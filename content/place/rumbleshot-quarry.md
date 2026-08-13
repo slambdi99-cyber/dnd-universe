@@ -1,0 +1,30 @@
+---
+name: Rumbleshot Quarry
+kind: place
+summary: Copper mine west of the vale, run by Foreman Rumbleshot. Attacked by goblins
+  and kobolds serving Gollub.
+appearance: stepped stone quarry, blasting rubble, cut faces, dust haze
+tags:
+- landmark
+- from-lore
+- from-session-log
+links:
+- place/copper-vale
+- character/foreman-rumbleshot
+- character/goluub
+- place/the-drowned-amphitheater
+sources:
+- discord:dnd-campaign:Copper_Vale_Map_1.jpg
+- session-log:the-buried-star-tobias-log.txt
+- dm-wiki
+art:
+- place/rumbleshot-quarry/default-b22abcb2
+data:
+  map_type: landmark
+---
+
+Mining rich copper, with metal deposits that gleam like fire and exposed copper visible in a waterfall. Conifer trees and brush around it. The tunnels were damaged by fires.
+
+Goblins and kobolds planned to burn the mining camp down. The party stopped it: Tobias pulled civilians out of a burning house, and he and Korran broke down the burning gate so people could carry buckets through.
+
+Below it lies a kobold warren, an elevator, and Gollub.

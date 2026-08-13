@@ -1,0 +1,27 @@
+# Where entities and generated art live, relative to this folder.
+content_dir: "content"
+assets_dir: "assets"
+
+art:
+  model: "stabilityai/stable-diffusion-xl-base-1.0"
+  steps: 30
+  guidance_scale: 6.0
+  width: 1024
+  height: 1024
+
+  # The single most important line in this file. It's prepended to every
+  # prompt, so it's what makes four hundred images look like one world instead
+  # of four hundred unrelated pictures. Change it and the whole universe
+  # restyles (delete the assets folder to regenerate).
+  house_style: "fantasy illustration, painterly, muted earthy palette, soft directional light"
+
+  negative_prompt: "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph"
+
+  # SDXL's text encoder truncates past 77 tokens, so this is a hard budget.
+  # Prompts are assembled in priority order and cut from the tail.
+  max_prompt_words: 60
+
+worldmap:
+  # Path to your Azgaar export, so `import-map` can be re-run without
+  # retyping it. Optional.
+  source: ""

@@ -1,0 +1,23 @@
+{
+  "info": {"version": "1.99", "mapName": "Test World"},
+  "biomesData": {"name": ["Marine", "Temperate rainforest", "Cold desert"]},
+  "pack": {
+    "cells": {"biome": [0, 1, 1, 2]},
+    "states": [
+      {"i": 0, "name": "Neutrals"},
+      {"i": 1, "name": "Aldmere", "fullName": "Kingdom of Aldmere", "formName": "Kingdom", "capital": 1, "area": 900, "urban": 12.0, "rural": 40.0}
+    ],
+    "provinces": [
+      {"i": 0},
+      {"i": 1, "name": "Thornmarch", "fullName": "Duchy of Thornmarch", "state": 1}
+    ],
+    "burgs": [
+      {},
+      {"i": 1, "name": "Saltmere Keep", "cell": 1, "x": 100, "y": 200, "state": 1, "province": 1, "population": 24.0, "capital": 1, "port": 1, "citadel": 1, "walls": 1, "temple": 1},
+      {"i": 2, "name": "Millbrook", "cell": 3, "x": 300, "y": 400, "state": 1, "population": 0.6}
+    ],
+    "cultures": [{"i": 1, "name": "Hollowfolk", "type": "Highland"}],
+    "religions": [{"i": 1, "name": "The Tidewatch", "type": "Organized"}]
+  },
+  "notes": [{"id": "burg1", "name": "Saltmere Keep", "legend": "The old seat of the Aldmere line."}]
+}

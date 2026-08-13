@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Generated art. Regenerable from content plus config, and large. Keep it out
+# of the repo unless you decide you want the history.
+assets/
+
+# content/ is deliberately NOT ignored. It is the campaign itself, it is only
+# ~100KB, and it is the one thing here that cannot be regenerated. Five people
+# can write to it through the MCP server, so its history is the undo button.
+
+# Shared secret for the MCP server. Never commit this.
+.mcp-token
+
+# Generated Obsidian vault. Rebuild with tools/export_obsidian.py.
+vault/

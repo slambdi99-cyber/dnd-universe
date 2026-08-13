@@ -1,0 +1,19 @@
+# Install torch FIRST from the CUDA 12.8 index (required for RTX 50-series):
+#   pip install torch --index-url https://download.pytorch.org/whl/cu128
+#
+# Only the `art` command needs torch and diffusers. Everything else (map
+# import, entities, the CLI) runs on the two packages at the top, so you can
+# work on the world without a GPU.
+
+PyYAML>=6.0
+
+# MCP server. uvicorn is only needed for --http (serving the table over a tunnel).
+mcp>=2.0
+uvicorn>=0.30
+
+# art generation only
+diffusers>=0.31
+transformers>=4.44
+accelerate>=1.0
+safetensors>=0.4
+Pillow>=10.0
