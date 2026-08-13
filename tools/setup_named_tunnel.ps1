@@ -19,7 +19,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$Hostname,
 
-    [string]$TunnelName = "copper-vale",
+    [string]$TunnelName = "buried-star",
     [int]$Port = 8787
 )
 
@@ -113,8 +113,11 @@ Write-Host "  & '$cf' tunnel run $TunnelName"
 Write-Host ""
 Write-Host "Start the MCP server (separate window, leave it running):" -ForegroundColor Yellow
 Write-Host "  cd C:\Claude\dnd-universe"
-Write-Host "  `$env:UNIVERSE_MCP_TOKEN = (Get-Content .mcp-token -Raw).Trim()"
-Write-Host "  .\.venv\Scripts\python.exe mcp_server.py --http --allowed-host $Hostname"
+Write-Host "  .\start.ps1"
+Write-Host ""
+Write-Host "  start.ps1 reads the hostname from Tailscale. Behind Cloudflare"
+Write-Host "  instead, pass it yourself:"
+Write-Host "  ..\dnd-scribe\.venv\Scripts\python.exe mcp_server.py --http --wiki-live --allowed-host $Hostname"
 Write-Host ""
 Write-Host "Your players then connect to:" -ForegroundColor Yellow
 Write-Host "  https://$Hostname/mcp"
