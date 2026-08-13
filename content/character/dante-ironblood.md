@@ -7,10 +7,13 @@ tags:
 - npc
 - from-session-log
 - needs-detail
+- npc-side
 links:
 - character/tobias-goreguts
 sources:
 - session-log:the-buried-star-tobias-log.txt
+- written by The DM
+- updated by The DM
 art:
 - character/dante-ironblood/default-b05d1a52
 ---

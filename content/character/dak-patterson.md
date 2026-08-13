@@ -8,11 +8,14 @@ tags:
 - npc
 - antagonist
 - from-wiki
+- npc-side
 links:
 - faction/underbelly-mercantile
 - place/copper-vale
 sources:
 - discord:lore-drop:2026-08-13
+- written by The DM
+- updated by The DM
 art:
 - character/dak-patterson/default-a8ef7d07
 ---

@@ -1,0 +1,19 @@
+---
+name: The Lowlands
+kind: place
+summary: Grassland and marshes south of Cutter Gulch and Copper Vale.
+appearance: flat wet grassland fading into reed marsh, standing water, low horizon
+tags:
+- surroundings
+- region
+- from-map
+- needs-detail
+links:
+- place/lorithal
+- place/cutter-gulch
+- place/copper-vale
+- place/arrowfell
+sources:
+- map:lorithal-city-map
+- written by The DM
+---

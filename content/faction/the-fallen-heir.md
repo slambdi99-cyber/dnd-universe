@@ -8,7 +8,8 @@ tags:
 - from-session-log
 - needs-detail
 links:
-- place/laurelthel
+- archive/laurelthel
+- place/lorithal
 sources:
 - session-log:the-buried-star-tobias-log.txt
 - edited by The DM on the wiki

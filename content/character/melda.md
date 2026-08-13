@@ -8,10 +8,13 @@ tags:
 - npc
 - from-session-log
 - needs-detail
+- npc-side
 links:
 - character/seamus-stonebuckle
 sources:
 - session-log:the-buried-star-tobias-log.txt
+- written by The DM
+- updated by The DM
 art:
 - character/melda/default-476d2e3f
 ---

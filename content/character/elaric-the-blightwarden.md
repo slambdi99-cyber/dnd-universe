@@ -10,6 +10,7 @@ tags:
 - elf
 - from-lore
 - from-session-log
+- npc-side
 links:
 - faction/hollow-root-covenant
 - character/kept
@@ -17,6 +18,8 @@ links:
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - session-log:the-buried-star-tobias-log.txt
+- written by The DM
+- updated by The DM
 art:
 - character/elaric-the-blightwarden/default-0edde42c
 - character/elaric-the-blightwarden/default-fbab3070

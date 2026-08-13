@@ -9,6 +9,7 @@ tags:
 - needs-appearance
 links:
 - place/copper-vale
+- place/the-lowlands
 sources:
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
 art:

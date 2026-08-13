@@ -12,7 +12,8 @@ tags:
 - human
 links:
 - place/copper-vale
-- place/laurelthel
+- archive/laurelthel
+- place/lorithal
 sources:
 - discord:Party-Chat-voice
 - session-log:the-buried-star-tobias-log.txt

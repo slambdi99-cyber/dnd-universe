@@ -8,6 +8,7 @@ appearance: tavern keeper, sleeves rolled, apron stained lavender, sharp practic
 tags:
 - npc
 - from-wiki
+- npc-side
 links:
 - place/peapod-pub
 - item/misenchanted-lavender-mead
@@ -19,6 +20,8 @@ sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - dm-wiki
 - discord:lore-drop:2026-08-13
+- written by The DM
+- updated by The DM
 art:
 - character/maera-broadkettle/default-84258154
 - character/maera-broadkettle/default-a244392b

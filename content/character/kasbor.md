@@ -7,10 +7,13 @@ tags:
 - npc
 - ally
 - from-session-log
+- npc-side
 links:
 - creature/goluub
 sources:
 - session-log:the-buried-star-tobias-log.txt
+- written by The DM
+- updated by The DM
 art:
 - character/kasbor/default-1fa2943d
 data:

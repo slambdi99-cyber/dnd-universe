@@ -1,0 +1,18 @@
+---
+name: The Frostlands
+kind: place
+summary: 'The country east of Lorithal: lovely in the summer, bitter in the winter.'
+appearance: open northern country, pale grass under thin sun in summer, deep snow
+  and hard grey light in winter
+tags:
+- surroundings
+- region
+- from-map
+- needs-detail
+links:
+- place/lorithal
+- place/east-post
+sources:
+- map:lorithal-city-map
+- written by The DM
+---

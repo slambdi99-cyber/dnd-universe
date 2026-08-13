@@ -1,0 +1,50 @@
+name: tests
+
+# The wiki is edited by five people through three different surfaces, so the
+# question this answers is "did someone's change break somebody else's view of
+# the world" — particularly the secret redaction, which fails silently and
+# badly.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # Deliberately not requirements.txt: that pulls torch and diffusers, which
+      # are ~3GB and only needed to draw pictures. Everything under test runs
+      # without the GPU stack.
+      - name: Install what the tests need
+        run: pip install pyyaml markdown starlette httpx python-multipart "mcp[cli]" uvicorn
+
+      - name: Run every suite
+        run: |
+          failed=0
+          for t in tests/test_*.py; do
+            echo "::group::$t"
+            python "$t" || failed=1
+            echo "::endgroup::"
+          done
+          exit $failed
+
+      # A canary rather than a claim: if a secret ever reaches the static
+      # export, this fails even when every unit test passes.
+      - name: No secret escapes the static export
+        run: |
+          python tools/export_site.py --out /tmp/site
+          if grep -rl ":::secret" /tmp/site; then
+            echo "A secret marker reached the exported site."
+            exit 1
+          fi
+          echo "Export is clean."

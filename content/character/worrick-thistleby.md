@@ -9,12 +9,15 @@ tags:
 - halfling
 - from-wiki
 - from-session-log
+- npc-side
 links:
 - faction/underbelly-mercantile
 - character/seamus-stonebuckle
 - place/rumbleshot-quarry
 sources:
 - discord:lore-drop:2026-08-13
+- written by The DM
+- updated by The DM
 art:
 - character/worrick-thistleby/default-1bde4561
 data:

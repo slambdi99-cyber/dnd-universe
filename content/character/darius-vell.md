@@ -9,12 +9,15 @@ tags:
 - antagonist
 - deceased
 - from-wiki
+- npc-side
 links:
 - faction/underbelly-mercantile
 - character/buster
 - character/tavin
 sources:
 - discord:lore-drop:2026-08-13
+- written by The DM
+- updated by The DM
 art:
 - character/darius-vell/default-e198a3d7
 ---

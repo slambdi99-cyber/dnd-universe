@@ -1,6 +1,6 @@
 ---
 name: Lorithal
-kind: place
+kind: archive
 summary: 'Lorithal (recorded here under the older spelling Laurelthel): a realm with
   royalty and an active rebellion, and Wren''s homeland.'
 appearance: distant prosperous realm, pale spires, laurel groves, banners
@@ -39,3 +39,7 @@ The realm's name is **Lorithal**. Laurelthel, Laurelfell and Laurefall are all c
 Set by the DM on 2026-08-13. This page's title and slug still read "Laurelthel" because the wiki exposes no rename tool; retitle when that becomes possible.
 
 Correction to the note above: the page title now reads **Lorithal**, renamed directly on the wiki. Only the slug is still `laurelthel`.
+
+## Superseded
+
+Replaced by `place/lorithal` on 2026-08-13. Kept only because the wiki has no delete tool; do not edit.

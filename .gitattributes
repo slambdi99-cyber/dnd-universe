@@ -1,0 +1,28 @@
+# Normalise line endings so a Windows checkout and a Linux CI runner agree.
+#
+# Without this, every commit from this machine warns "LF will be replaced by
+# CRLF", and the tests that compare rendered output byte-for-byte pass locally
+# and fail in CI for reasons that have nothing to do with the code.
+* text=auto eol=lf
+
+# Windows-only scripts. PowerShell copes with LF, but an editor that rewrites
+# them shouldn't be the thing that decides.
+*.ps1 text eol=crlf
+
+# Never touched: mangling a byte of a PNG makes it a broken PNG.
+*.png binary
+*.jpg binary
+*.gif binary
+*.webp binary
+*.pdf binary
+*.zip binary
+*.mp3 binary
+*.ogg binary
+*.mp4 binary
+*.wav binary
+
+# Generated or bulk data: keep it out of diffs and language stats so the
+# repo's summary reflects what people actually wrote.
+content/** linguist-documentation
+lore/** linguist-documentation
+data/srd.json linguist-generated

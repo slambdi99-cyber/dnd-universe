@@ -10,6 +10,7 @@ tags:
 - ally
 - orc
 - from-wiki
+- npc-side
 links:
 - character/tavin
 - faction/underbelly-mercantile
@@ -20,6 +21,8 @@ links:
 sources:
 - session-log:the-buried-star-tobias-log.txt
 - discord:lore-drop:2026-08-13
+- written by The DM
+- updated by The DM
 art:
 - character/buster/default-30132a7e
 - character/buster/default-6e5452d3

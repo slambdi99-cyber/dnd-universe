@@ -8,6 +8,7 @@ tags:
 - npc
 - from-wiki
 - from-lore
+- npc-side
 links:
 - place/enchanters-guild
 - place/underground-chamber
@@ -15,6 +16,8 @@ links:
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - dm-wiki
+- written by The DM
+- updated by The DM
 art:
 - character/barnaby-thistlewick/default-1e30fb27
 - character/barnaby-thistlewick/default-157764c8

@@ -7,6 +7,7 @@ tags:
 - npc
 - halfling
 - from-wiki
+- npc-side
 links:
 - character/buster
 - faction/underbelly-mercantile
@@ -14,6 +15,8 @@ links:
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - discord:lore-drop:2026-08-13
+- written by The DM
+- updated by The DM
 art:
 - character/tavin/default-586aa497
 - character/tavin/default-c06ca894

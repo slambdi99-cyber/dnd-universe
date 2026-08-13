@@ -10,6 +10,7 @@ tags:
 - deceased
 - from-wiki
 - from-session-log
+- npc-side
 links:
 - faction/underbelly-mercantile
 - faction/hollow-root-covenant
@@ -18,6 +19,8 @@ links:
 - character/melda
 sources:
 - discord:lore-drop:2026-08-13
+- written by The DM
+- updated by The DM
 art:
 - character/seamus-stonebuckle/default-353effbe
 data:

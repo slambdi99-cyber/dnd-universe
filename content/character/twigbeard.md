@@ -10,6 +10,7 @@ tags:
 - dwarf
 - druid
 - from-wiki
+- npc-side
 links:
 - faction/six-wolves
 - item/twigbeards-lucky-beard-twig
@@ -19,6 +20,8 @@ sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - session-log:the-buried-star-tobias-log.txt
 - discord:lore-drop:2026-08-13
+- written by The DM
+- updated by The DM
 art:
 - character/twigbeard/default-4ffb46ac
 - character/twigbeard/default-5c27e372
