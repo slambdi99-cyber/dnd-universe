@@ -1,4 +1,4 @@
-﻿"""Seed entities from Tobias Goreguts' session log, "The Buried Star".
+﻿"""Seed entities from Tobias's player's session log, "The Buried Star".
 
 Source: `dnd-scribe/lore/session-notes/the-buried-star-tobias-log.txt`, a
 running log kept from Tobias's point of view, roughly 2025-10 to 2026-08.
@@ -391,8 +391,7 @@ UPDATES = [
         summary="Joined the party on the road to Laurelthel in August 2026. The party are suspicious of them.",
         tags=["player-character", "from-lore", "needs-appearance"],
         links=["place/copper-vale", "place/laurelthel"],
-        data={"player": "Aelan Viremont", "discord_id": "REDACTED",
-              "pronunciation": "Ay-lan VEER-mont"},
+        data={"pronunciation": "Ay-lan VEER-mont"},
         body=(
             "Joined the fray on 2026-08-05 when the party's carriage to "
             "Laurelthel was attacked by rebels shouting for the fallen heir. "

@@ -33,7 +33,7 @@ data:
   occupation: Owner of the Peapod Public House
 ---
 
-Owner of the Peapod Public House and Korran's previous boss. Tobias Goreguts' session log spells her Myra.
+Owner of the Peapod Public House and Korran's previous boss. Tobias's player's session log spells her Myra.
 
 ## Controversy
 

@@ -30,4 +30,4 @@ Living in their own insular society within the Hollow Root, nestled beneath Copp
 
 Worshipping the Buried Star, which propels them forward by way of psychic wish magic, most members attain an otherwise-impossible lifestyle of peace and scientific progress.
 
-Read that carefully against what the party has seen. The Covenant describes itself as peaceful and scientifically advanced. Tobias Goreguts' session log calls them a vampire cult, and the Bogwatchers oppose them as the Blight. Elaric mentored Mundus here, then murdered Lucian. Both accounts can be true at once, which is more interesting than either being wrong.
+Read that carefully against what the party has seen. The Covenant describes itself as peaceful and scientifically advanced. Tobias's player's session log calls them a vampire cult, and the Bogwatchers oppose them as the Blight. Elaric mentored Mundus here, then murdered Lucian. Both accounts can be true at once, which is more interesting than either being wrong.

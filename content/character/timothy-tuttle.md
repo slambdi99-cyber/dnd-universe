@@ -21,10 +21,8 @@ art:
 data:
   class: Druid
   race: Tortle
-  player: Timothy Tuttle
   subclass: Circle of the Shepherd (2024)
   level: 4
-  dndbeyond_player: TimTuttle
   status: active
   dndbeyond_sheet: https://www.dndbeyond.com/characters/151162336
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676

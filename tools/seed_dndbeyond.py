@@ -27,8 +27,7 @@ SRC = "dndbeyond:campaign/6916676"
 SHEETS = {
     "aelan-viremont": dict(
         data={"race": "Human", "class": "Wizard", "subclass": "Illusionist",
-              "level": 4, "player": "Aelan Viremont", "dndbeyond_player": "Aelan Viremont",
-              "discord_id": "REDACTED", "status": "active"},
+              "level": 4, "status": "active"},
         summary="Human illusionist wizard. Joined the party on the road to Laurelthel in August 2026.",
         appearance="human wizard, travelling robes over practical clothes, hooded cloak, "
                    "spellbook at the hip, faint shimmer of illusion at the fingertips",
@@ -38,24 +37,23 @@ SHEETS = {
     "korran-mossborn": dict(
         data={"race": "Goliath", "class": "Monk",
               "subclass": "Warrior of the Elements", "level": 4,
-              "dndbeyond_player": "Korrans-player", "status": "active"},
+              "status": "active"},
     ),
     "timothy-tuttle": dict(
         data={"race": "Tortle", "class": "Druid",
               "subclass": "Circle of the Shepherd (2024)", "level": 4,
-              "dndbeyond_player": "TimTuttle", "status": "active"},
+              "status": "active"},
     ),
     "tobias-goreguts": dict(
         data={"race": "Half-Orc", "class": "Barbarian",
               "subclass": "Path of the Ancestral Guardian (XGtE)", "level": 4,
-              "dndbeyond_player": "Maximpod", "status": "active"},
+              "status": "active"},
         summary="Half-orc barbarian of the Path of the Ancestral Guardian, and a "
                 "former mercenary of the 11th Battalion.",
     ),
     "wren": dict(
         data={"race": "Elf", "class": "Fighter", "subclass": "Battle Master",
-              "level": 4, "dndbeyond_player": "Nrwshoe",
-              "discord_id": "REDACTED", "status": "active"},
+              "level": 4, "status": "active"},
         summary="Elf fighter of the Battle Master archetype, from Laurelthel. "
                 "Carries a splinter of the Buried Star.",
         add_tags=["fighter"],
@@ -73,13 +71,11 @@ SHEETS = {
     ),
     "lucian-lovelyre": dict(
         data={"race": "Aasimar", "class": "Bard", "subclass": "College of Lore",
-              "level": 3, "dndbeyond_player": "Lucians-player",
-              "discord_id": "766420870016663572", "status": "deactivated"},
+              "level": 3, "status": "deactivated"},
     ),
     "mundus-decepi": dict(
         data={"race": "Halfling", "class": "Rogue", "level": 3,
-              "dndbeyond_player": "MundusDecepi",
-              "discord_id": "REDACTED", "status": "deactivated"},
+              "status": "deactivated"},
         summary="Halfling rogue, mentored by Elaric the Blightwarden inside the "
                 "Hollow Root Covenant. Currently deactivated on D&D Beyond.",
         appearance="halfling in dark leathers, hood up, twin daggers, "

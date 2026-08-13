@@ -31,12 +31,10 @@ art:
 data:
   class: Monk
   race: Goliath
-  player: Korrans-player
   epithet: the Still Hand
   occupation: Bartender at the Peapod Public House
   subclass: Warrior of the Elements
   level: 4
-  dndbeyond_player: Korrans-player
   status: active
   dndbeyond_sheet: https://www.dndbeyond.com/characters/153830761
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676

@@ -6,7 +6,7 @@ This is the highest-authority source in the project and it overrides everything
 before it. Several earlier entities were wrong in ways that mattered:
 
   * Lucian Lovelyre is an Aasimar, not a half-elf.
-  * "Myra" and Maera Broadkettle are the same person. Tobias Goreguts' session log
+  * "Myra" and Maera Broadkettle are the same person. Tobias's player's session log
     spelled her Myra; she owns the Peapod Public House.
   * Warwick and Seamus have surnames and are both Underbelly Mercantile
     consorts: Worrick Thistleby and Seamus Stonebuckle.
@@ -158,7 +158,7 @@ UPDATES = [
         tags=["player-character", "bard", "aasimar", "deceased", "from-wiki"],
         links=[VALE, "item/bloomfang-rapier", "character/elaric-the-blightwarden", PEAPOD],
         data={"class": "Bard", "subclass": "College of Lore", "race": "Aasimar",
-              "discord_id": "766420870016663572"},
+              },
         body=(
             "A prolific musician who often wrote songs about his sexual "
             "conquests and subsequent heartbreak. At the time of his death he "
@@ -192,7 +192,7 @@ UPDATES = [
         data={"aka": ["Myra"], "occupation": "Owner of the Peapod Public House"},
         body=(
             "Owner of the Peapod Public House and Korran's previous boss. "
-            "Tobias Goreguts' session log spells her Myra.\n\n"
+            "Tobias's player's session log spells her Myra.\n\n"
             "## Controversy\n\n"
             "Under investigation by the Enchanters' Guild for the Misenchanted "
             "Lavender Mead.\n\n"
@@ -215,8 +215,7 @@ UPDATES = [
         links=[VALE, "place/brindlewood", PEAPOD, "faction/bogwatchers-sanctum",
                "place/bogwatchers-sanctum-temple", "character/maera-broadkettle",
                "item/misenchanted-lavender-mead", "character/thog-mossborn"],
-        data={"class": "Monk", "race": "Goliath (Storm)", "player": "Korrans-player",
-              "discord_id": "REDACTED", "epithet": "the Still Hand",
+        data={"class": "Monk", "race": "Goliath (Storm)", "epithet": "the Still Hand",
               "occupation": "Bartender at the Peapod Public House"},
         body=(
             "Born not among his people's peaks but in the lowland marshes, after "
@@ -313,8 +312,7 @@ UPDATES = [
         tags=["player-character", "rogue", "from-wiki", "needs-appearance"],
         links=[VALE, "item/rootbound-dagger", COVENANT,
                "character/elaric-the-blightwarden"],
-        data={"class": "Rogue", "player": "Mundus-player", "discord_id": "REDACTED",
-              "mentor": "Elaric the Blightwarden",
+        data={"class": "Rogue", "mentor": "Elaric the Blightwarden",
               "former_affiliation": "Hollow Root Covenant"},
         body=(
             "A member of the party, formerly of the Hollow Root Covenant, "
@@ -341,7 +339,7 @@ UPDATES = [
             "psychic wish magic, most members attain an otherwise-impossible "
             "lifestyle of peace and scientific progress.\n\n"
             "Read that carefully against what the party has seen. The Covenant "
-            "describes itself as peaceful and scientifically advanced. Tobias Goreguts' "
+            "describes itself as peaceful and scientifically advanced. Tobias's player's "
             "session log calls them a vampire cult, and the Bogwatchers oppose "
             "them as the Blight. Elaric mentored Mundus here, then murdered "
             "Lucian. Both accounts can be true at once, which is more "

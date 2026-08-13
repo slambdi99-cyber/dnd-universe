@@ -86,9 +86,9 @@ check("original audience still reads it", CANARY in s.redact(nested, {"dm"}))
 
 print("\n== case and spacing ==")
 check("audience is case-insensitive",
-      CANARY in s.redact(f":::secret SAM\n{CANARY}\n:::", {"dm"}))
+      CANARY in s.redact(f":::secret DM\n{CANARY}\n:::", {"dm"}))
 check("viewer keys are case-insensitive",
-      CANARY in s.redact(f":::secret dm\n{CANARY}\n:::", {"SAM"}))
+      CANARY in s.redact(f":::secret dm\n{CANARY}\n:::", {"DM"}))
 check("semicolons accepted as separators",
       CANARY in s.redact(f":::secret dm; wren\n{CANARY}\n:::", {"wren"}))
 # A marker must own its line. Mid-line text that looks like one must not open

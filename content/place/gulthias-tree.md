@@ -12,7 +12,7 @@ tags:
 links:
 - faction/hollow-root-covenant
 sources:
-- dm:dm:2026-08-13
+- dm:wiki:2026-08-13
 - written by The DM
 - updated by The DM
 ---

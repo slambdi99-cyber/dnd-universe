@@ -13,7 +13,7 @@ links:
 - faction/hollow-root-covenant
 sources:
 - session-log:the-buried-star-tobias-log.txt
-- dm:dm:2026-08-13
+- dm:wiki:2026-08-13
 - updated by The DM
 art:
 - place/goltheas-tree/default-22b9ac96

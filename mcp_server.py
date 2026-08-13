@@ -927,9 +927,13 @@ def main(argv: list[str]) -> int:
             secret_path.write_text(pysecrets.token_urlsafe(32), encoding="utf-8")
         session_secret = secret_path.read_text(encoding="utf-8").strip()
         live_routes = webapp.build(cfg, library, registry, schema=schema)
+        from universe import gate as gate_mod
+
+        guarded = ("passphrase required" if gate_mod.is_enabled(cfg.root)
+                   else "OPEN, no passphrase")
         print(
             f"[mcp] wiki: live, {len(registry.members)} name(s) to pick from, "
-            "no password",
+            f"{guarded}",
             file=sys.stderr,
         )
 

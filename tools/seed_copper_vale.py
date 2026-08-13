@@ -6,7 +6,7 @@ Everything here was extracted from `dnd-scribe/lore/dnd-campaign/`, chiefly:
   * the hand-drawn regional map, Copper_Vale_Map_1.jpg
   * the Valeshire city map, Valeshire_Map.jpg
   * character level-up posts, which name each PC's class and Discord ID
-  * Korran Mossborn's backstory post by Korrans-player, 2025-10-11
+  * Korran Mossborn's backstory post by Korran's player, 2025-10-11
   * the magic item inventory post, 2025-10-15
 
 Re-running is safe. `Library.upsert` fills empty fields and merges lists but
@@ -305,8 +305,7 @@ CHARACTERS = [
         tags=["player-character", "barbarian", "half-orc", "from-lore"],
         links=[VALE, "item/bloodroot-greatsword"],
         sources=[SRC_LEVELS, SRC_ITEMS, SRC_PORTRAITS, SRC_GRAPH],
-        data={"class": "Barbarian", "race": "Half-orc", "player": "Tobias Goreguts",
-              "discord_id": "REDACTED"},
+        data={"class": "Barbarian", "race": "Half-orc", },
         body="Fights with a greatsword and a javelin. Known for Reckless Attack, which is on-brand.",
     ),
     dict(
@@ -317,7 +316,7 @@ CHARACTERS = [
         tags=["player-character", "bard", "half-elf", "from-lore"],
         links=[VALE, "item/bloomfang-rapier"],
         sources=[SRC_LEVELS, SRC_ITEMS, SRC_PORTRAITS],
-        data={"class": "Bard", "race": "Half-elf", "discord_id": "766420870016663572"},
+        data={"class": "Bard", "race": "Half-elf", },
         body="Joined the party 2025-05-09.",
     ),
     dict(
@@ -331,7 +330,7 @@ CHARACTERS = [
         # Eva's player has no Discord ID on record: she doesn't post in either of the
         # imported channels, so the scribe can't label her speech yet.
         data={"class": "Cleric", "subclass": "Tempest Domain", "race": "Half-drow",
-              "player": "Eva's player", "deity": "Selune", "discord_id": None},
+              "deity": "Selune", },
         body=(
             "The first character created for the campaign, on 2025-05-05. She "
             "has since left the party.\n\n"
@@ -350,8 +349,7 @@ CHARACTERS = [
         tags=["player-character", "druid", "tortle", "from-lore"],
         links=[VALE],
         sources=[SRC_LEVELS, SRC_PORTRAITS],
-        data={"class": "Druid", "race": "Tortle", "player": "Timothy Tuttle",
-              "discord_id": "REDACTED"},
+        data={"class": "Druid", "race": "Tortle", },
         body="Has turned into a giant frog and a giant wolf spider. Wren may have his staff.",
     ),
     dict(
@@ -362,7 +360,7 @@ CHARACTERS = [
         tags=["player-character", "rogue", "from-lore", "needs-appearance"],
         links=[VALE, "item/rootbound-dagger", "faction/hollow-root-covenant"],
         sources=[SRC_LEVELS, SRC_ITEMS, SRC_GRAPH],
-        data={"class": "Rogue", "player": "Mundus-player", "discord_id": "REDACTED"},
+        data={"class": "Rogue", },
         body=(
             "An Avrae lookup for 'Rogue: Soulknife' appears in the channel, "
             "which given the party's class list is most likely his.\n\n"
@@ -378,7 +376,7 @@ CHARACTERS = [
         tags=["player-character", "elf", "from-lore"],
         links=[VALE, "item/twigbeards-lucky-beard-twig", "character/timothy-tuttle"],
         sources=[SRC_ITEMS, SRC_PORTRAITS],
-        data={"player": "nickshoee", "discord_id": "REDACTED"},
+        data={},
         body=(
             "Class not recorded in the imported lore, but she casts Speak With "
             "Dead, so some flavour of caster.\n\n"
@@ -396,7 +394,7 @@ CHARACTERS = [
         tags=["player-character", "monk", "goliath", "from-lore"],
         links=[VALE, "place/brindlewood", "place/peapod-pub", "faction/bogwatchers-sanctum"],
         sources=[SRC_KORRAN, SRC_PORTRAITS],
-        data={"class": "Monk", "race": "Goliath", "player": "Korrans-player", "epithet": "the Still Hand"},
+        data={"class": "Monk", "race": "Goliath", "epithet": "the Still Hand"},
         body=(
             "Born not among his people's peaks but in the lowland marshes, after a "
             "rockslide swept his tribe away during a seasonal migration. Found as a "

@@ -23,7 +23,6 @@ data:
   class: Cleric
   subclass: Tempest Domain
   race: Half-drow
-  player: Eva's player
   deity: Selune
 ---
 

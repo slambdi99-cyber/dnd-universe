@@ -8,7 +8,7 @@
 # `key` is what you write in a secret block's audience list:
 #
 #     :::secret dm, wren
-#     Only The DM and Wren can read this.
+#     Only the DM and Wren can read this.
 #     :::
 #
 # The special audience `dm` matches anyone whose role is dm, so you can address

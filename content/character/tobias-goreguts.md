@@ -29,10 +29,8 @@ art:
 data:
   class: Barbarian
   race: Half-Orc
-  player: Tobias Goreguts
   subclass: Path of the Ancestral Guardian (XGtE)
   level: 4
-  dndbeyond_player: Maximpod
   status: active
   dndbeyond_sheet: https://www.dndbeyond.com/characters/151161161
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676

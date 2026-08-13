@@ -26,12 +26,10 @@ art:
 - character/mundus-decepi/default-32484a65
 data:
   class: Rogue
-  player: Mundus-player
   mentor: Elaric the Blightwarden
   former_affiliation: Hollow Root Covenant
   race: Halfling
   level: 3
-  dndbeyond_player: MundusDecepi
   status: departed
 ---
 

@@ -34,7 +34,6 @@ data:
   subclass: College of Lore
   race: Aasimar
   level: 3
-  dndbeyond_player: Lucians-player
   status: deactivated
 ---
 

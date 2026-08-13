@@ -18,20 +18,18 @@ sources:
 - discord:Party-Chat-voice
 - session-log:the-buried-star-tobias-log.txt
 - dndbeyond:campaign/6916676
-- dm:dm:2026-08-13
+- dm:wiki:2026-08-13
 - updated by The DM
 - edited by The DM on the wiki
 art:
 - character/aelan-viremont/default-f654d93a
 - character/aelan-viremont/default-9d3422dd
 data:
-  player: Aelan Viremont
   pronunciation: Ay-lan VEER-mont
   race: Human
   class: Wizard
   subclass: Illusionist
   level: 4
-  dndbeyond_player: Aelan Viremont
   status: active
   dndbeyond_sheet: https://www.dndbeyond.com/characters/169093190
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676

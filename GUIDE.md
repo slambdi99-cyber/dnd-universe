@@ -2,7 +2,7 @@
 
 Everything we know about the world lives in one place now: every town, NPC,
 faction, item and god, cross-linked, with art. It was built from four years of
-our Discord, The DM's wiki pages, Tobias Goreguts' session notes and the D&D Beyond sheets.
+our Discord, The DM's wiki pages, Tobias's player's session notes and the D&D Beyond sheets.
 
 There are two ways in. You probably want both.
 
@@ -361,7 +361,7 @@ an assistant** on the website and use the Copy button rather than selecting by
 hand.
 
 **It can't connect at all, or the site won't load.** The whole thing runs
-on Timothy Tuttle's PC. If it's off, the wiki and the MCP both stop working. It isn't
+on Timothy's player's PC. If it's off, the wiki and the MCP both stop working. It isn't
 broken, it's asleep. Timothy Tuttle: `powershell -ExecutionPolicy Bypass -File
 .\start.ps1` from `C:\Claude\dnd-universe`.
 

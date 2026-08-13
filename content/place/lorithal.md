@@ -16,7 +16,7 @@ links:
 - place/the-broadheights
 - place/the-grand-endurance
 sources:
-- dm:dm:2026-08-13
+- dm:wiki:2026-08-13
 - written by The DM
 art:
 - place/lorithal/upload-195b5862bfaf8443

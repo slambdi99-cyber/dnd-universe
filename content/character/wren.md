@@ -26,18 +26,16 @@ sources:
 - dndbeyond:campaign/6916676
 - player:wren:2026-08-13
 - updated by guest
-- dm:dm:2026-08-13
+- dm:wiki:2026-08-13
 - updated by The DM
 - edited by The DM on the wiki
 art:
 - character/wren/default-9a210fa7
 data:
-  player: nickshoee
   race: Elf
   class: Fighter
   subclass: Battle Master
   level: 4
-  dndbeyond_player: Nrwshoe
   status: active
   dndbeyond_sheet: https://www.dndbeyond.com/characters/150673315
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676

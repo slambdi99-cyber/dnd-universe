@@ -5,7 +5,7 @@ them into a handful of numbered sheets so the whole archive can be reviewed at
 a glance, then the index tells you which file each tile is.
 
     python tools\\contact_sheet.py --lore ..\\dnd-scribe\\lore\\dnd-campaign
-    python tools\\contact_sheet.py --author Korrans-player
+    python tools\\contact_sheet.py --author Korran's player
 
 Writes sheets and index.txt into <lore>/contact_sheets/.
 """
