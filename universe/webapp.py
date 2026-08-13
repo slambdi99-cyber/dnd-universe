@@ -20,8 +20,9 @@ from starlette.routing import Route
 
 from . import accounts as accounts_mod
 from . import people as people_mod
+from . import secrets as secrets_mod
 from . import site as site_mod
-from .entities import Library
+from .entities import KINDS, Entity, Library, slugify
 
 PUBLIC: frozenset[str] = frozenset()
 
@@ -175,7 +176,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         images = images_for(entities)
         return HTMLResponse(site_mod.shell(
             "Copper Vale", "/wiki/",
-            site_mod.render_index(entities, images, "/wiki/"),
+            site_mod.render_index(entities, images, "/wiki/", editable=True),
             site_mod.search_index(entities, viewer), user=user, live=True,
         ))
 
@@ -216,7 +217,8 @@ def build(cfg, library: Library, registry: people_mod.People,
         images = images_for(entities)
         return HTMLResponse(site_mod.shell(
             entity.name, "/wiki/",
-            site_mod.render_body(entity, library, images, "/wiki/", viewer, allowed),
+            site_mod.render_body(entity, library, images, "/wiki/", viewer, allowed,
+                                 editable=True),
             site_mod.search_index(entities, viewer), user=user, live=True,
         ))
 
@@ -274,7 +276,121 @@ def build(cfg, library: Library, registry: people_mod.People,
             "[]", user=person.name, live=True,
         ))
 
+    # -- editing --------------------------------------------------------
+
+    def form_values(entity: Entity | None, viewer: frozenset[str]) -> dict:
+        if entity is None:
+            return {"name": "", "summary": "", "appearance": "", "body": "",
+                    "tags": "", "links": "", "kind": "place"}
+        return {
+            "name": entity.name,
+            "summary": entity.summary,
+            "appearance": entity.appearance,
+            "body": secrets_mod.redact(entity.body, viewer),
+            "tags": ", ".join(entity.tags),
+            "links": ", ".join(entity.links),
+            "kind": entity.kind,
+        }
+
+    async def edit(request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        kind, slug = request.path_params["kind"], request.path_params["slug"]
+        _, allowed = entities_for(viewer)
+        if f"{kind}/{slug}" not in allowed:
+            return HTMLResponse("Not found", status_code=404)
+        entity = library.load(kind, slug)
+
+        withheld = len(secrets_mod.withheld_blocks(entity.body, viewer))
+
+        if request.method == "GET":
+            return HTMLResponse(site_mod.shell(
+                f"Editing {entity.name}", "/wiki/",
+                _edit_form(form_values(entity, viewer), registry, withheld=withheld,
+                           action=f"/wiki/{kind}/{slug}/edit"),
+                "[]", user=user, live=True,
+            ))
+
+        form = await request.form()
+        entity.name = str(form.get("name", entity.name)).strip() or entity.name
+        entity.summary = str(form.get("summary", "")).strip()
+        entity.appearance = str(form.get("appearance", "")).strip()
+        entity.tags = [t.strip() for t in str(form.get("tags", "")).split(",") if t.strip()]
+        entity.links = [
+            l.strip() for l in str(form.get("links", "")).split(",")
+            if l.strip() and "/" in l
+        ]
+
+        body = str(form.get("body", ""))
+        secret_text = str(form.get("secret_text", "")).strip()
+        audience = [a for a in form.getlist("audience") if a]
+        if secret_text and audience:
+            body = body.rstrip() + "\n\n" + secrets_mod.wrap(secret_text, audience)
+        # Anything this editor could not see is carried across untouched.
+        entity.body = secrets_mod.merge_edit(entity.body, body, viewer)
+
+        note = f"edited by {user} on the wiki"
+        if note not in entity.sources:
+            entity.sources.append(note)
+        library.save(entity)
+        return RedirectResponse(f"/wiki/{kind}/{slug}.html", status_code=303)
+
+    async def new_page(request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+
+        if request.method == "GET":
+            return HTMLResponse(site_mod.shell(
+                "New page", "/wiki/",
+                _edit_form(form_values(None, viewer), registry, withheld=0,
+                           action="/wiki/new", creating=True),
+                "[]", user=user, live=True,
+            ))
+
+        form = await request.form()
+        name = str(form.get("name", "")).strip()
+        kind = str(form.get("kind", "")).strip()
+        if not name or kind not in KINDS:
+            return HTMLResponse(site_mod.shell(
+                "New page", "/wiki/",
+                _edit_form({**form_values(None, viewer),
+                            "name": name, "kind": kind},
+                           registry, withheld=0, action="/wiki/new",
+                           creating=True,
+                           error="Give it a name and pick a type."),
+                "[]", user=user, live=True,
+            ))
+
+        slug = slugify(name)
+        if library.exists(kind, slug):
+            return RedirectResponse(f"/wiki/{kind}/{slug}.html", status_code=303)
+
+        body = str(form.get("body", ""))
+        secret_text = str(form.get("secret_text", "")).strip()
+        audience = [a for a in form.getlist("audience") if a]
+        if secret_text and audience:
+            body = body.rstrip() + "\n\n" + secrets_mod.wrap(secret_text, audience)
+
+        entity = Entity(
+            kind=kind, slug=slug, name=name,
+            summary=str(form.get("summary", "")).strip(),
+            appearance=str(form.get("appearance", "")).strip(),
+            body=body.strip(),
+            tags=[t.strip() for t in str(form.get("tags", "")).split(",") if t.strip()],
+            links=[l.strip() for l in str(form.get("links", "")).split(",")
+                   if l.strip() and "/" in l],
+            sources=[f"created by {user} on the wiki"],
+        )
+        library.save(entity)
+        return RedirectResponse(f"/wiki/{kind}/{slug}.html", status_code=303)
+
     return [
+        Route("/wiki/new", new_page, methods=["GET", "POST"]),
+        Route("/wiki/{kind}/{slug}/edit", edit, methods=["GET", "POST"]),
         Route("/wiki/login", login, methods=["GET", "POST"]),
         Route("/wiki/register", register, methods=["GET", "POST"]),
         Route("/wiki/logout", logout),
@@ -289,6 +405,77 @@ def build(cfg, library: Library, registry: people_mod.People,
 
 
 # -- forms -------------------------------------------------------------
+
+def _edit_form(v: dict, registry: people_mod.People, withheld: int,
+               action: str, creating: bool = False, error: str = "") -> str:
+    err = f'<div class="error">{html.escape(error)}</div>' if error else ""
+    title = "New page" if creating else f"Editing {v['name']}"
+
+    kinds = "".join(
+        f'<option value="{k}"{" selected" if k == v["kind"] else ""}>{k}</option>'
+        for k in KINDS
+    )
+    kind_field = (
+        f'  <label for="k">Type</label>\n  <select id="k" name="kind">{kinds}</select>'
+        if creating else ""
+    )
+
+    warning = ""
+    if withheld:
+        warning = (
+            f'<div class="notice">This page has {withheld} secret section'
+            f'{"s" if withheld != 1 else ""} you cannot read. '
+            f"They are kept exactly as they are, and will sit at the end of the "
+            f"page after you save.</div>"
+        )
+
+    boxes = "".join(
+        f'<label class="cb"><input type="checkbox" name="audience" '
+        f'value="{html.escape(p.key)}"> {html.escape(p.name)}'
+        f'{" (DM)" if p.is_dm else ""}</label>'
+        for p in registry.members.values()
+    )
+
+    return f"""
+<h1>{html.escape(title)}</h1>
+{err}
+{warning}
+<form class="auth wide" method="post" action="{action}">
+{kind_field}
+  <label for="n">Name</label>
+  <input id="n" name="name" value="{html.escape(v['name'])}" required>
+
+  <label for="s">Summary <span class="hint">one sentence on what it is</span></label>
+  <input id="s" name="summary" value="{html.escape(v['summary'])}">
+
+  <label for="a">Appearance <span class="hint">what it looks like, concrete
+    and visual. This is what the art generator draws, so write physique and
+    colour, not "a tortle".</span></label>
+  <input id="a" name="appearance" value="{html.escape(v['appearance'])}">
+
+  <label for="b">Body <span class="hint">markdown is fine</span></label>
+  <textarea id="b" name="body" rows="16">{html.escape(v['body'])}</textarea>
+
+  <label for="t">Tags <span class="hint">comma separated</span></label>
+  <input id="t" name="tags" value="{html.escape(v['tags'])}">
+
+  <label for="l">Links <span class="hint">comma separated, as
+    place/brindlewood</span></label>
+  <input id="l" name="links" value="{html.escape(v['links'])}">
+
+  <fieldset class="secretbox">
+    <legend>Add a secret</legend>
+    <p class="hint">Only the people you tick will ever see this, on the site or
+    through their own Claude. Leave it empty for nothing.</p>
+    <textarea name="secret_text" rows="4"
+              placeholder="Something only some of us know..."></textarea>
+    <div class="cbs">{boxes}</div>
+  </fieldset>
+
+  <button type="submit">{"Create" if creating else "Save"}</button>
+</form>
+"""
+
 
 def _connect_page(name: str, url: str, token: str) -> str:
     config = (

@@ -123,6 +123,26 @@ form.auth button { margin-top: 1.2rem; padding: .55rem 1.2rem; border: 0;
 .guide blockquote { font-style: italic; }
 .guide table { font-size: .85rem; }
 .guide li { margin: .3rem 0; }
+a.edit { float: right; font-size: .8rem; text-transform: none;
+  letter-spacing: 0; border: 1px solid var(--line); border-radius: 4px;
+  padding: .1rem .5rem; background: var(--panel); }
+form.auth.wide { max-width: 46rem; }
+form.auth textarea { width: 100%; padding: .5rem .6rem; border: 1px solid var(--line);
+  border-radius: 4px; background: var(--panel); color: var(--ink);
+  font: inherit; font-size: .9rem; line-height: 1.5; resize: vertical;
+  font-family: ui-monospace, Consolas, monospace; }
+form.auth label .hint { display: block; font-weight: normal; margin-top: .1rem; }
+fieldset.secretbox { margin: 1.6rem 0 0; border: 1px solid var(--line);
+  border-radius: 4px; padding: .6rem 1rem 1rem; }
+fieldset.secretbox legend { font-size: .85rem; color: var(--accent);
+  padding: 0 .4rem; }
+.cbs { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: .6rem; }
+label.cb { display: inline-flex; align-items: center; gap: .3rem; margin: 0;
+  font-size: .85rem; color: var(--ink); }
+label.cb input { width: auto; }
+.notice { border-left: 3px solid var(--accent); background: var(--accent-soft);
+  padding: .6rem 1rem; margin: 1rem 0; font-size: .9rem; border-radius: 0 4px 4px 0; }
+.newpage { float: right; font-size: .85rem; }
 .copyblock { position: relative; margin: 1rem 0; }
 .copyblock pre { background: var(--panel); border: 1px solid var(--line);
   border-radius: 4px; padding: .8rem 1rem; overflow-x: auto; font-size: .8rem;
@@ -224,9 +244,15 @@ def render_guide(source: str) -> str:
 
 
 def render_body(entity: Entity, library: Library, images: dict[str, str],
-                base: str, viewer: frozenset[str], allowed: set[str]) -> str:
+                base: str, viewer: frozenset[str], allowed: set[str],
+                editable: bool = False) -> str:
+    edit_link = (
+        f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/edit">Edit</a>'
+        if editable else ""
+    )
     parts = [
-        f'<div class="kind">{html.escape(KIND_LABEL.get(entity.kind, entity.kind))}</div>',
+        f'<div class="kind">{html.escape(KIND_LABEL.get(entity.kind, entity.kind))}'
+        f"{edit_link}</div>",
         f"<h1>{html.escape(entity.name)}</h1>",
     ]
     if entity.summary:
@@ -308,12 +334,14 @@ def _cards(items: list[Entity], images: dict[str, str], base: str) -> str:
     return f'<div class="grid">{"".join(out)}</div>'
 
 
-def render_index(entities: list[Entity], images: dict[str, str], base: str) -> str:
+def render_index(entities: list[Entity], images: dict[str, str], base: str,
+                 editable: bool = False) -> str:
     by_kind: dict[str, list[Entity]] = defaultdict(list)
     for e in entities:
         by_kind[e.kind].append(e)
 
     parts = [
+        f'<a class="newpage" href="{base}new">+ New page</a>' if editable else "",
         "<h1>Copper Vale</h1>",
         '<p class="summary">A low-lying landscape where scattered civilization '
         "clings to dwindling natural resources.</p>",

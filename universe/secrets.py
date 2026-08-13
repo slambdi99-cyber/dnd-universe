@@ -137,6 +137,35 @@ def audiences(body: str) -> set[str]:
     return out
 
 
+def withheld_blocks(body: str, identities: set[str] | frozenset[str]) -> list[str]:
+    """The secret blocks this viewer cannot read, as raw fenced text.
+
+    Needed for editing. Someone editing a page only ever sees their own
+    version, so saving it verbatim would delete everyone else's secrets. These
+    blocks get carried across untouched.
+    """
+    viewer = {i.lower() for i in identities}
+    out = []
+    for segment in parse(body):
+        if segment.audience is not None and not (viewer & segment.audience):
+            out.append(wrap(segment.text, segment.audience))
+    return out
+
+
+def merge_edit(
+    original: str, edited: str, identities: set[str] | frozenset[str]
+) -> str:
+    """Fold an edited visible body back into the full one.
+
+    Blocks the editor could not see are appended, unchanged. They may move to
+    the end of the page, which is a small cost against the alternative of
+    quietly destroying them.
+    """
+    kept = withheld_blocks(original, identities)
+    parts = [edited.strip()] + kept
+    return "\n\n".join(p for p in parts if p.strip()).strip()
+
+
 def wrap(text: str, audience: list[str] | set[str]) -> str:
     """Build a secret block, for tools that write one."""
     keys = ", ".join(sorted({str(a).strip().lower() for a in audience if str(a).strip()}))

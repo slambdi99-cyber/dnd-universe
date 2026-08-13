@@ -45,6 +45,31 @@ the people we've lost.
 Good places to start: **Copper Vale** for how the region is dying, **Hollow
 Root Covenant** for what we're up against, or your own character.
 
+### Adding and changing things
+
+You don't need Claude for this. Every page has an **Edit** button in the top
+right, and the front page has **+ New page**.
+
+The form has:
+
+- **Name** and **Summary**, a sentence on what the thing is
+- **Appearance**, what it physically looks like. This is what the art generator
+  draws, so write physique and colour rather than game words. "Green scaled
+  turtle-folk with a domed shell" works; "tortle" does nothing.
+- **Body**, the actual writing. Markdown works.
+- **Tags** and **Links**, both comma separated. Links look like
+  `place/brindlewood`.
+- **Add a secret**, at the bottom. Type something, tick who's allowed to read
+  it, and only those people ever see it.
+
+Edits are attributed, so pages record who changed them.
+
+**One thing to know if you edit a page with secrets on it.** You only ever see
+your own version, so the box you're typing in doesn't contain other people's
+secret sections. They're kept exactly as they are and put back when you save,
+and the form tells you how many are being preserved. You can't accidentally
+delete something you can't see.
+
 ### Secrets
 
 Some pages have blocks only certain people can read. If you can read one, it

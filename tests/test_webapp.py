@@ -199,6 +199,68 @@ r = wren.get("/wiki/logout")
 check("logout redirects", r.status_code == 303)
 check("session cleared", wren.get("/wiki/").status_code == 303)
 
+print("\n== editing from the site ==")
+check("edit needs a login",
+      client().get("/wiki/character/wren/edit").status_code == 303)
+check("new page needs a login", client().get("/wiki/new").status_code == 303)
+
+# Wren signed out in the section above; editing needs him back.
+wren = client()
+wren.post("/wiki/login", data={"email": "wren@example.com",
+                               "password": "hunter2hunter"})
+form = wren.get("/wiki/character/wren/edit")
+check("edit form renders", form.status_code == 200, str(form.status_code))
+check("body is his redacted view, not the raw file",
+      NICK_ONLY in form.text and DM_ONLY not in form.text)
+check("warned that something is withheld", "cannot read" in form.text)
+check("offers audience checkboxes", 'name="audience"' in form.text)
+
+# The dangerous case: Wren saves a body he can only partly see.
+wren.post("/wiki/character/wren/edit", data={
+    "name": "Wren", "summary": "Elf fighter, edited.",
+    "appearance": "an elf with a staff",
+    "body": f"{SHARED}\n\nRewritten by Wren entirely.",
+    "tags": "player-character", "links": "",
+})
+raw = (sandbox / "content" / "character" / "wren.md").read_text(encoding="utf-8")
+check("the DM's secret survived Wren's edit", DM_ONLY in raw,
+      "this is the whole point")
+check("his own edit landed", "Rewritten by Wren entirely." in raw)
+check("summary updated", "Elf fighter, edited." in raw)
+check("edit is attributed", "edited by Wren" in raw)
+sam_view = dm.get("/wiki/character/wren.html")
+check("dm still sees his secret", DM_ONLY in sam_view.text)
+
+# Wren adds a secret of his own.
+wren.post("/wiki/character/wren/edit", data={
+    "name": "Wren", "summary": "Elf fighter, edited.",
+    "appearance": "an elf with a staff", "body": f"{SHARED}\n\nRewritten by Wren entirely.",
+    "tags": "", "links": "",
+    "secret_text": "NICKSNEWSECRET", "audience": ["wren", "dm"],
+})
+check("wren sees his new secret", "NICKSNEWSECRET" in
+      wren.get("/wiki/character/wren.html").text)
+check("dm sees it too", "NICKSNEWSECRET" in
+      dm.get("/wiki/character/wren.html").text)
+
+print("\n== creating a page from the site ==")
+r = wren.post("/wiki/new", data={
+    "kind": "place", "name": "Test Tavern", "summary": "A tavern.",
+    "appearance": "a low timber tavern", "body": "Somewhere to drink.",
+    "tags": "site, test", "links": "place/brindlewood",
+})
+check("redirects to the new page", r.status_code == 303, str(r.status_code))
+made = sandbox / "content" / "place" / "test-tavern.md"
+check("file written", made.exists())
+if made.exists():
+    text = made.read_text(encoding="utf-8")
+    check("linked as given", "place/brindlewood" in text)
+    check("creation attributed", "created by Wren" in text)
+bad = wren.post("/wiki/new", data={"kind": "spaceship", "name": "Nope"})
+check("unknown kind refused", "pick a type" in bad.text.lower())
+blank = wren.post("/wiki/new", data={"kind": "place", "name": ""})
+check("blank name refused", "pick a type" in blank.text.lower())
+
 print("\n== the guide ==")
 guide_anon = client().get("/wiki/guide")
 check("readable without an account", guide_anon.status_code == 200,
