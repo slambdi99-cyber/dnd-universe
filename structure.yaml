@@ -29,6 +29,7 @@ kinds:
   label: Sessions
 - key: lore
   label: Lore
+  nav: false
 - key: audit
   label: Audit
 home:
