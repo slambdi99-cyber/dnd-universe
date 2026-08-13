@@ -360,6 +360,38 @@ next export. Write through `content/`, the CLI, or the MCP server. It only
 deletes files it created itself (tracked in `.export-manifest.json`), so
 anything you add to the vault by hand survives.
 
+## Structure, and who gets to change it
+
+What kinds of thing exist, how the front page is arranged and what the site is
+called all live in `structure.yaml`, editable through the MCP tools or the
+Structure page. Adding a kind is a config change, not a code change, and
+renaming one migrates every page and repoints every link that pointed at them.
+
+Anyone connected can do it. That was a deliberate decision by the person
+running this table: the campaign is shared, so its shape is shared. The safety
+net is git, not permissions. Every structural change commits first, so the
+worst case is `git revert` rather than an evening lost.
+
+The line that isn't crossed is code. Nothing here writes Python, edits
+templates or runs a command; a tool that did would hand a shell to anyone who
+ever leaked a token. Feature work goes through the repo instead.
+
+## Uploads
+
+Two kinds, kept apart:
+
+- **Pictures** uploaded on the Art page join the same gallery as the generated
+  ones, in `assets/`.
+- **Attachments** on the Files page (maps, handouts, PDFs, recordings) live in
+  `files/`, which is *not* gitignored: art can be redrawn from the content, a
+  scanned map cannot.
+
+What a file is gets decided by its leading bytes, never its name or the
+browser's claim. SVG is refused outright since it can carry script and would
+run on the wiki's own origin. Stored names are content hashes, so nothing a
+person typed reaches the filesystem, and everything but plain images is served
+as a download with `X-Content-Type-Options: nosniff`.
+
 ## The Discord inbox
 
 `dnd-scribe` pulls the campaign's Discord channels into `lore/` on a schedule.
@@ -413,6 +445,8 @@ nothing points at, which is how a shared wiki quietly rots.
 | `universe/art.py` | Local SDXL generation. |
 | `universe/webapp.py` | The live wiki: sign-in, editing, art, inbox. |
 | `universe/inbox.py` | What's been said in Discord that no page accounts for. |
+| `universe/schema.py` | Kinds, front page layout, site name, and editing them. |
+| `universe/uploads.py` | Uploaded pictures and attachments, and what's refused. |
 | `universe/worldmap/azgaar.py` | Azgaar export to entities. |
 | `cli.py` | All commands. |
 | `content/` | Your world. This is the real deliverable. |

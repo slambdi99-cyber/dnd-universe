@@ -28,8 +28,6 @@ kinds:
   label: Sessions
 - key: lore
   label: Lore
-- key: quest
-  label: Quests
 home:
 - title: Where
   kind: place

@@ -25,6 +25,7 @@ sources:
 - dndbeyond:campaign/6916676
 art:
 - character/tobias-goreguts/default-81dcae2b
+- character/tobias-goreguts/upload-4184399b3554366a
 data:
   class: Barbarian
   race: Half-Orc

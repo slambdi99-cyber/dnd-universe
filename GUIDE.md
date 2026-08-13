@@ -86,6 +86,34 @@ riverbed, dusk, low mist" gets you something; "the bridge" gets you a bridge
 from nowhere in particular. Game words mean nothing to it, so say "green scaled
 turtle-folk with a domed shell" rather than "tortle".
 
+### Uploading a picture instead
+
+The same Art page takes an upload. If you drew something, commissioned it, or
+found the perfect image, that beats anything the GPU will produce. PNG, JPEG,
+GIF or WEBP, up to 25MB. It goes straight on the page and joins the gallery, so
+you can switch back and forth.
+
+### Files on a page
+
+**Files** next to Edit and Art. Battle maps, handouts, PDFs, a recording of the
+session, the printout of someone's homebrew subclass. Anything the table wants
+kept with that page rather than lost in Discord.
+
+Images, PDF, ZIP, MP3, OGG and MP4, up to 25MB. Not SVG, which can carry
+scripts and would run as part of the site. Removing a file takes it off the
+page but doesn't delete it, in case another page uses the same one.
+
+### Changing the shape of the wiki
+
+**Structure** in the nav. This is the one that surprises people: any of us can
+add a whole new *kind* of page. If the campaign needs Ships, or Quests, or
+Rumours, add it and it appears in the nav, in the new-page form, and in
+everyone's assistant. You can rename kinds too, which moves every page and
+repoints every link, and rearrange the front page.
+
+There's no DM-only tier here. Everything commits to git before it changes, so
+a bad idea is undoable rather than permanent.
+
 ### The inbox
 
 **Inbox** in the nav is everything said in our Discord lore channels that no
@@ -284,7 +312,7 @@ that's the most useful thing you can add.
 
 ## 5. The tools, if you're curious
 
-Eleven of them, whatever client you use:
+Whatever client you use:
 
 | | |
 |---|---|
@@ -295,10 +323,16 @@ Eleven of them, whatever client you use:
 | `list_pages` | browse by type or tag |
 | `open_questions` | what's deliberately unfinished |
 | `whats_new` | Discord messages no page accounts for yet |
+| `get_structure` | what kinds exist and how the front page is built |
+| `list_files` | files attached to a page |
 | `create_page` | add something new |
 | `update_page` | add to something existing |
 | `link_pages` | connect two things |
 | `mark_filed` | dismiss Discord messages that aren't lore |
+| `add_kind`, `change_kind`, `remove_kind` | reshape the world |
+| `move_page` | move one page to a different kind |
+| `set_site`, `set_home_sections` | rename it, rebuild the front page |
+| `remove_file` | take a file off a page |
 
 You don't need to name them. Just ask for what you want.
 
