@@ -2,7 +2,7 @@
 name: Lucian Lovelyre
 kind: character
 summary: Aasimar bard of the College of Lore. A prolific musician, assassinated at
-  the Peapod Public House.
+  the Peapod Public House; no longer with the party.
 appearance: handsome aasimar man, tousled dark hair, faintly luminous violet eyes,
   scarred cheek, warm ochre patterned tunic, lute
 tags:
@@ -11,6 +11,7 @@ tags:
 - aasimar
 - deceased
 - from-wiki
+- former-party-member
 links:
 - place/copper-vale
 - item/bloomfang-rapier
@@ -23,6 +24,8 @@ sources:
 - session-log:the-buried-star-tobias-log.txt
 - discord:lore-drop:2026-08-13
 - dndbeyond:campaign/6916676
+- player:wren:2026-08-12
+- updated by guest
 art:
 - character/lucian-lovelyre/default-d422e12f
 - character/lucian-lovelyre/default-ce589ffe
@@ -61,3 +64,11 @@ Hundreds of songs over the years. Some towns prefer an uplifting jig, others a s
 - My Sweet Songbird
 - Unrequited
 - Brindlewood Booty
+
+## Status
+
+No longer in the party. His sheet sits under Deactivated Characters on D&D Beyond alongside Mundus's, and he was killed at the Peapod Pub.
+
+Still carries the `player-character` tag as of 2026-08-12, which is why he continues to appear on the active roster. That tag needs removing directly in the wiki; it cannot be deleted through the MCP tools, which only append to tag lists.
+
+Reported by Wren's player, 2026-08-12.

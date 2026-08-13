@@ -17,3 +17,8 @@ transformers>=4.44
 accelerate>=1.0
 safetensors>=0.4
 Pillow>=10.0
+
+# Live wiki with accounts (mcp_server.py --wiki-live)
+markdown>=3.5
+itsdangerous>=2.2
+python-multipart>=0.0.9

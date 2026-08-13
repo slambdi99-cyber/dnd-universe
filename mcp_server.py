@@ -1,4 +1,4 @@
-"""MCP server over the Copper Vale universe.
+﻿"""MCP server over the Copper Vale universe.
 
 Lets everyone at the table point their own Claude at the world and read or
 write it directly, instead of everything routing through one person.
@@ -460,6 +460,8 @@ def http_app(
     registry: people_mod.People,
     wiki_dir: Path | None = None,
     wiki_password: str = "",
+    live_routes: list | None = None,
+    session_secret: str = "",
 ):
     """Wrap the MCP app with auth.
 
@@ -487,6 +489,10 @@ def http_app(
 
     class Auth(BaseHTTPMiddleware):
         async def dispatch(self, request, call_next):
+            # The live wiki does its own sign-in, so it isn't gated here.
+            if live_routes and request.url.path.startswith("/wiki"):
+                return await call_next(request)
+
             if wiki_dir is not None and request.url.path.startswith("/wiki"):
                 if not wiki_password or _basic_ok(
                     request.headers.get("authorization", ""), wiki_password
@@ -506,16 +512,34 @@ def http_app(
     )
     inner = server.streamable_http_app(transport_security=security)
     routes = list(inner.routes)
-    if wiki_dir is not None:
+    middleware = [Middleware(Auth)]
+
+    if live_routes:
+        from starlette.middleware.sessions import SessionMiddleware
+
+        # Routes first so they win over any static mount.
+        routes = list(live_routes) + routes
+        middleware.append(
+            Middleware(
+                SessionMiddleware,
+                secret_key=session_secret,
+                session_cookie="copper_vale",
+                max_age=60 * 60 * 24 * 30,
+                same_site="lax",
+                https_only=True,
+            )
+        )
+    elif wiki_dir is not None:
         from starlette.staticfiles import StaticFiles
 
         routes.append(
             Mount("/wiki", app=StaticFiles(directory=str(wiki_dir), html=True),
                   name="wiki")
         )
+
     return Starlette(
         routes=routes,
-        middleware=[Middleware(Auth)],
+        middleware=middleware,
         lifespan=inner.router.lifespan_context,
     )
 
@@ -532,6 +556,11 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--as", dest="as_person", metavar="KEY",
                     help="On stdio, view the world as this person. Default: full access.")
     ap.add_argument("--wiki", help="Serve a static site folder at /wiki")
+    ap.add_argument(
+        "--wiki-live", action="store_true",
+        help="Serve the wiki live at /wiki with accounts, so each person signs "
+             "in and sees their own secrets. Replaces --wiki.",
+    )
     ap.add_argument("--wiki-password",
                     default=os.environ.get("UNIVERSE_WIKI_PASSWORD", ""),
                     help="Password for /wiki via HTTP Basic. Omit to leave it open.")
@@ -591,8 +620,30 @@ def main(argv: list[str]) -> int:
         print("HTTP mode needs uvicorn:  pip install uvicorn", file=sys.stderr)
         return 1
 
+    live_routes = None
+    session_secret = ""
+    if args.wiki_live:
+        from universe import accounts as accounts_mod
+        from universe import webapp
+
+        accounts = accounts_mod.load(cfg.root)
+        # A stable secret, so sign-ins survive a restart. Generated once.
+        secret_path = cfg.root / ".session-secret"
+        if not secret_path.exists():
+            import secrets as pysecrets
+
+            secret_path.write_text(pysecrets.token_urlsafe(32), encoding="utf-8")
+        session_secret = secret_path.read_text(encoding="utf-8").strip()
+        live_routes = webapp.build(cfg, library, registry, accounts)
+        open_invites = len(accounts.open_invites())
+        print(
+            f"[mcp] wiki: live, {len(accounts.emails)} account(s), "
+            f"{open_invites} unused invite(s)",
+            file=sys.stderr,
+        )
+
     wiki_dir = None
-    if args.wiki:
+    if args.wiki and not args.wiki_live:
         wiki_dir = Path(args.wiki)
         if not wiki_dir.is_absolute():
             wiki_dir = cfg.root / wiki_dir
@@ -608,7 +659,9 @@ def main(argv: list[str]) -> int:
         f"[mcp] {len(registry.members)} people, {len(registry.tokens)} personal token(s)\n"
         f"[mcp] http://{args.host}:{args.port}/mcp (bearer token required)\n"
         + (
-            "[mcp] http://{}:{}/wiki ({})\n".format(
+            f"[mcp] http://{args.host}:{args.port}/wiki "
+            f"(sign-in required, per-person secrets)\n" if live_routes
+            else "[mcp] http://{}:{}/wiki ({})\n".format(
                 args.host, args.port,
                 "password protected" if args.wiki_password
                 else "OPEN - anyone with the link can read the public pages",
@@ -619,7 +672,7 @@ def main(argv: list[str]) -> int:
     )
     uvicorn.run(
         http_app(server, args.token, list(dict.fromkeys(hosts)), registry,
-                 wiki_dir, args.wiki_password),
+                 wiki_dir, args.wiki_password, live_routes, session_secret),
         host=args.host, port=args.port, log_level="warning",
     )
     return 0
@@ -627,3 +680,4 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv))
+

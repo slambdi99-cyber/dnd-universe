@@ -24,6 +24,8 @@ sources:
 - session-log:the-buried-star-tobias-log.txt
 - discord:lore-drop:2026-08-13
 - dndbeyond:campaign/6916676
+- player:wren:2026-08-13
+- updated by guest
 art:
 - character/wren/default-9a210fa7
 data:
@@ -48,3 +50,9 @@ The log records that Wren has a lot of information on the Hollow Root Covenant. 
 Her sheet says Fighter (Battle Master), which has no spellcasting. But the DM posted art captioned 'Wren casting Speak With Dead', and the session log has her hearing a voice when a gemstone touched a root in the Covenant's chamber.
 
 The most likely explanation is an item rather than a class feature: she holds the Gnarled Staff of the Rooted One and a Splinter of the Buried Star, either of which could carry the spell. Worth asking her player rather than assuming the sheet or the fiction is wrong.
+
+## Age
+
+Wren is 69 years old.
+
+Stated by her player, 2026-08-13.

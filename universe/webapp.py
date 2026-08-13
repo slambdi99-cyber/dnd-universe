@@ -1,0 +1,252 @@
+"""The live wiki: accounts, sign-in, and per-person rendering.
+
+Unlike the static export, this knows who is reading. Each person signs in with
+their own username and password, and every page is rendered for their identity:
+their secrets appear, other people's don't, and pages restricted away from them
+don't exist as far as they can tell.
+
+Registration is open but gated by a one-time invite code bound to a person in
+`people.yaml`. Without that gate anyone who found the URL could register as the
+DM. Nothing the registrant types decides who they are; the code does.
+"""
+
+from __future__ import annotations
+
+import html
+from pathlib import Path
+
+from starlette.responses import FileResponse, HTMLResponse, RedirectResponse
+from starlette.routing import Route
+
+from . import accounts as accounts_mod
+from . import people as people_mod
+from . import site as site_mod
+from .entities import Library
+
+PUBLIC: frozenset[str] = frozenset()
+
+
+def _auth_page(title: str, base: str, inner: str) -> HTMLResponse:
+    return HTMLResponse(
+        site_mod.shell(title, base, inner, "[]", user=None, live=True)
+    )
+
+
+def build(cfg, library: Library, registry: people_mod.People,
+          accounts: accounts_mod.Accounts) -> list[Route]:
+    """Routes for /wiki. Everything requires a signed-in account."""
+
+    def viewer_for(request) -> tuple[frozenset[str], str | None]:
+        email = request.session.get("user")
+        if not email:
+            return PUBLIC, None
+        key = accounts.key_for(email)
+        person = registry.members.get(key) if key else None
+        if person is None:
+            # Account references a person who has since been removed.
+            return PUBLIC, email
+        # Show the person's name in the header rather than their address.
+        return person.identities, person.name
+
+    def entities_for(viewer: frozenset[str]):
+        everything = sorted(library.all(), key=lambda e: (e.kind, e.name))
+        allowed_list = site_mod.visible_to(everything, viewer)
+        return allowed_list, {e.ref for e in allowed_list}
+
+    def images_for(entities) -> dict[str, str]:
+        out = {}
+        for entity in entities:
+            if entity.art:
+                kind, slug, name = entity.art[-1].split("/", 2)
+                if (cfg.assets_dir / kind / slug / f"{name}.png").exists():
+                    out[entity.ref] = f"{kind}-{slug}.png"
+        return out
+
+    def require_login(request):
+        if not request.session.get("user"):
+            return RedirectResponse("/wiki/login", status_code=303)
+        return None
+
+    # -- auth ----------------------------------------------------------
+
+    async def login(request):
+        if request.method == "GET":
+            if request.session.get("user"):
+                return RedirectResponse("/wiki/", status_code=303)
+            return _auth_page("Sign in", "/wiki/", _login_form())
+
+        form = await request.form()
+        account = accounts.authenticate(
+            str(form.get("email", "")), str(form.get("password", ""))
+        )
+        if account is None:
+            # One message for both causes, so this can't be used to find out
+            # which addresses have accounts.
+            return _auth_page(
+                "Sign in", "/wiki/",
+                _login_form(error="That email and password don't match.",
+                            email=str(form.get("email", ""))),
+            )
+        request.session["user"] = account.email
+        return RedirectResponse("/wiki/", status_code=303)
+
+    async def register(request):
+        if request.method == "GET":
+            return _auth_page("Create an account", "/wiki/", _register_form())
+
+        form = await request.form()
+        account, error = accounts.register(
+            str(form.get("email", "")),
+            str(form.get("password", "")),
+            str(form.get("code", "")),
+        )
+        if account is None:
+            return _auth_page(
+                "Create an account", "/wiki/",
+                _register_form(
+                    error=error,
+                    email=str(form.get("email", "")),
+                    code=str(form.get("code", "")),
+                ),
+            )
+        request.session["user"] = account.email
+        return RedirectResponse("/wiki/", status_code=303)
+
+    async def logout(request):
+        request.session.clear()
+        return RedirectResponse("/wiki/login", status_code=303)
+
+    # -- pages ---------------------------------------------------------
+
+    async def index(request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        entities, _ = entities_for(viewer)
+        images = images_for(entities)
+        return HTMLResponse(site_mod.shell(
+            "Copper Vale", "/wiki/",
+            site_mod.render_index(entities, images, "/wiki/"),
+            site_mod.search_index(entities, viewer), user=user, live=True,
+        ))
+
+    async def kind_index(request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        kind = request.path_params["kind"]
+        entities, _ = entities_for(viewer)
+        items = [e for e in entities if e.kind == kind]
+        if not items:
+            return HTMLResponse("Not found", status_code=404)
+        images = images_for(entities)
+        return HTMLResponse(site_mod.shell(
+            site_mod.KIND_LABEL.get(kind, kind), "/wiki/",
+            site_mod.render_kind_index(kind, items, images, "/wiki/"),
+            site_mod.search_index(entities, viewer), user=user, live=True,
+        ))
+
+    async def page(request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        kind, slug = request.path_params["kind"], request.path_params["slug"]
+        entities, allowed = entities_for(viewer)
+        if f"{kind}/{slug}" not in allowed:
+            # Deliberately the same response as a page that doesn't exist, so
+            # a 403 can't be used to enumerate hidden pages.
+            return HTMLResponse(
+                site_mod.shell("Not found", "/wiki/",
+                               "<h1>Not found</h1><p class='hint'>No such page.</p>",
+                               "[]", user=user, live=True),
+                status_code=404,
+            )
+        entity = library.load(kind, slug)
+        images = images_for(entities)
+        return HTMLResponse(site_mod.shell(
+            entity.name, "/wiki/",
+            site_mod.render_body(entity, library, images, "/wiki/", viewer, allowed),
+            site_mod.search_index(entities, viewer), user=user, live=True,
+        ))
+
+    async def art(request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, _ = viewer_for(request)
+        name = request.path_params["filename"]
+        if "/" in name or "\\" in name or ".." in name:
+            return HTMLResponse("Not found", status_code=404)
+        _, allowed = entities_for(viewer)
+        # Art filenames are "<kind>-<slug>.png"; only serve one whose page this
+        # viewer may see, or a restricted page's portrait leaks by direct URL.
+        stem = name.rsplit(".", 1)[0]
+        kind, _, slug = stem.partition("-")
+        if f"{kind}/{slug}" not in allowed:
+            return HTMLResponse("Not found", status_code=404)
+        entity = library.load(kind, slug)
+        if not entity or not entity.art:
+            return HTMLResponse("Not found", status_code=404)
+        akind, aslug, aname = entity.art[-1].split("/", 2)
+        path = Path(cfg.assets_dir) / akind / aslug / f"{aname}.png"
+        if not path.exists():
+            return HTMLResponse("Not found", status_code=404)
+        return FileResponse(path)
+
+    return [
+        Route("/wiki/login", login, methods=["GET", "POST"]),
+        Route("/wiki/register", register, methods=["GET", "POST"]),
+        Route("/wiki/logout", logout),
+        Route("/wiki/", index),
+        Route("/wiki/index.html", index),
+        Route("/wiki/art/{filename}", art),
+        Route("/wiki/{kind}/index.html", kind_index),
+        Route("/wiki/{kind}/{slug}.html", page),
+    ]
+
+
+# -- forms -------------------------------------------------------------
+
+def _login_form(error: str = "", email: str = "") -> str:
+    err = f'<div class="error">{html.escape(error)}</div>' if error else ""
+    return f"""
+<h1>Sign in</h1>
+<p class="summary">Copper Vale is private to the table.</p>
+{err}
+<form class="auth" method="post" action="/wiki/login">
+  <label for="e">Email</label>
+  <input id="e" name="email" type="email" value="{html.escape(email)}"
+         autocomplete="email" autofocus required>
+  <label for="p">Password</label>
+  <input id="p" name="password" type="password" autocomplete="current-password" required>
+  <button type="submit">Sign in</button>
+</form>
+<p class="hint">No account yet? <a href="/wiki/register">Create one</a> with the
+invite code your DM gave you.</p>
+"""
+
+
+def _register_form(error: str = "", email: str = "", code: str = "") -> str:
+    err = f'<div class="error">{html.escape(error)}</div>' if error else ""
+    return f"""
+<h1>Create an account</h1>
+<p class="summary">You'll need the invite code your DM gave you. It decides
+whose secrets you can read, so use your own.</p>
+{err}
+<form class="auth" method="post" action="/wiki/register">
+  <label for="c">Invite code</label>
+  <input id="c" name="code" value="{html.escape(code)}" autofocus required>
+  <label for="e">Email</label>
+  <input id="e" name="email" type="email" value="{html.escape(email)}"
+         autocomplete="email" required>
+  <label for="p">Password</label>
+  <input id="p" name="password" type="password" autocomplete="new-password"
+         minlength="8" required>
+  <button type="submit">Create account</button>
+</form>
+<p class="hint">At least 8 characters. Your email is just your sign-in name;
+nothing is sent to it. Already registered? <a href="/wiki/login">Sign in</a>.</p>
+"""

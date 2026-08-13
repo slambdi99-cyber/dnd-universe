@@ -24,3 +24,9 @@ site/
 
 # Per-person MCP tokens. Never commit these.
 .people-tokens.json
+
+# Wiki accounts and session key. Never commit these.
+.accounts.json
+
+# Wiki accounts and session key. Never commit these.
+.session-secret
