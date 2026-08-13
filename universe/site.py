@@ -109,6 +109,20 @@ form.auth button { margin-top: 1.2rem; padding: .55rem 1.2rem; border: 0;
   .error { color: #ffb4ab; background: #3b1512; border-color: #5c221d; }
 }
 .hint { color: var(--muted); font-size: .85rem; }
+.guide h1 { margin-top: 0; }
+.guide h2 { margin-top: 2.4rem; }
+.guide pre { background: var(--panel); border: 1px solid var(--line);
+  border-radius: 4px; padding: .8rem 1rem; overflow-x: auto; font-size: .8rem;
+  line-height: 1.5; font-family: ui-monospace, Consolas, monospace;
+  white-space: pre-wrap; word-break: break-word; }
+.guide code { background: var(--accent-soft); padding: .1rem .3rem;
+  border-radius: 3px; font-size: .85em;
+  font-family: ui-monospace, Consolas, monospace; }
+.guide pre code { background: none; padding: 0; font-size: inherit; }
+.guide hr { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
+.guide blockquote { font-style: italic; }
+.guide table { font-size: .85rem; }
+.guide li { margin: .3rem 0; }
 .copyblock { position: relative; margin: 1rem 0; }
 .copyblock pre { background: var(--panel); border: 1px solid var(--line);
   border-radius: 4px; padding: .8rem 1rem; overflow-x: auto; font-size: .8rem;
@@ -151,10 +165,13 @@ def page_url(ref: str) -> str:
 
 def shell(title: str, base: str, body: str, index_json: str,
           user: str | None = None, live: bool = False) -> str:
+    # The live server routes /wiki/guide; a static export has to be a real file
+    # with an .html extension, or the browser downloads it instead of showing it.
+    guide_href = f"{base}guide" if live else f"{base}guide.html"
     nav = "".join(
         f'<a href="{base}{kind}/index.html">{label}</a>'
         for kind, label in KIND_LABEL.items()
-    )
+    ) + f'<a href="{guide_href}">Guide</a>'
     # ASCII separators on purpose: these strings get rewritten by tooling now
     # and then, and a stray encoding round-trip turns punctuation into mojibake.
     full = title if title == "Copper Vale" else f"{title} - Copper Vale"
@@ -191,6 +208,19 @@ def shell(title: str, base: str, body: str, index_json: str,
 
 def _markdown(text: str) -> str:
     return md.markdown(text, extensions=["tables", "nl2br"])
+
+
+def render_guide(source: str) -> str:
+    """The player guide, rendered from GUIDE.md.
+
+    No nl2br here: the guide is prose with fenced code blocks that people copy,
+    and forcing a line break at every newline would mangle them.
+    """
+    return (
+        '<div class="guide">'
+        + md.markdown(source, extensions=["tables", "fenced_code", "toc"])
+        + "</div>"
+    )
 
 
 def render_body(entity: Entity, library: Library, images: dict[str, str],

@@ -34,6 +34,7 @@ sandbox = Path(tempfile.mkdtemp(prefix="webapp-test-"))
 shutil.copytree(ROOT / "universe", sandbox / "universe")
 shutil.copy(ROOT / "config.yaml", sandbox / "config.yaml")
 shutil.copy(ROOT / "people.yaml", sandbox / "people.yaml")
+shutil.copy(ROOT / "GUIDE.md", sandbox / "GUIDE.md")
 sys.path.insert(0, str(sandbox))
 
 from starlette.applications import Starlette  # noqa: E402
@@ -198,6 +199,18 @@ r = wren.get("/wiki/logout")
 check("logout redirects", r.status_code == 303)
 check("session cleared", wren.get("/wiki/").status_code == 303)
 
+print("\n== the guide ==")
+guide_anon = client().get("/wiki/guide")
+check("readable without an account", guide_anon.status_code == 200,
+      str(guide_anon.status_code))
+check("renders the guide", "Copper Vale: a guide for the table" in guide_anon.text
+      or "guide for the table" in guide_anon.text)
+check("code blocks survive", "<pre" in guide_anon.text)
+check("linked from the nav", "/wiki/guide" in client().get("/wiki/login").text)
+check("linked from register", "/wiki/guide" in client().get("/wiki/register").text)
+check("carries no campaign secret",
+      DM_ONLY not in guide_anon.text and NICK_ONLY not in guide_anon.text)
+
 print("\n== connect page is self-service ==")
 anon = client()
 check("connect needs a login", anon.get("/wiki/connect").status_code == 303)
@@ -263,5 +276,6 @@ if FAIL:
     print(f"{len(FAIL)} FAILURE(S): {FAIL}")
     sys.exit(1)
 print("all checks passed")
+
 
 

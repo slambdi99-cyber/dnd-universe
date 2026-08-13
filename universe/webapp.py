@@ -141,6 +141,29 @@ def build(cfg, library: Library, registry: people_mod.People,
         request.session.clear()
         return RedirectResponse("/wiki/login", status_code=303)
 
+    async def guide(request):
+        """The player guide. Readable without an account on purpose.
+
+        It's the page that explains how to get an account in the first place,
+        so putting it behind the login would be a locked door with the key
+        inside. It contains no campaign content.
+        """
+        _, user = viewer_for(request)
+        source = Path(cfg.root) / "GUIDE.md"
+        if not source.exists():
+            return HTMLResponse(
+                site_mod.shell("Guide", "/wiki/",
+                               "<h1>Guide</h1><p class='hint'>GUIDE.md is "
+                               "missing from the project folder.</p>",
+                               "[]", user=user, live=True),
+                status_code=404,
+            )
+        return HTMLResponse(site_mod.shell(
+            "Guide", "/wiki/",
+            site_mod.render_guide(source.read_text(encoding="utf-8")),
+            "[]", user=user, live=True,
+        ))
+
     # -- pages ---------------------------------------------------------
 
     async def index(request):
@@ -255,6 +278,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         Route("/wiki/login", login, methods=["GET", "POST"]),
         Route("/wiki/register", register, methods=["GET", "POST"]),
         Route("/wiki/logout", logout),
+        Route("/wiki/guide", guide),
         Route("/wiki/connect", connect),
         Route("/wiki/", index),
         Route("/wiki/index.html", index),
@@ -353,8 +377,8 @@ def _login_form(error: str = "", email: str = "") -> str:
   <input id="p" name="password" type="password" autocomplete="current-password" required>
   <button type="submit">Sign in</button>
 </form>
-<p class="hint">No account yet? <a href="/wiki/register">Create one</a> with the
-invite code your DM gave you.</p>
+<p class="hint">No account yet? <a href="/wiki/register">Create one</a>.
+First time here? Read the <a href="/wiki/guide">guide</a>.</p>
 """
 
 
@@ -408,5 +432,6 @@ this is wrong.</p>
   <button type="submit">Create account</button>
 </form>
 <p class="hint">At least 8 characters. Your email is just your sign-in name;
-nothing is sent to it. Already registered? <a href="/wiki/login">Sign in</a>.</p>
+nothing is sent to it. Already registered? <a href="/wiki/login">Sign in</a>.
+Not sure what any of this is? Read the <a href="/wiki/guide">guide</a>.</p>
 """

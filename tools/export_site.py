@@ -99,6 +99,16 @@ def main() -> int:
         encoding="utf-8",
     )
 
+    guide_src = cfg.root / "GUIDE.md"
+    if guide_src.exists():
+        (site / "guide.html").write_text(
+            site_mod.shell("Guide", "",
+                           site_mod.render_guide(
+                               guide_src.read_text(encoding="utf-8")),
+                           index_json),
+            encoding="utf-8",
+        )
+
     counts = Counter(e.kind for e in entities)
     size = sum(f.stat().st_size for f in site.rglob("*") if f.is_file()) / 1024 / 1024
     print(f"Exported {len(entities)} pages to {site}  ({size:.0f} MB)")
