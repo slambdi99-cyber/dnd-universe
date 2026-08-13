@@ -25,8 +25,13 @@ jobs:
       # Deliberately not requirements.txt: that pulls torch and diffusers, which
       # are ~3GB and only needed to draw pictures. Everything under test runs
       # without the GPU stack.
+      # itsdangerous is what signs the session cookie. Starlette doesn't
+      # depend on it, so it arrives locally as somebody else's transitive
+      # dependency and its absence only shows up on a clean machine.
       - name: Install what the tests need
-        run: pip install pyyaml markdown starlette httpx python-multipart "mcp[cli]" uvicorn
+        run: |
+          pip install pyyaml markdown starlette httpx python-multipart \
+                      itsdangerous "mcp[cli]" uvicorn
 
       - name: Run every suite
         run: |
