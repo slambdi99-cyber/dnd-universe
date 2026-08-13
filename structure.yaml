@@ -20,6 +20,7 @@ kinds:
   label: Items
 - key: deity
   label: Deities
+  nav: false
 - key: creature
   label: Creatures
 - key: event
