@@ -28,7 +28,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from universe import config as config_mod  # noqa: E402
-from universe import site as site_mod  # noqa: E402
+from universe import site as site_mod
+from universe import tooltips as tooltips_mod  # noqa: E402
 from universe.entities import Entity, Library  # noqa: E402
 
 PUBLIC: frozenset[str] = frozenset()
@@ -70,6 +71,13 @@ def main() -> int:
 
     index_json = site_mod.search_index(entities, PUBLIC)
 
+    # One shared script so browsers cache it across every page.
+    (site / "tooltips.js").write_text(
+        f"window.__TIPS__={tooltips_mod.build(entities, PUBLIC, cfg.root, '')};\n"
+        + tooltips_mod.TOOLTIP_JS,
+        encoding="utf-8",
+    )
+
     by_kind: dict[str, list[Entity]] = defaultdict(list)
     for entity in entities:
         by_kind[entity.kind].append(entity)
@@ -79,7 +87,7 @@ def main() -> int:
             site_mod.shell(
                 entity.name, "../",
                 site_mod.render_body(entity, library, images, "../", PUBLIC, allowed),
-                index_json,
+                index_json, tips=True,
             ),
             encoding="utf-8",
         )
@@ -95,7 +103,8 @@ def main() -> int:
 
     (site / "index.html").write_text(
         site_mod.shell("Copper Vale", "",
-                       site_mod.render_index(entities, images, ""), index_json),
+                       site_mod.render_index(entities, images, ""), index_json,
+                       tips=True),
         encoding="utf-8",
     )
 

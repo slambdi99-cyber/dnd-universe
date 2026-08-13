@@ -15,6 +15,7 @@ from collections import defaultdict
 import markdown as md
 
 from . import secrets as secrets_mod
+from . import tooltips as tooltips_mod
 from .entities import Entity, Library
 
 KIND_LABEL = {
@@ -192,7 +193,8 @@ def page_url(ref: str) -> str:
 
 
 def shell(title: str, base: str, body: str, index_json: str,
-          user: str | None = None, live: bool = False) -> str:
+          user: str | None = None, live: bool = False,
+          tips: bool = False) -> str:
     # The live server routes /wiki/guide; a static export has to be a real file
     # with an .html extension, or the browser downloads it instead of showing it.
     guide_href = f"{base}guide" if live else f"{base}guide.html"
@@ -217,7 +219,7 @@ def shell(title: str, base: str, body: str, index_json: str,
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(full)}</title>
-<style>{CSS}</style>
+<style>{CSS}{tooltips_mod.TOOLTIP_CSS if tips else ""}</style>
 </head><body>
 <header class="top">
   <a class="home" href="{base}index.html">Copper Vale</a>
@@ -230,6 +232,7 @@ def shell(title: str, base: str, body: str, index_json: str,
   <div id="page">{body}</div>
 </main>
 <script>const BASE={json.dumps(base)};window.__INDEX__={index_json};{SEARCH_JS}</script>
+{f'<script src="{base}tooltips.js"></script>' if tips else ""}
 </body></html>
 """
 

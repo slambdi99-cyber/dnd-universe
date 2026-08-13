@@ -15,13 +15,15 @@ from __future__ import annotations
 import html
 from pathlib import Path
 
-from starlette.responses import FileResponse, HTMLResponse, RedirectResponse
+from starlette.responses import (FileResponse, HTMLResponse,
+                                 RedirectResponse, Response)
 from starlette.routing import Route
 
 from . import accounts as accounts_mod
 from . import people as people_mod
 from . import secrets as secrets_mod
 from . import site as site_mod
+from . import tooltips as tooltips_mod
 from .entities import KINDS, Entity, Library, slugify
 
 PUBLIC: frozenset[str] = frozenset()
@@ -178,6 +180,7 @@ def build(cfg, library: Library, registry: people_mod.People,
             "Copper Vale", "/wiki/",
             site_mod.render_index(entities, images, "/wiki/", editable=True),
             site_mod.search_index(entities, viewer), user=user, live=True,
+            tips=True,
         ))
 
     async def kind_index(request):
@@ -195,6 +198,7 @@ def build(cfg, library: Library, registry: people_mod.People,
             site_mod.KIND_LABEL.get(kind, kind), "/wiki/",
             site_mod.render_kind_index(kind, items, images, "/wiki/"),
             site_mod.search_index(entities, viewer), user=user, live=True,
+            tips=True,
         ))
 
     async def page(request):
@@ -220,7 +224,26 @@ def build(cfg, library: Library, registry: people_mod.People,
             site_mod.render_body(entity, library, images, "/wiki/", viewer, allowed,
                                  editable=True),
             site_mod.search_index(entities, viewer), user=user, live=True,
+            tips=True,
         ))
+
+    async def tooltips_js(request):
+        """The tooltip index, as a script so browsers cache it across pages.
+
+        Built per viewer: a page you can't see must not appear here either, or
+        hovering a name would reveal something the page itself hides.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, _ = viewer_for(request)
+        entities, _ = entities_for(viewer)
+        index = tooltips_mod.build(entities, viewer, Path(cfg.root), "/wiki/")
+        return Response(
+            f"window.__TIPS__={index};\n{tooltips_mod.TOOLTIP_JS}",
+            media_type="application/javascript",
+            headers={"Cache-Control": "no-store"},
+        )
 
     async def art(request):
         redirect = require_login(request)
@@ -398,6 +421,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         Route("/wiki/connect", connect),
         Route("/wiki/", index),
         Route("/wiki/index.html", index),
+        Route("/wiki/tooltips.js", tooltips_js),
         Route("/wiki/art/{filename}", art),
         Route("/wiki/{kind}/index.html", kind_index),
         Route("/wiki/{kind}/{slug}.html", page),

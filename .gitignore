@@ -30,3 +30,6 @@ site/
 
 # Wiki accounts and session key. Never commit these.
 .session-secret
+
+# SRD reference data. Regenerate with tools/fetch_srd.py.
+data/srd.json
