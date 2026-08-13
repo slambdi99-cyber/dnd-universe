@@ -7,8 +7,8 @@
 # restart.
 site:
   name: The Buried Star
-  tagline: 'The DM''s campaign, set in Copper Vale: a low-lying landscape where scattered
-    civilization clings to dwindling natural resources.'
+  tagline: 'Set in Copper Vale: a low-lying landscape where scattered civilization
+    clings to dwindling natural resources.'
 kinds:
 - key: place
   label: Places
