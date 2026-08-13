@@ -1,7 +1,7 @@
 # dnd-universe
 
 The shared world: every place, person, faction and item in your campaign, as
-linked files you can query, draw, and hand to Claude.
+linked files you can query, draw, and hand to any AI assistant.
 
 This is the layer everything else plugs into. `dnd-scribe` feeds sessions in at
 one end. The web app and the MCP server (both still to build) read from it at
@@ -19,8 +19,11 @@ Working now:
   the whole world, content-addressed so nothing is ever drawn twice.
 - **CLI** over all of it.
 
-Not built yet: the web app, the MCP server, Foundry integration, and the
-session-to-wiki pipeline.
+- **The live wiki.** Per-person views, editing, art, uploads, a Discord inbox
+  and a Structure editor, served over a permanent HTTPS address.
+- **The MCP server**, so anyone's assistant can read and write the world.
+
+Not built yet: Foundry integration, and the session-to-wiki pipeline.
 
 ## The one architectural decision worth arguing about
 
@@ -33,9 +36,9 @@ The reasons:
 - Several people edit this world at once, and markdown in git merges. A shared
   database needs a migration and a merge strategy for every schema change, and
   someone to own it.
-- Claude reads and writes files natively. That's the whole basis of the MCP
-  server plan: your friends' Claude can author lore directly, and a file is far
-  less fragile to hand a language model than a write API.
+- Language models read and write files natively. That's the whole basis of the
+  MCP server: your friends' assistants author lore directly, and a file is far
+  less fragile to hand a model than a write API.
 - The web app loses nothing. It indexes the files into SQLite or Postgres at
   load and queries the index.
 
@@ -148,8 +151,11 @@ from the bare name and the CLI warns you.
 and write The Buried Star from their own client instead of routing everything
 through one person.
 
-Eight tools: `search_world`, `get_page`, `list_pages`, `world_overview`,
-`open_questions`, `create_page`, `update_page`, `link_pages`.
+Reading: `search_world`, `get_page`, `list_pages`, `world_overview`,
+`open_questions`, `whats_new`, `list_files`, `get_structure`.
+Writing: `create_page`, `update_page`, `link_pages`, `mark_filed`,
+`remove_file`, `move_page`, `add_kind`, `change_kind`, `remove_kind`,
+`set_site`, `set_home_sections`.
 
 ### Running it just for yourself
 
