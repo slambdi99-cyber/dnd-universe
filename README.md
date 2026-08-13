@@ -265,6 +265,23 @@ happened last session can't wipe what was already written.
 Page references are forgiving: `get_page` accepts `"Korran Mossborn"`,
 `"korran"`, or `"character/korran-mossborn"`.
 
+## Running it
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\start.ps1
+```
+
+That's the whole thing: it finds the Python environment, loads the token, asks
+Tailscale for this machine's hostname so the transport accepts requests through
+the funnel, and starts the wiki and MCP server together. Leave the window open.
+
+Note there is **no venv in this folder**. The interpreter lives next door in
+`dnd-scribe\.venv`, which is why `.\.venv\Scripts\python.exe` fails from here.
+`start.ps1` exists so you never have to remember that.
+
+Tailscale runs as a service and returns on its own after a reboot, so this is
+normally the only thing that needs restarting.
+
 ## Sharing the wiki as a website
 
 The simplest thing to hand your table: a link. No Obsidian, no git, no Python.

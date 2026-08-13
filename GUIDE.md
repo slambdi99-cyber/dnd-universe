@@ -261,8 +261,10 @@ signing in instead.
 **Claude says 401.** The header didn't copy cleanly. Go back to **connect
 Claude** on the website and use the Copy button rather than selecting by hand.
 
-**Claude can't connect at all.** The whole thing runs on Timothy Tuttle's PC. If it's
-off, the wiki and Claude both stop working. It isn't broken, it's asleep.
+**Claude can't connect at all, or the site won't load.** The whole thing runs
+on Timothy Tuttle's PC. If it's off, the wiki and Claude both stop working. It isn't
+broken, it's asleep. Timothy Tuttle: `powershell -ExecutionPolicy Bypass -File
+.\start.ps1` from `C:\Claude\dnd-universe`.
 
 **Claude says something that's wrong.** Tell The DM, and check the page's Sources
 line: it records where each fact came from. Some of it was reconstructed from
