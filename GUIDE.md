@@ -1,4 +1,4 @@
-# Copper Vale: a guide for the table
+# The Buried Star: a guide for the table
 
 Everything we know about the world lives in one place now: every town, NPC,
 faction, item and god, cross-linked, with art. It was built from four years of
@@ -46,7 +46,8 @@ Root Covenant** for what we're up against, or your own character.
 ### Adding and changing things
 
 You don't need Claude for this. Every page has an **Edit** button in the top
-right, and the front page has **+ New page**.
+right, and **+ New** sits in the nav bar on every page, so writing something
+down never means going back to the front page first.
 
 The form has:
 
@@ -84,6 +85,26 @@ riverbed, dusk, low mist" gets you something; "the bridge" gets you a bridge
 from nowhere in particular. Game words mean nothing to it, so say "green scaled
 turtle-folk with a domed shell" rather than "tortle".
 
+### The inbox
+
+**Inbox** in the nav is everything said in our Discord lore channels that no
+page accounts for yet. The server checks Discord every half hour on its own, so
+this fills up by itself.
+
+Two buttons on each message:
+
+- **Write it up** opens a new page with the message already in the box. Edit it
+  into something that reads like a wiki entry and save. The page credits the
+  message, and the message leaves the inbox.
+- **Not lore** is for jokes, dice rolls and "lol". It just goes away.
+
+Nothing is ever added to the wiki automatically. A machine summarising four
+years of our arguments into confident wiki pages would be worse than useless,
+so a person decides every time. That person can be any of us.
+
+Your Claude can work the queue too, which is faster: *"check what's new and
+write up anything worth keeping."*
+
 ### Secrets
 
 Some pages have blocks only certain people can read. If you can read one, it
@@ -117,7 +138,7 @@ Each has a Copy button. Pick whichever suits and paste it.
 
 ### Check it worked
 
-Ask your Claude: **"call whoami on copper-vale"**. It should come back with
+Ask your Claude: **"call whoami on buried-star"**. It should come back with
 your name, and how many pages you can see. If it says *guest*, the header
 didn't take: go back to the connect page and try one of the other options.
 
@@ -135,7 +156,7 @@ Paste this once, at the start of a conversation. It saves a lot of
 back-and-forth.
 
 ```
-You have access to a "copper-vale" MCP server. It's the shared wiki for our
+You have access to a "buried-star" MCP server. It's the shared wiki for our
 D&D campaign, The Buried Star, run by The DM. Treat it as the group's collective
 memory: it's real, it's shared, and other people rely on what's in it.
 
@@ -200,7 +221,7 @@ Others worth trying:
 ### Write up a session
 
 ```
-Using copper-vale: I'm going to tell you what happened in tonight's session.
+Using buried-star: I'm going to tell you what happened in tonight's session.
 Search for each person, place and thing I mention before assuming it's new.
 Then update the existing pages and create only what's genuinely missing,
 linking everything together. Source it as "session <today's date>". Ask me
@@ -212,7 +233,7 @@ Then just talk. It'll ask questions when something's unclear.
 ### Flesh out your character
 
 ```
-Using copper-vale: get_page for my character, then interview me about them.
+Using buried-star: get_page for my character, then interview me about them.
 Ask one question at a time. When we're done, update the page with what we
 established, keeping the appearance field visual and concrete, and link them
 to the places and people that matter to them.
@@ -224,7 +245,7 @@ years ago. If yours is wrong, this is how to fix it.
 ### Write something only some people know
 
 ```
-Using copper-vale: add to my character's page, as a secret only The DM and I can
+Using buried-star: add to my character's page, as a secret only The DM and I can
 read: <the thing>.
 ```
 
@@ -234,8 +255,16 @@ the website and through their Claude.
 ### Fill a gap
 
 ```
-Using copper-vale: call open_questions and show me what's unfinished. Then
+Using buried-star: call open_questions and show me what's unfinished. Then
 help me write up one of them.
+```
+
+### Catch up on Discord
+
+```
+Using buried-star: call whats_new. Show me what's worth keeping, write up the
+ones I agree with, and mark the rest as filed. Don't invent anything that
+isn't in the messages.
 ```
 
 There are pages that are deliberately just a name: **Sister Lethra**,
@@ -246,8 +275,6 @@ that's the most useful thing you can add.
 
 ## 5. The tools, if you're curious
 
-Your Claude has eight:
-
 | | |
 |---|---|
 | `whoami` | who the server thinks you are |
@@ -256,9 +283,11 @@ Your Claude has eight:
 | `get_page` | one page plus what links to it |
 | `list_pages` | browse by type or tag |
 | `open_questions` | what's deliberately unfinished |
+| `whats_new` | Discord messages no page accounts for yet |
 | `create_page` | add something new |
 | `update_page` | add to something existing |
 | `link_pages` | connect two things |
+| `mark_filed` | dismiss Discord messages that aren't lore |
 
 You don't need to name them. Just ask for what you want.
 
@@ -268,6 +297,9 @@ You don't need to name them. Just ask for what you want.
 
 **"My name isn't on the sign-in page."** Click **Someone new** and add
 yourself. It takes ten seconds and nobody has to approve it.
+
+**"The inbox is empty but people have been posting."** It checks every half
+hour, and it only counts the channels that were imported. Ask Timothy Tuttle.
 
 **"The art button is spinning forever."** One picture at a time, and the queue
 is one graphics card. If someone else hit generate first, yours waits. Give it

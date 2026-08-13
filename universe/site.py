@@ -30,6 +30,12 @@ KIND_LABEL = {
     "lore": "Lore",
 }
 
+# The campaign's name, which is not the region's name. Kept in one place
+# because the two used to be the same string, and the front page rendered as
+# "Copper Vale - Copper Vale" while the region page of the same name sat one
+# click away.
+SITE_NAME = "The Buried Star"
+
 CSS = """
 :root {
   --bg: #faf7f2; --panel: #fffdfa; --ink: #24211d; --muted: #6b6459;
@@ -50,8 +56,17 @@ header.top { position: sticky; top: 0; z-index: 10; background: var(--panel);
   border-bottom: 1px solid var(--line); padding: .7rem 1.2rem;
   display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
 header.top .home { font-weight: bold; letter-spacing: .02em; }
-header.top nav { display: flex; gap: .8rem; flex-wrap: wrap; font-size: .85rem; }
+header.top nav { display: flex; gap: .8rem; flex-wrap: wrap; font-size: .85rem;
+  align-items: center; }
 header.top .who { font-size: .8rem; color: var(--muted); }
+/* Writing actions, set apart from the browsing links so "add something" is
+   never more than one click away from any page. */
+nav a.act { border: 1px solid var(--line); border-radius: 999px;
+  padding: .1rem .6rem; background: var(--panel); }
+nav a.act:hover { background: var(--accent-soft); text-decoration: none; }
+nav a.act .badge { display: inline-block; margin-left: .35rem; padding: 0 .35rem;
+  border-radius: 999px; background: var(--accent); color: var(--panel);
+  font-size: .75rem; }
 #q { margin-left: auto; padding: .4rem .7rem; min-width: 12rem; flex: 1 1 10rem;
   border: 1px solid var(--line); border-radius: 4px; background: var(--bg);
   color: var(--ink); font: inherit; font-size: .9rem; }
@@ -169,6 +184,30 @@ details.newperson summary { cursor: pointer; color: var(--accent);
 .artgrid figure.current button { color: var(--muted); cursor: default; }
 .slow { border-left: 3px solid var(--accent); background: var(--accent-soft);
   padding: .6rem 1rem; margin: 1rem 0; font-size: .9rem; border-radius: 0 4px 4px 0; }
+/* Discord inbox */
+.tabs { display: flex; gap: .8rem; flex-wrap: wrap; font-size: .85rem;
+  border-bottom: 1px solid var(--line); padding-bottom: .5rem; margin: 1rem 0; }
+.tabs a.on { color: var(--ink); font-weight: bold; }
+form.catchup { margin: 2rem 0 0; }
+form.catchup button { border: 1px solid var(--line); border-radius: 4px;
+  padding: .4rem .9rem; background: var(--panel); color: var(--muted);
+  font: inherit; font-size: .85rem; cursor: pointer; }
+form.catchup button:hover { color: var(--ink); background: var(--accent-soft); }
+.msg { border: 1px solid var(--line); border-radius: 6px; background: var(--panel);
+  padding: .8rem 1rem; margin: .8rem 0; }
+.msg .meta { font-size: .8rem; color: var(--muted); display: flex; gap: .5rem;
+  flex-wrap: wrap; align-items: baseline; }
+.msg .meta .chan { color: var(--accent); }
+.msg .text { margin: .5rem 0 0; white-space: pre-wrap; }
+.msg .shots { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .6rem; }
+.msg .shots img { max-height: 11rem; border-radius: 4px; border: 1px solid var(--line); }
+.msg .acts { margin-top: .7rem; display: flex; gap: .8rem; align-items: center;
+  font-size: .85rem; }
+.msg form { display: inline; }
+.msg button { border: 1px solid var(--line); border-radius: 4px; padding: .25rem .7rem;
+  background: var(--bg); color: var(--ink); font: inherit; font-size: .85rem;
+  cursor: pointer; }
+.msg button:hover { background: var(--accent-soft); }
 .sheet { border: 1px solid var(--line); border-radius: 6px; padding: .9rem 1.1rem;
   margin: 2rem 0 0; background: var(--panel); }
 .sheet .statline { font-size: .85rem; color: var(--muted); text-transform: uppercase;
@@ -219,7 +258,13 @@ def page_url(ref: str) -> str:
 
 def shell(title: str, base: str, body: str, index_json: str,
           user: str | None = None, live: bool = False,
-          tips: bool = False) -> str:
+          tips: bool = False, extra: str = "") -> str:
+    """Wrap rendered body text in the site chrome.
+
+    `extra` goes in the nav and is only ever passed by the live server: the
+    static export has nothing to link to for writing, and a New button that
+    404s is worse than no button.
+    """
     # The live server routes /wiki/guide; a static export has to be a real file
     # with an .html extension, or the browser downloads it instead of showing it.
     guide_href = f"{base}guide" if live else f"{base}guide.html"
@@ -229,7 +274,7 @@ def shell(title: str, base: str, body: str, index_json: str,
     ) + f'<a href="{guide_href}">Guide</a>'
     # ASCII separators on purpose: these strings get rewritten by tooling now
     # and then, and a stray encoding round-trip turns punctuation into mojibake.
-    full = title if title == "Copper Vale" else f"{title} - Copper Vale"
+    full = title if title == SITE_NAME else f"{title} - {SITE_NAME}"
     if live:
         account = (
             f'<span class="who">{html.escape(user)} &middot; '
@@ -247,8 +292,8 @@ def shell(title: str, base: str, body: str, index_json: str,
 <style>{CSS}{tooltips_mod.TOOLTIP_CSS if tips else ""}</style>
 </head><body>
 <header class="top">
-  <a class="home" href="{base}index.html">Copper Vale</a>
-  <nav>{nav}</nav>
+  <a class="home" href="{base}index.html">{SITE_NAME}</a>
+  <nav>{nav}{extra}</nav>
   {account}
   <input id="q" type="search" placeholder="Search the world..." autocomplete="off">
 </header>
@@ -402,9 +447,10 @@ def render_index(entities: list[Entity], images: dict[str, str], base: str,
 
     parts = [
         f'<a class="newpage" href="{base}new">+ New page</a>' if editable else "",
-        "<h1>Copper Vale</h1>",
-        '<p class="summary">A low-lying landscape where scattered civilization '
-        "clings to dwindling natural resources.</p>",
+        f"<h1>{SITE_NAME}</h1>",
+        '<p class="summary">The DM\'s campaign, set in Copper Vale: a low-lying '
+        "landscape where scattered civilization clings to dwindling natural "
+        "resources.</p>",
     ]
     places = [e for e in by_kind.get("place", [])
               if e.data.get("map_type") in {"region", "settlement"}]

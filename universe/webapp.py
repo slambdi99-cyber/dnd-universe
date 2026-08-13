@@ -20,6 +20,7 @@ from starlette.responses import (FileResponse, HTMLResponse,
                                  RedirectResponse, Response)
 from starlette.routing import Route
 
+from . import inbox as inbox_mod
 from . import people as people_mod
 from . import secrets as secrets_mod
 from . import site as site_mod
@@ -45,6 +46,41 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
     # Built on first use, so importing torch and diffusers is deferred until
     # someone actually asks for a picture.
     _art = None
+
+    lore_dir = cfg.raw.get("lore_dir")
+    inbox = inbox_mod.Inbox(
+        Path(cfg.root),
+        (Path(cfg.root) / lore_dir).resolve() if lore_dir else None,
+    )
+
+    def nav_extra(user: str | None) -> str:
+        """The writing actions, on every page rather than just the front one.
+
+        Adding something was previously a link on the index, which meant
+        reading a page about a place and wanting to write down what happened
+        there took you back to the front page first. Nobody does that; they
+        forget instead.
+        """
+        if not user:
+            return ""
+        try:
+            waiting = inbox.count(library)
+        except OSError:
+            waiting = 0
+        badge = f'<span class="badge">{waiting}</span>' if waiting else ""
+        return (
+            '<a class="act" href="/wiki/new">+ New</a>'
+            f'<a class="act" href="/wiki/inbox">Inbox{badge}</a>'
+        )
+
+    def render(title: str, body: str, index_json: str = "[]", *,
+               user: str | None = None, tips: bool = False,
+               status: int = 200) -> HTMLResponse:
+        return HTMLResponse(
+            site_mod.shell(title, "/wiki/", body, index_json, user=user,
+                           live=True, tips=tips, extra=nav_extra(user)),
+            status_code=status,
+        )
 
     def reload_people() -> None:
         """Pick up anyone added since the server started."""
@@ -149,18 +185,13 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         _, user = viewer_for(request)
         source = Path(cfg.root) / "GUIDE.md"
         if not source.exists():
-            return HTMLResponse(
-                site_mod.shell("Guide", "/wiki/",
-                               "<h1>Guide</h1><p class='hint'>GUIDE.md is "
-                               "missing from the project folder.</p>",
-                               "[]", user=user, live=True),
-                status_code=404,
-            )
-        return HTMLResponse(site_mod.shell(
-            "Guide", "/wiki/",
-            site_mod.render_guide(source.read_text(encoding="utf-8")),
-            "[]", user=user, live=True,
-        ))
+            return render("Guide",
+                          "<h1>Guide</h1><p class='hint'>GUIDE.md is missing "
+                          "from the project folder.</p>",
+                          user=user, status=404)
+        return render("Guide",
+                      site_mod.render_guide(source.read_text(encoding="utf-8")),
+                      user=user)
 
     # -- pages ---------------------------------------------------------
 
@@ -171,12 +202,11 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         viewer, user = viewer_for(request)
         entities, _ = entities_for(viewer)
         images = images_for(entities)
-        return HTMLResponse(site_mod.shell(
-            "Copper Vale", "/wiki/",
+        return render(
+            site_mod.SITE_NAME,
             site_mod.render_index(entities, images, "/wiki/", editable=True),
-            site_mod.search_index(entities, viewer), user=user, live=True,
-            tips=True,
-        ))
+            site_mod.search_index(entities, viewer), user=user, tips=True,
+        )
 
     async def kind_index(request):
         redirect = require_login(request)
@@ -189,12 +219,11 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         if not items:
             return HTMLResponse("Not found", status_code=404)
         images = images_for(entities)
-        return HTMLResponse(site_mod.shell(
-            site_mod.KIND_LABEL.get(kind, kind), "/wiki/",
+        return render(
+            site_mod.KIND_LABEL.get(kind, kind),
             site_mod.render_kind_index(kind, items, images, "/wiki/"),
-            site_mod.search_index(entities, viewer), user=user, live=True,
-            tips=True,
-        ))
+            site_mod.search_index(entities, viewer), user=user, tips=True,
+        )
 
     async def page(request):
         redirect = require_login(request)
@@ -206,21 +235,17 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         if f"{kind}/{slug}" not in allowed:
             # Deliberately the same response as a page that doesn't exist, so
             # a 403 can't be used to enumerate hidden pages.
-            return HTMLResponse(
-                site_mod.shell("Not found", "/wiki/",
-                               "<h1>Not found</h1><p class='hint'>No such page.</p>",
-                               "[]", user=user, live=True),
-                status_code=404,
-            )
+            return render("Not found",
+                          "<h1>Not found</h1><p class='hint'>No such page.</p>",
+                          user=user, status=404)
         entity = library.load(kind, slug)
         images = images_for(entities)
-        return HTMLResponse(site_mod.shell(
-            entity.name, "/wiki/",
+        return render(
+            entity.name,
             site_mod.render_body(entity, library, images, "/wiki/", viewer, allowed,
                                  editable=True),
-            site_mod.search_index(entities, viewer), user=user, live=True,
-            tips=True,
-        ))
+            site_mod.search_index(entities, viewer), user=user, tips=True,
+        )
 
     # -- art -----------------------------------------------------------
 
@@ -278,11 +303,9 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
                         error = f"Couldn't generate that: {exc}"
 
         existing = [a for a in entity.art]
-        return HTMLResponse(site_mod.shell(
-            f"Art for {entity.name}", "/wiki/",
-            _art_form(entity, existing, candidates, prompt, error),
-            "[]", user=user, live=True,
-        ))
+        return render(f"Art for {entity.name}",
+                      _art_form(entity, existing, candidates, prompt, error),
+                      user=user)
 
     async def tooltips_js(request):
         """The tooltip index, as a script so browsers cache it across pages.
@@ -362,28 +385,76 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         key = request.session.get("who")
         person = registry.members.get(key) if key else None
         if person is None:
-            return HTMLResponse(
-                site_mod.shell("Connect", "/wiki/",
-                               "<h1>Connect</h1><p class='hint'>Your account "
-                               "isn't linked to anyone. Ask your DM.</p>",
-                               "[]", user=None, live=True),
-                status_code=404,
-            )
+            return render("Connect",
+                          "<h1>Connect</h1><p class='hint'>Your account isn't "
+                          "linked to anyone. Ask your DM.</p>",
+                          user=None, status=404)
 
         token = people_mod.ensure_token(Path(cfg.root), person.key)
         base = str(request.base_url).rstrip("/")
-        return HTMLResponse(site_mod.shell(
-            "Connect Claude", "/wiki/",
-            _connect_page(person.name, f"{base}/mcp", token),
-            "[]", user=person.name, live=True,
-        ))
+        return render("Connect Claude",
+                      _connect_page(person.name, f"{base}/mcp", token),
+                      user=person.name)
+
+    # -- the Discord inbox ----------------------------------------------
+
+    async def inbox_page(request):
+        """Everything said in Discord that no page accounts for yet.
+
+        A review queue, not an importer. The wiki is what the table decided is
+        true; Discord is four years of argument, jokes and half-ideas. Someone
+        has to choose between them, and that someone is a person.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        _, user = viewer_for(request)
+
+        if request.method == "POST":
+            form = await request.form()
+            action = str(form.get("action", ""))
+            if action == "catch_up":
+                inbox.catch_up(str(form.get("channel", "")) or None)
+            else:
+                ids = [i for i in form.getlist("id") if i]
+                if ids:
+                    inbox.file(ids)
+            return RedirectResponse(request.url.path + (
+                f"?channel={request.query_params['channel']}"
+                if request.query_params.get("channel") else ""
+            ), status_code=303)
+
+        channel = request.query_params.get("channel") or None
+        if channel and channel not in inbox.channels():
+            channel = None
+        waiting = inbox.unfiled(library, channel=channel, limit=60)
+        total = inbox.count(library)
+        return render("Inbox",
+                      _inbox_page(waiting, total, inbox.channels(), channel,
+                                  inbox.last_sync()),
+                      user=user)
+
+    async def inbox_attachment(request):
+        """An image posted in Discord, straight from the lore archive.
+
+        Read from `dnd-scribe/lore`, which sits outside this project, so the
+        path is resolved and checked rather than trusted.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        path = inbox.attachment_path(request.path_params["channel"],
+                                     request.path_params["filename"])
+        if path is None:
+            return HTMLResponse("Not found", status_code=404)
+        return FileResponse(path)
 
     # -- editing --------------------------------------------------------
 
     def form_values(entity: Entity | None, viewer: frozenset[str]) -> dict:
         if entity is None:
             return {"name": "", "summary": "", "appearance": "", "body": "",
-                    "tags": "", "links": "", "kind": "place"}
+                    "tags": "", "links": "", "kind": "place", "source": ""}
         return {
             "name": entity.name,
             "summary": entity.summary,
@@ -408,12 +479,12 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         withheld = len(secrets_mod.withheld_blocks(entity.body, viewer))
 
         if request.method == "GET":
-            return HTMLResponse(site_mod.shell(
-                f"Editing {entity.name}", "/wiki/",
+            return render(
+                f"Editing {entity.name}",
                 _edit_form(form_values(entity, viewer), registry, withheld=withheld,
                            action=f"/wiki/{kind}/{slug}/edit"),
-                "[]", user=user, live=True,
-            ))
+                user=user,
+            )
 
         form = await request.form()
         entity.name = str(form.get("name", entity.name)).strip() or entity.name
@@ -446,26 +517,34 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         viewer, user = viewer_for(request)
 
         if request.method == "GET":
-            return HTMLResponse(site_mod.shell(
-                "New page", "/wiki/",
-                _edit_form(form_values(None, viewer), registry, withheld=0,
-                           action="/wiki/new", creating=True),
-                "[]", user=user, live=True,
-            ))
+            # Prefilled from the query string, which is how the inbox hands a
+            # Discord message straight into the form: the text is already
+            # there and you write over it rather than retyping it.
+            values = form_values(None, viewer)
+            for field in ("name", "summary", "body", "kind", "source"):
+                supplied = request.query_params.get(field, "").strip()
+                if supplied and (field != "kind" or supplied in KINDS):
+                    values[field] = supplied
+            return render("New page",
+                          _edit_form(values, registry, withheld=0,
+                                     action="/wiki/new", creating=True),
+                          user=user)
 
         form = await request.form()
         name = str(form.get("name", "")).strip()
         kind = str(form.get("kind", "")).strip()
         if not name or kind not in KINDS:
-            return HTMLResponse(site_mod.shell(
-                "New page", "/wiki/",
-                _edit_form({**form_values(None, viewer),
-                            "name": name, "kind": kind},
+            return render(
+                "New page",
+                _edit_form({**form_values(None, viewer), "name": name,
+                            "kind": kind, "body": str(form.get("body", "")),
+                            "summary": str(form.get("summary", "")),
+                            "source": str(form.get("source", ""))},
                            registry, withheld=0, action="/wiki/new",
                            creating=True,
                            error="Give it a name and pick a type."),
-                "[]", user=user, live=True,
-            ))
+                user=user,
+            )
 
         slug = slugify(name)
         if library.exists(kind, slug):
@@ -477,6 +556,7 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         if secret_text and audience:
             body = body.rstrip() + "\n\n" + secrets_mod.wrap(secret_text, audience)
 
+        source = str(form.get("source", "")).strip()
         entity = Entity(
             kind=kind, slug=slug, name=name,
             summary=str(form.get("summary", "")).strip(),
@@ -485,9 +565,11 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
             tags=[t.strip() for t in str(form.get("tags", "")).split(",") if t.strip()],
             links=[l.strip() for l in str(form.get("links", "")).split(",")
                    if l.strip() and "/" in l],
-            sources=[f"created by {user} on the wiki"],
+            sources=([source] if source else []) + [f"created by {user} on the wiki"],
         )
         library.save(entity)
+        # A page citing a Discord message is the message being dealt with, so
+        # the inbox drops it without anyone pressing a second button.
         return RedirectResponse(f"/wiki/{kind}/{slug}.html", status_code=303)
 
     return [
@@ -501,12 +583,91 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         Route("/wiki/", index),
         Route("/wiki/index.html", index),
         Route("/wiki/tooltips.js", tooltips_js),
+        Route("/wiki/inbox", inbox_page, methods=["GET", "POST"]),
+        Route("/wiki/inbox/att/{channel}/{filename}", inbox_attachment),
         Route("/wiki/{kind}/{slug}/art", art_panel, methods=["GET", "POST"]),
         Route("/wiki/art/id/{asset:path}.png", art_by_id),
         Route("/wiki/art/{filename}", art),
         Route("/wiki/{kind}/index.html", kind_index),
         Route("/wiki/{kind}/{slug}.html", page),
     ]
+
+
+def _inbox_page(messages, total: int, channels: list[str],
+                channel: str | None, last_sync: str) -> str:
+    from urllib.parse import quote
+
+    tabs = "".join(
+        f'<a href="/wiki/inbox{"" if c is None else "?channel=" + quote(c)}"'
+        f'{" class=\'on\'" if c == channel else ""}>'
+        f'{html.escape(c or "Everything")}</a>'
+        for c in [None] + channels
+    )
+    checked = (f"Last checked {html.escape(last_sync[:16].replace('T', ' '))} UTC."
+               if last_sync else
+               "Discord has not been checked yet. Run sync.ps1 in dnd-scribe.")
+
+    if not messages:
+        return f"""
+<h1>Inbox</h1>
+<p class="summary">Nothing waiting. Everything said in Discord is either
+written up or marked as read.</p>
+<div class="tabs">{tabs}</div>
+<p class="hint">{checked}</p>
+"""
+
+    cards = []
+    for m in messages:
+        shots = "".join(
+            f'<img src="/wiki/inbox/att/{quote(m.channel)}/{quote(a["file"])}" '
+            f'alt="{html.escape(a.get("filename", ""))}" loading="lazy">'
+            for a in m.attachments
+            if str(a.get("content_type", "")).startswith("image/") and a.get("file")
+        )
+        files = ", ".join(
+            html.escape(a.get("filename", "")) for a in m.attachments
+            if not str(a.get("content_type", "")).startswith("image/")
+        )
+        # The first line usually names the thing, which is the best guess at a
+        # page title anyone is going to get without reading it for them.
+        first = (m.text.splitlines() or [""])[0][:80]
+        prefill = (f"/wiki/new?name={quote(first)}&body={quote(m.text[:4000])}"
+                   f"&source={quote(m.source)}")
+        cards.append(f"""
+<div class="msg">
+  <div class="meta"><strong>{html.escape(m.author)}</strong>
+    <span class="chan">#{html.escape(m.channel)}</span>
+    <span>{html.escape(m.at[:16].replace("T", " "))}</span></div>
+  <div class="text">{html.escape(m.text)}</div>
+  {f'<div class="shots">{shots}</div>' if shots else ""}
+  {f'<p class="hint">Files: {files}</p>' if files else ""}
+  <div class="acts">
+    <a href="{prefill}">Write it up</a>
+    <form method="post">
+      <input type="hidden" name="id" value="{html.escape(m.id)}">
+      <button type="submit">Not lore</button>
+    </form>
+  </div>
+</div>""")
+
+    more = ("<p class='hint'>Showing the oldest 60. Deal with these and the "
+            "rest appear.</p>" if total > len(messages) else "")
+
+    return f"""
+<h1>Inbox</h1>
+<p class="summary">{total} message{"s" if total != 1 else ""} from Discord that
+no page accounts for yet.</p>
+<div class="tabs">{tabs}</div>
+<p class="hint">{checked} A message disappears from here when a page cites it,
+so writing it up is enough. "Not lore" is for the rest.</p>
+{"".join(cards)}
+{more}
+<form method="post" class="catchup">
+  <input type="hidden" name="action" value="catch_up">
+  {f'<input type="hidden" name="channel" value="{html.escape(channel)}">' if channel else ""}
+  <button type="submit">Mark everything here as read</button>
+</form>
+"""
 
 
 # -- forms -------------------------------------------------------------
@@ -523,6 +684,17 @@ def _edit_form(v: dict, registry: people_mod.People, withheld: int,
     kind_field = (
         f'  <label for="k">Type</label>\n  <select id="k" name="kind">{kinds}</select>'
         if creating else ""
+    )
+    # Carried through the form rather than the URL, so a page made from a
+    # Discord message credits the message even after a validation round-trip.
+    source_field = (
+        f'<input type="hidden" name="source" value="{html.escape(v.get("source", ""))}">'
+        if creating and v.get("source") else ""
+    )
+    from_note = (
+        f'<div class="notice">Written up from a message in Discord. The page '
+        f'will credit it, and the inbox will stop showing it.</div>'
+        if creating and v.get("source", "").startswith("discord:") else ""
     )
 
     warning = ""
@@ -545,7 +717,9 @@ def _edit_form(v: dict, registry: people_mod.People, withheld: int,
 <h1>{html.escape(title)}</h1>
 {err}
 {warning}
+{from_note}
 <form class="auth wide" method="post" action="{action}">
+{source_field}
 {kind_field}
   <label for="n">Name</label>
   <input id="n" name="name" value="{html.escape(v['name'])}" required>
@@ -586,7 +760,7 @@ def _connect_page(name: str, url: str, token: str) -> str:
     config = (
         '{\n'
         '  "mcpServers": {\n'
-        '    "copper-vale": {\n'
+        '    "buried-star": {\n'
         '      "type": "http",\n'
         f'      "url": "{url}",\n'
         '      "headers": {\n'
@@ -598,7 +772,7 @@ def _connect_page(name: str, url: str, token: str) -> str:
     )
     prompt = (
         "Please set up an MCP server for me.\n\n"
-        f"  Name:      copper-vale\n"
+        f"  Name:      buried-star\n"
         f"  Transport: HTTP (streamable HTTP, not SSE, not stdio)\n"
         f"  URL:       {url}\n"
         f"  Auth:      an Authorization header with the value\n"
@@ -608,7 +782,7 @@ def _connect_page(name: str, url: str, token: str) -> str:
         "Then verify by calling whoami: it should come back with my name."
     )
     cli = (
-        f"claude mcp add --transport http copper-vale {url} "
+        f"claude mcp add --transport http buried-star {url} "
         f'--header "Authorization: Bearer {token}"'
     )
 
@@ -636,7 +810,7 @@ tied to you, so use your own details and don't pass them around.</p>
 {block(3, config)}
 
 <h2>Check it worked</h2>
-<p>Ask your Claude: <em>call whoami on copper-vale</em>. It should come back
+<p>Ask your Claude: <em>call whoami on buried-star</em>. It should come back
 with your name. If it says <em>guest</em>, the header didn't take.</p>
 
 <p class="hint">Treat this like a password: it can write to the campaign, and

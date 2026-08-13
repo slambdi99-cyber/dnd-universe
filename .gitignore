@@ -33,3 +33,6 @@ site/
 
 # SRD reference data. Regenerate with tools/fetch_srd.py.
 data/srd.json
+
+# Which Discord messages have been dealt with. Local state, like a cursor.
+.inbox.json

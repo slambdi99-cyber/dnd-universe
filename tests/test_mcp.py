@@ -79,7 +79,7 @@ async def run() -> None:
             init = await session.initialize()
             print("== handshake ==")
             info = getattr(init, "server_info", None) or init.serverInfo
-            check("server initializes", info.name == "copper-vale", info.name)
+            check("server initializes", info.name == "buried-star", info.name)
             check("instructions provided", bool(init.instructions))
 
             tools = {t.name: t for t in (await session.list_tools()).tools}

@@ -1,4 +1,4 @@
-﻿"""MCP server over the Copper Vale universe.
+﻿"""MCP server over The Buried Star campaign wiki.
 
 Lets everyone at the table point their own Claude at the world and read or
 write it directly, instead of everything routing through one person.
@@ -52,6 +52,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mcp.server.mcpserver import Context, MCPServer  # noqa: E402
 
 from universe import config as config_mod  # noqa: E402
+from universe import inbox as inbox_mod  # noqa: E402
 from universe import people as people_mod  # noqa: E402
 from universe import secrets as secrets_mod  # noqa: E402
 from universe.entities import KINDS, Entity, Library, slugify  # noqa: E402
@@ -59,8 +60,9 @@ from universe.entities import KINDS, Entity, Library, slugify  # noqa: E402
 GUEST = frozenset({"guest"})
 
 INSTRUCTIONS = """
-This is the shared world of the Copper Vale D&D campaign: places, characters,
-factions, items, deities and lore, all cross-linked.
+This is the shared world of The Buried Star, a D&D campaign set in the dying
+region of Copper Vale: places, characters, factions, items, deities and lore,
+all cross-linked.
 
 Start with `world_overview` if you don't know the world, or `search_world` for
 anything specific. `get_page` returns a full page plus everything that links to
@@ -81,6 +83,13 @@ the person keys who may read it. `whoami` says who the server thinks you are.
 Sources matter here. Each page records where its content came from, in rough
 order of authority: the DM's wiki, the DM's relationship graph, players'
 session logs, then Discord chat. If you add something, say where it came from.
+
+`whats_new` returns messages posted in the campaign's Discord channels that no
+page accounts for yet. Read them, and where one contains something worth
+keeping, write it up with create_page or update_page and pass the message's
+`source` value through. That both credits it and clears it from the queue.
+Judge what belongs: most chat is banter, and a wiki full of confidently
+recorded jokes is worse than a thin one. `mark_filed` dismisses the rest.
 """
 
 
@@ -93,8 +102,8 @@ def build_server(
     default_name: str,
 ) -> MCPServer:
     server = MCPServer(
-        name="copper-vale",
-        title="Copper Vale Universe",
+        name="buried-star",
+        title="The Buried Star",
         instructions=INSTRUCTIONS.strip(),
         version="2.0.0",
     )
@@ -316,6 +325,58 @@ def build_server(
     if read_only:
         return server
 
+    # -- the Discord inbox ---------------------------------------------
+
+    lore_dir = cfg.raw.get("lore_dir")
+    inbox = inbox_mod.Inbox(
+        Path(cfg.root),
+        (Path(cfg.root) / lore_dir).resolve() if lore_dir else None,
+    )
+
+    @server.tool(
+        description="Messages posted in the campaign's Discord channels that "
+        "no page accounts for yet. Read them, write up what matters, and pass "
+        "each message's `source` through to create_page or update_page."
+    )
+    def whats_new(
+        ctx: Context,
+        channel: Annotated[str, "Limit to one channel, e.g. 'lore-drop'"] = "",
+        limit: Annotated[int, "How many messages, oldest first"] = 25,
+    ) -> dict:
+        try:
+            waiting = inbox.unfiled(
+                library, channel=channel.strip() or None,
+                limit=max(1, min(limit, 100)),
+            )
+            total = inbox.count(library)
+        except OSError as exc:
+            return {"error": f"Can't read the lore archive: {exc}"}
+
+        return {
+            "waiting": total,
+            "showing": len(waiting),
+            "channels": inbox.channels(),
+            "last_sync": inbox.last_sync(),
+            "messages": [m.as_dict() for m in waiting],
+            "note": "Most of this is chat. Only write up what the table would "
+                    "call canon, and say so if you're unsure rather than "
+                    "inventing detail to fill a page.",
+        }
+
+    @server.tool(
+        description="Dismiss Discord messages that aren't worth a page. Use "
+        "this for banter; anything you write up is cleared automatically by "
+        "citing its source."
+    )
+    def mark_filed(
+        ctx: Context,
+        message_ids: Annotated[list[str], "IDs from whats_new"],
+    ) -> dict:
+        if read_only:
+            return {"error": "This connection is read-only."}
+        filed = inbox.file(message_ids or [])
+        return {"filed": filed, "still_waiting": inbox.count(library)}
+
     # -- write tools ---------------------------------------------------
 
     def secret_block(text: str, audience: list[str] | None) -> str:
@@ -499,8 +560,8 @@ def http_app(
                 ):
                     return await call_next(request)
                 return Response(
-                    "Copper Vale is private.", status_code=401,
-                    headers={"WWW-Authenticate": 'Basic realm="Copper Vale"'},
+                    "The Buried Star is private.", status_code=401,
+                    headers={"WWW-Authenticate": 'Basic realm="The Buried Star"'},
                 )
 
             if not accepted(request.headers.get("authorization", "")):
@@ -523,7 +584,7 @@ def http_app(
             Middleware(
                 SessionMiddleware,
                 secret_key=session_secret,
-                session_cookie="copper_vale",
+                session_cookie="buried_star",
                 max_age=60 * 60 * 24 * 30,
                 same_site="lax",
                 https_only=True,
@@ -600,7 +661,7 @@ def main(argv: list[str]) -> int:
     )
 
     if not args.http:
-        print(f"[mcp] copper-vale, {count} pages ({secret_pages} with secrets), "
+        print(f"[mcp] buried-star, {count} pages ({secret_pages} with secrets), "
               f"{mode}, stdio as {default_name}", file=sys.stderr)
         server.run(transport="stdio")
         return 0
@@ -652,7 +713,7 @@ def main(argv: list[str]) -> int:
     hosts = [f"{args.host}:{args.port}", f"localhost:{args.port}",
              f"127.0.0.1:{args.port}", *args.allowed_host]
     print(
-        f"[mcp] copper-vale, {count} pages ({secret_pages} with secrets), {mode}\n"
+        f"[mcp] buried-star, {count} pages ({secret_pages} with secrets), {mode}\n"
         f"[mcp] {len(registry.members)} people, {len(registry.tokens)} personal token(s)\n"
         f"[mcp] http://{args.host}:{args.port}/mcp (bearer token required)\n"
         + (

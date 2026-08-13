@@ -47,6 +47,10 @@ from universe import webapp  # noqa: E402
 from universe.entities import Entity, Library  # noqa: E402
 
 cfg = config_mod.load(sandbox)
+# Point the Discord inbox at a sandbox archive. Left alone it resolves to
+# ../dnd-scribe/lore, and a test that reads the real campaign archive is a test
+# whose results depend on what someone said in Discord this morning.
+cfg.raw["lore_dir"] = "lore"
 lib = Library(cfg.content_dir)
 lib.save(Entity(
     kind="character", slug="wren", name="Wren", summary="An elf fighter.",
@@ -221,6 +225,85 @@ check("wren cannot fetch a restricted page's image by id",
       wren.get("/wiki/art/id/lore/dm-notes/default-x.png").status_code == 404)
 check("traversal refused",
       wren.get("/wiki/art/id/../../secret.png").status_code in (404, 400))
+
+print("\n== the inbox ==")
+import json  # noqa: E402
+
+lore = sandbox / "lore"
+(lore / "lore-drop").mkdir(parents=True, exist_ok=True)
+BASE = 1400000000000000000
+
+
+def discord_msg(n: int, text: str) -> dict:
+    return {"id": str(BASE + n), "author": "The DM", "author_id": "1",
+            "is_bot": False, "created_at": "2026-08-12T19:30:00+00:00",
+            "content": text, "attachments": [], "embeds": [],
+            "reply_to": None, "reactions": []}
+
+
+def write_lore(messages: list[dict]) -> None:
+    (lore / "lore-drop" / "messages.json").write_text(
+        json.dumps(messages), encoding="utf-8")
+
+
+# Written before anyone looks, so the first read sets the watermark here and
+# the backlog behaviour is exercised rather than assumed.
+write_lore([discord_msg(1, "The old bridge at Cutter Creek washed out in spring.")])
+ic = signed_in_as("wren")
+ic.get("/wiki/inbox")
+write_lore([
+    discord_msg(1, "The old bridge at Cutter Creek washed out in spring."),
+    discord_msg(2, "Sister Lethra keeps the records in a locked cabinet."),
+])
+inbox_page = ic.get("/wiki/inbox")
+check("renders", inbox_page.status_code == 200, str(inbox_page.status_code))
+check("shows the new message", "Sister Lethra" in inbox_page.text)
+check("history is not a backlog", "Cutter Creek" not in inbox_page.text)
+check("offers to write it up", "/wiki/new?name=" in inbox_page.text)
+check("offers to dismiss it", "Not lore" in inbox_page.text)
+check("nav carries a badge", 'class="badge"' in inbox_page.text)
+check("nav offers New everywhere",
+      '/wiki/new">+ New' in ic.get("/wiki/character/wren.html").text)
+check("signed out sees no inbox link",
+      "/wiki/inbox" not in client().get("/wiki/login").text)
+check("signed out cannot open it",
+      client().get("/wiki/inbox").status_code == 303)
+
+prefill = ic.get(f"/wiki/new?name=Sister+Lethra&source=discord:lore-drop:{BASE + 2}"
+                 "&body=Keeps+the+records.")
+check("prefilled form", "Sister Lethra" in prefill.text and "Keeps the records." in prefill.text)
+check("says where it came from", "Written up from a message" in prefill.text)
+ic.post("/wiki/new", data={
+    "kind": "character", "name": "Sister Lethra", "summary": "A record keeper.",
+    "appearance": "a stooped woman in bog-green robes", "body": "Keeps the records.",
+    "tags": "", "links": "", "source": f"discord:lore-drop:{BASE + 2}",
+})
+made = sandbox / "content" / "character" / "sister-lethra.md"
+check("page written", made.exists())
+if made.exists():
+    check("credits the message",
+          f"discord:lore-drop:{BASE + 2}" in made.read_text(encoding="utf-8"))
+check("and it leaves the inbox", "Sister Lethra" not in ic.get("/wiki/inbox").text,
+      "citing the source is enough; no second button")
+
+write_lore([
+    discord_msg(1, "The old bridge at Cutter Creek washed out in spring."),
+    discord_msg(2, "Sister Lethra keeps the records in a locked cabinet."),
+    discord_msg(3, "Does anyone remember where we left the cart?"),
+])
+check("next one waiting", "left the cart" in ic.get("/wiki/inbox").text)
+ic.post("/wiki/inbox", data={"id": str(BASE + 3)})
+check("dismissing works", "left the cart" not in ic.get("/wiki/inbox").text)
+check("empty inbox says so", "Nothing waiting" in ic.get("/wiki/inbox").text)
+
+(lore / "lore-drop" / "attachments").mkdir(parents=True, exist_ok=True)
+(lore / "lore-drop" / "attachments" / "9-map.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+check("serves an attachment",
+      ic.get("/wiki/inbox/att/lore-drop/9-map.png").status_code == 200)
+check("refuses traversal",
+      ic.get("/wiki/inbox/att/lore-drop/..%2F..%2Fpeople.yaml").status_code in (404, 400))
+check("attachments need a login",
+      client().get("/wiki/inbox/att/lore-drop/9-map.png").status_code == 303)
 
 print("\n== the guide ==")
 g = client().get("/wiki/guide")

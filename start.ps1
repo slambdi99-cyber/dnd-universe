@@ -1,4 +1,4 @@
-# Start the Copper Vale wiki and MCP server.
+# Start The Buried Star wiki and MCP server.
 #
 #   powershell -ExecutionPolicy Bypass -File .\start.ps1
 #

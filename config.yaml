@@ -2,6 +2,11 @@
 content_dir: "content"
 assets_dir: "assets"
 
+# Where dnd-scribe drops imported Discord channels. The wiki reads this to work
+# out what has been said that no page accounts for yet, and shows it at
+# /wiki/inbox. Point it somewhere else if the two projects aren't side by side.
+lore_dir: "../dnd-scribe/lore"
+
 art:
   model: "stabilityai/stable-diffusion-xl-base-1.0"
   steps: 30

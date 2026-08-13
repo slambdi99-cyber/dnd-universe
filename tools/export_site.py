@@ -102,7 +102,7 @@ def main() -> int:
         )
 
     (site / "index.html").write_text(
-        site_mod.shell("Copper Vale", "",
+        site_mod.shell(site_mod.SITE_NAME, "",
                        site_mod.render_index(entities, images, ""), index_json,
                        tips=True),
         encoding="utf-8",

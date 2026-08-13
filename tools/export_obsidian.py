@@ -160,10 +160,10 @@ def render_index(entities: list[Entity], titles: dict[str, str]) -> str:
         "kind: index",
         "---",
         "",
-        "# Copper Vale",
+        "# The Buried Star",
         "",
-        "*A low-lying landscape where scattered civilization clings to "
-        "dwindling natural resources.*",
+        "*The DM's campaign, set in Copper Vale: a low-lying landscape where "
+        "scattered civilization clings to dwindling natural resources.*",
         "",
         f"{len(entities)} pages. Generated from the campaign archive; see "
         "`content/` for the source of truth.",

@@ -145,7 +145,7 @@ from the bare name and the CLI warns you.
 ## The MCP server
 
 `mcp_server.py` exposes the world to Claude, so everyone at the table can read
-and write Copper Vale from their own client instead of routing everything
+and write The Buried Star from their own client instead of routing everything
 through one person.
 
 Eight tools: `search_world`, `get_page`, `list_pages`, `world_overview`,
@@ -162,7 +162,7 @@ Then point a client at it. For Claude Code, in `.claude/settings.json`:
 ```json
 {
   "mcpServers": {
-    "copper-vale": {
+    "buried-star": {
       "command": "C:\\Claude\\dnd-universe\\.venv\\Scripts\\python.exe",
       "args": ["C:\\Claude\\dnd-universe\\mcp_server.py"]
     }
@@ -360,6 +360,28 @@ next export. Write through `content/`, the CLI, or the MCP server. It only
 deletes files it created itself (tracked in `.export-manifest.json`), so
 anything you add to the vault by hand survives.
 
+## The Discord inbox
+
+`dnd-scribe` pulls the campaign's Discord channels into `lore/` on a schedule.
+The wiki reads that archive and shows, at `/wiki/inbox`, everything that no
+page accounts for yet.
+
+A message stops being new when a page cites it (`discord:<channel>:<id>` in
+`sources`), when someone presses **Not lore**, or when it predates the
+watermark set the first time a channel is seen. That last rule is what keeps
+four years of backlog from landing in the queue on day one; to review a channel
+from the start anyway, set its watermark to `0` in `.inbox.json`.
+
+Nothing is written to the wiki automatically, and that is the point. Discord is
+four years of argument, jokes and half-ideas; the wiki is what the table
+decided was true. Only a person can tell those apart, so the inbox hands them
+the raw messages and a **Write it up** button that opens the new-page form with
+the text already in it. Claude can work the same queue through `whats_new` and
+`mark_filed`.
+
+Point `lore_dir` in `config.yaml` somewhere else if the two projects aren't
+side by side.
+
 ## Everyday commands
 
 ```bash
@@ -389,6 +411,8 @@ nothing points at, which is how a shared wiki quietly rots.
 | `universe/style.py` | Entity to image prompt. House style, framing, stable seeds. |
 | `universe/assets.py` | Content-addressed art store and provenance sidecars. |
 | `universe/art.py` | Local SDXL generation. |
+| `universe/webapp.py` | The live wiki: sign-in, editing, art, inbox. |
+| `universe/inbox.py` | What's been said in Discord that no page accounts for. |
 | `universe/worldmap/azgaar.py` | Azgaar export to entities. |
 | `cli.py` | All commands. |
 | `content/` | Your world. This is the real deliverable. |
