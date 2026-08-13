@@ -561,6 +561,12 @@ def main(argv: list[str]) -> int:
         help="Serve the wiki live at /wiki with accounts, so each person signs "
              "in and sees their own secrets. Replaces --wiki.",
     )
+    ap.add_argument(
+        "--require-invite", action="store_true",
+        help="Require a one-time invite code to register. Without this, "
+             "registration is open and people pick their own name from the "
+             "roster, which trusts anyone with the link to be honest.",
+    )
     ap.add_argument("--wiki-password",
                     default=os.environ.get("UNIVERSE_WIKI_PASSWORD", ""),
                     help="Password for /wiki via HTTP Basic. Omit to leave it open.")
@@ -634,11 +640,14 @@ def main(argv: list[str]) -> int:
 
             secret_path.write_text(pysecrets.token_urlsafe(32), encoding="utf-8")
         session_secret = secret_path.read_text(encoding="utf-8").strip()
-        live_routes = webapp.build(cfg, library, registry, accounts)
-        open_invites = len(accounts.open_invites())
+        live_routes = webapp.build(cfg, library, registry, accounts,
+                                   require_invite=args.require_invite)
+        unclaimed = len(set(registry.members) - accounts.claimed_keys)
+        gate = (f"invite required, {len(accounts.open_invites())} unused code(s)"
+                if args.require_invite
+                else f"OPEN registration, {unclaimed} name(s) unclaimed")
         print(
-            f"[mcp] wiki: live, {len(accounts.emails)} account(s), "
-            f"{open_invites} unused invite(s)",
+            f"[mcp] wiki: live, {len(accounts.emails)} account(s), {gate}",
             file=sys.stderr,
         )
 

@@ -66,15 +66,22 @@ lib.save(Entity(
 
 registry = people_mod.load(sandbox)
 accounts = accounts_mod.load(sandbox)
-app = Starlette(
-    routes=webapp.build(cfg, lib, registry, accounts),
-    middleware=[Middleware(SessionMiddleware, secret_key="test-secret",
-                           session_cookie="cv")],
-)
 
 
-def client() -> TestClient:
-    return TestClient(app, follow_redirects=False)
+def make_app(require_invite: bool) -> Starlette:
+    return Starlette(
+        routes=webapp.build(cfg, lib, registry, accounts,
+                            require_invite=require_invite),
+        middleware=[Middleware(SessionMiddleware, secret_key="test-secret",
+                               session_cookie="cv")],
+    )
+
+
+app = make_app(require_invite=True)
+
+
+def client(target: Starlette | None = None) -> TestClient:
+    return TestClient(target or app, follow_redirects=False)
 
 
 print("\n== signed out ==")
@@ -190,6 +197,38 @@ print("\n== sign out ==")
 r = wren.get("/wiki/logout")
 check("logout redirects", r.status_code == 303)
 check("session cleared", wren.get("/wiki/").status_code == 303)
+
+print("\n== open registration ==")
+open_app = make_app(require_invite=False)
+o = client(open_app)
+form = o.get("/wiki/register").text
+check("offers a person picker", "<select" in form and 'name="who"' in form)
+check("no invite field", 'name="code"' not in form)
+check("claimed people are not offered", ">Wren" not in form and ">The DM" not in form,
+      "already registered above")
+check("unclaimed people are offered", "Tobias Goreguts" in form)
+
+r = o.post("/wiki/register", data={"email": "tobias@example.com",
+                                   "password": "hunter2hunter", "who": "tobias"})
+check("registers by picking a name", r.status_code == 303, str(r.status_code))
+check("bound to the chosen person",
+      accounts.key_for("tobias@example.com") == "tobias")
+
+r2 = client(open_app).post("/wiki/register", data={
+    "email": "imposter@example.com", "password": "hunter2hunter", "who": "tobias"})
+check("a name cannot be claimed twice", "already registered" in r2.text)
+r3 = client(open_app).post("/wiki/register", data={
+    "email": "nobody@example.com", "password": "hunter2hunter", "who": "gandalf"})
+check("an unknown name is refused", "Pick who you are" in r3.text)
+r4 = client(open_app).post("/wiki/register", data={
+    "email": "blank@example.com", "password": "hunter2hunter", "who": ""})
+check("no name selected is refused", "Pick who you are" in r4.text)
+
+print("\n== what Tobias Goreguts sees, registered openly ==")
+goobs_page = o.get("/wiki/character/wren.html")
+check("public text shown", SHARED in goobs_page.text)
+check("wren's secret hidden", NICK_ONLY not in goobs_page.text)
+check("dm secret hidden", DM_ONLY not in goobs_page.text)
 
 shutil.rmtree(sandbox, ignore_errors=True)
 

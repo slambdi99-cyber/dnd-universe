@@ -109,9 +109,26 @@ class Accounts:
 
     # -- registration and sign-in --------------------------------------
 
+    @property
+    def claimed_keys(self) -> set[str]:
+        return {record["key"] for record in self._data["users"].values()}
+
     def register(
-        self, email: str, password: str, code: str
+        self,
+        email: str,
+        password: str,
+        *,
+        code: str = "",
+        key: str = "",
+        known_keys: set[str] | None = None,
     ) -> tuple[Account | None, str]:
+        """Create an account.
+
+        Two ways in. With `code`, a one-time invite decides who the account is.
+        With `key`, the person picks themselves from the roster: open
+        registration, which trusts whoever has the link to be honest about
+        which of your friends they are.
+        """
         email = normalise(email)
         if not EMAIL.match(email):
             return None, "That doesn't look like an email address."
@@ -120,19 +137,32 @@ class Accounts:
         if email in self._data["users"]:
             return None, "There's already an account with that email. Sign in instead."
 
-        key = self.invite_key(code.strip())
-        if key is None:
-            return None, "That invite code isn't valid, or has already been used."
+        if code:
+            resolved = self.invite_key(code.strip())
+            if resolved is None:
+                return None, "That invite code isn't valid, or has already been used."
+        else:
+            resolved = (key or "").strip().lower()
+            if not resolved or (known_keys is not None and resolved not in known_keys):
+                return None, "Pick who you are from the list."
+            # Catches a mis-click immediately rather than leaving two accounts
+            # claiming to be the same person.
+            if resolved in self.claimed_keys:
+                return None, (
+                    "Someone has already registered as that person. If it's you, "
+                    "sign in instead. If you picked the wrong name, ask your DM."
+                )
 
         salt = secrets.token_bytes(16)
         self._data["users"][email] = {
-            "key": key,
+            "key": resolved,
             "salt": salt.hex(),
             "hash": self._hash(password, salt),
         }
-        self._data["invites"][code.strip()]["used_by"] = email
+        if code:
+            self._data["invites"][code.strip()]["used_by"] = email
         self.save()
-        return Account(email=email, key=key), ""
+        return Account(email=email, key=resolved), ""
 
     def authenticate(self, email: str, password: str) -> Account | None:
         record = self._data["users"].get(normalise(email))

@@ -1,4 +1,4 @@
-"""Rendering for the wiki, shared by the static export and the live server.
+﻿"""Rendering for the wiki, shared by the static export and the live server.
 
 One implementation, two callers. `tools/export_site.py` renders with an empty
 viewer, which strips every secret, and produces files. `mcp_server.py` renders
@@ -98,7 +98,7 @@ th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid var(--
 form.auth { max-width: 22rem; }
 form.auth label { display: block; margin: .9rem 0 .2rem; font-size: .85rem;
   color: var(--muted); }
-form.auth input { width: 100%; padding: .5rem .6rem; border: 1px solid var(--line);
+form.auth input, form.auth select { width: 100%; padding: .5rem .6rem; border: 1px solid var(--line);
   border-radius: 4px; background: var(--panel); color: var(--ink); font: inherit; }
 form.auth button { margin-top: 1.2rem; padding: .55rem 1.2rem; border: 0;
   border-radius: 4px; background: var(--accent); color: #fff; font: inherit;
@@ -147,10 +147,12 @@ def shell(title: str, base: str, body: str, index_json: str,
         f'<a href="{base}{kind}/index.html">{label}</a>'
         for kind, label in KIND_LABEL.items()
     )
-    full = title if title == "Copper Vale" else f"{title} — Copper Vale"
+    # ASCII separators on purpose: these strings get rewritten by tooling now
+    # and then, and a stray encoding round-trip turns punctuation into mojibake.
+    full = title if title == "Copper Vale" else f"{title} - Copper Vale"
     if live:
         account = (
-            f'<span class="who">{html.escape(user)} · '
+            f'<span class="who">{html.escape(user)} &middot; '
             f'<a href="{base}logout">sign out</a></span>'
             if user else f'<span class="who"><a href="{base}login">sign in</a></span>'
         )
@@ -204,7 +206,7 @@ def render_body(entity: Entity, library: Library, images: dict[str, str],
         elif viewer & segment.audience:
             who = ", ".join(sorted(segment.audience))
             parts.append(
-                f'<div class="secret"><span class="who">secret · {html.escape(who)}'
+                f'<div class="secret"><span class="who">secret &middot; {html.escape(who)}'
                 f"</span>{_markdown(segment.text)}</div>"
             )
 
@@ -333,3 +335,4 @@ def visible_to(entities: list[Entity], viewer: frozenset[str]) -> list[Entity]:
         if viewer & {str(a).strip().lower() for a in allowed}:
             out.append(entity)
     return out
+

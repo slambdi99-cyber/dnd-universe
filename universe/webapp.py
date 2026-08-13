@@ -33,8 +33,15 @@ def _auth_page(title: str, base: str, inner: str) -> HTMLResponse:
 
 
 def build(cfg, library: Library, registry: people_mod.People,
-          accounts: accounts_mod.Accounts) -> list[Route]:
-    """Routes for /wiki. Everything requires a signed-in account."""
+          accounts: accounts_mod.Accounts,
+          require_invite: bool = False) -> list[Route]:
+    """Routes for /wiki. Everything requires a signed-in account.
+
+    With `require_invite`, registration needs a one-time code that decides who
+    the new account is. Without it, registration is open and people pick
+    themselves from the roster, which trusts anyone holding the link to be
+    honest about which of your friends they are.
+    """
 
     def viewer_for(request) -> tuple[frozenset[str], str | None]:
         email = request.session.get("user")
@@ -90,15 +97,30 @@ def build(cfg, library: Library, registry: people_mod.People,
         request.session["user"] = account.email
         return RedirectResponse("/wiki/", status_code=303)
 
+    def roster() -> list[tuple[str, str]]:
+        """People still available to claim, for the picker."""
+        taken = accounts.claimed_keys
+        return [
+            (p.key, f"{p.name}" + (f" ({p.character})" if p.character
+                                   else " (DM)" if p.is_dm else ""))
+            for p in registry.members.values()
+            if p.key not in taken
+        ]
+
     async def register(request):
         if request.method == "GET":
-            return _auth_page("Create an account", "/wiki/", _register_form())
+            return _auth_page(
+                "Create an account", "/wiki/",
+                _register_form(require_invite=require_invite, roster=roster()),
+            )
 
         form = await request.form()
         account, error = accounts.register(
             str(form.get("email", "")),
             str(form.get("password", "")),
-            str(form.get("code", "")),
+            code=str(form.get("code", "")) if require_invite else "",
+            key=str(form.get("who", "")),
+            known_keys=set(registry.members),
         )
         if account is None:
             return _auth_page(
@@ -107,6 +129,9 @@ def build(cfg, library: Library, registry: people_mod.People,
                     error=error,
                     email=str(form.get("email", "")),
                     code=str(form.get("code", "")),
+                    who=str(form.get("who", "")),
+                    require_invite=require_invite,
+                    roster=roster(),
                 ),
             )
         request.session["user"] = account.email
@@ -229,16 +254,47 @@ invite code your DM gave you.</p>
 """
 
 
-def _register_form(error: str = "", email: str = "", code: str = "") -> str:
+def _register_form(error: str = "", email: str = "", code: str = "",
+                   who: str = "", require_invite: bool = False,
+                   roster: list[tuple[str, str]] | None = None) -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""
+    roster = roster or []
+
+    if require_invite:
+        intro = ("You'll need the invite code your DM gave you. It decides "
+                 "whose secrets you can read, so use your own.")
+        identity = (
+            '  <label for="c">Invite code</label>\n'
+            f'  <input id="c" name="code" value="{html.escape(code)}" autofocus required>'
+        )
+    elif not roster:
+        return f"""
+<h1>Create an account</h1>
+{err}
+<p class="summary">Everyone on the roster already has an account.</p>
+<p class="hint"><a href="/wiki/login">Sign in</a>, or ask your DM if you think
+this is wrong.</p>
+"""
+    else:
+        intro = ("Pick your name so the wiki knows whose secrets to show you. "
+                 "Choose your own; the world looks different for everyone.")
+        options = "".join(
+            f'<option value="{html.escape(key)}"'
+            f'{" selected" if key == who else ""}>{html.escape(label)}</option>'
+            for key, label in roster
+        )
+        identity = (
+            '  <label for="w">Who are you?</label>\n'
+            f'  <select id="w" name="who" autofocus required>\n'
+            f'    <option value="">Choose your name...</option>\n{options}\n  </select>'
+        )
+
     return f"""
 <h1>Create an account</h1>
-<p class="summary">You'll need the invite code your DM gave you. It decides
-whose secrets you can read, so use your own.</p>
+<p class="summary">{intro}</p>
 {err}
 <form class="auth" method="post" action="/wiki/register">
-  <label for="c">Invite code</label>
-  <input id="c" name="code" value="{html.escape(code)}" autofocus required>
+{identity}
   <label for="e">Email</label>
   <input id="e" name="email" type="email" value="{html.escape(email)}"
          autocomplete="email" required>
