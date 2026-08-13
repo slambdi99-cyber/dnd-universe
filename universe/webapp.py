@@ -21,11 +21,13 @@ from starlette.responses import (FileResponse, HTMLResponse,
 from starlette.routing import Route
 
 from . import inbox as inbox_mod
+from . import schema as schema_mod
+from . import uploads as uploads_mod
 from . import people as people_mod
 from . import secrets as secrets_mod
 from . import site as site_mod
 from . import tooltips as tooltips_mod
-from .entities import KINDS, Entity, Library, slugify
+from .entities import Entity, Library, slugify
 
 PUBLIC: frozenset[str] = frozenset()
 
@@ -36,7 +38,8 @@ def _auth_page(title: str, base: str, inner: str) -> HTMLResponse:
     )
 
 
-def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
+def build(cfg, library: Library, registry: people_mod.People,
+          schema: schema_mod.Schema | None = None) -> list[Route]:
     """Routes for /wiki. Everything but the guide needs someone signed in.
 
     Signing in only establishes which secrets to render; it keeps nobody out.
@@ -47,11 +50,31 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
     # someone actually asks for a picture.
     _art = None
 
+    schema = schema or schema_mod.load(Path(cfg.root))
+    site_mod.use(schema)
+
     lore_dir = cfg.raw.get("lore_dir")
     inbox = inbox_mod.Inbox(
         Path(cfg.root),
         (Path(cfg.root) / lore_dir).resolve() if lore_dir else None,
     )
+
+    def snapshot(what: str, who: str) -> None:
+        """Commit before reshaping anything, so it can be undone.
+
+        Same reasoning as the MCP tools: a rename touches every file in
+        content/, and without a commit first there is no before to return to.
+        """
+        import subprocess
+
+        try:
+            subprocess.run(["git", "add", "-A"], cwd=cfg.root, check=False,
+                           capture_output=True, timeout=30)
+            subprocess.run(
+                ["git", "commit", "-q", "-m", f"before: {what} ({who})"],
+                cwd=cfg.root, check=False, capture_output=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            pass
 
     def nav_extra(user: str | None) -> str:
         """The writing actions, on every page rather than just the front one.
@@ -71,6 +94,7 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         return (
             '<a class="act" href="/wiki/new">+ New</a>'
             f'<a class="act" href="/wiki/inbox">Inbox{badge}</a>'
+            '<a class="act" href="/wiki/structure">Structure</a>'
         )
 
     def render(title: str, body: str, index_json: str = "[]", *,
@@ -203,7 +227,7 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         entities, _ = entities_for(viewer)
         images = images_for(entities)
         return render(
-            site_mod.SITE_NAME,
+            schema.name,
             site_mod.render_index(entities, images, "/wiki/", editable=True),
             site_mod.search_index(entities, viewer), user=user, tips=True,
         )
@@ -220,7 +244,7 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
             return HTMLResponse("Not found", status_code=404)
         images = images_for(entities)
         return render(
-            site_mod.KIND_LABEL.get(kind, kind),
+            schema.label(kind),
             site_mod.render_kind_index(kind, items, images, "/wiki/"),
             site_mod.search_index(entities, viewer), user=user, tips=True,
         )
@@ -273,12 +297,31 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         prompt = ""
         candidates: list[str] = []
         error = ""
+        message = ""
 
         if request.method == "POST":
             form = await request.form()
             action = str(form.get("action", "generate"))
 
-            if action == "pick":
+            if action == "upload":
+                # A picture someone drew, commissioned, or found beats anything
+                # the GPU produces, so uploads join the same gallery rather
+                # than living in a second-class section of their own.
+                sent = form.get("file")
+                data = await sent.read() if hasattr(sent, "read") else b""
+                upload, note = uploads_mod.save(
+                    Path(cfg.assets_dir), kind, slug, data,
+                    getattr(sent, "filename", "") or "")
+                if upload is None:
+                    error = note
+                elif not upload.is_image:
+                    error = ("That isn't an image the browser can show. Add it "
+                             "as an attachment on the page instead.")
+                else:
+                    art_service().attach(entity, upload.asset_id)
+                    return RedirectResponse(f"/wiki/{kind}/{slug}.html",
+                                            status_code=303)
+            elif action == "pick":
                 asset_id = str(form.get("asset", ""))
                 # Only accept ids belonging to this page, so a crafted form
                 # can't attach someone else's picture.
@@ -302,10 +345,91 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
                     except Exception as exc:  # GPU out of memory, model missing
                         error = f"Couldn't generate that: {exc}"
 
+        entity = library.load(kind, slug) or entity
         existing = [a for a in entity.art]
         return render(f"Art for {entity.name}",
-                      _art_form(entity, existing, candidates, prompt, error),
+                      _art_form(entity, existing, candidates, prompt, error,
+                                message),
                       user=user)
+
+    # -- attachments -----------------------------------------------------
+
+    async def files_panel(request):
+        """Files that belong to a page: maps, handouts, PDFs, recordings.
+
+        Separate from art because they're different jobs. Art is the one
+        picture at the top of the page; this is everything else the table
+        wants to keep with it.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        kind, slug = request.path_params["kind"], request.path_params["slug"]
+        _, allowed = entities_for(viewer)
+        if f"{kind}/{slug}" not in allowed:
+            return HTMLResponse("Not found", status_code=404)
+        entity = library.load(kind, slug)
+        error = message = ""
+
+        if request.method == "POST":
+            form = await request.form()
+            if str(form.get("action", "")) == "remove":
+                if uploads_mod.detach_file(entity, str(form.get("file", ""))):
+                    library.save(entity)
+                    message = "Removed from this page."
+                else:
+                    error = "That file isn't on this page."
+            else:
+                sent = form.get("file")
+                data = await sent.read() if hasattr(sent, "read") else b""
+                upload, note = uploads_mod.save(
+                    Path(cfg.files_dir), kind, slug, data,
+                    getattr(sent, "filename", "") or "")
+                if upload is None:
+                    error = note
+                else:
+                    uploads_mod.attach_file(entity, upload, user or "")
+                    library.save(entity)
+                    message = f"Added {upload.filename}."
+
+        return render(f"Files on {entity.name}",
+                      _files_form(entity, uploads_mod.attachments_of(entity),
+                                  message, error),
+                      user=user)
+
+    async def file_download(request):
+        """Serve an attachment, permission-checked against its page.
+
+        Always as a download, never inline. A file that renders in the page is
+        a file that can run scripts on the wiki's own origin, and the point of
+        this route is to hand people back what they put in, not to host it.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, _ = viewer_for(request)
+        asset_id = request.path_params["asset"]
+        parts = asset_id.split("/")
+        if len(parts) != 3:
+            return HTMLResponse("Not found", status_code=404)
+        _, allowed = entities_for(viewer)
+        if f"{parts[0]}/{parts[1]}" not in allowed:
+            return HTMLResponse("Not found", status_code=404)
+
+        path = uploads_mod.locate(Path(cfg.files_dir), asset_id)
+        if path is None:
+            return HTMLResponse("Not found", status_code=404)
+
+        entity = library.load(parts[0], parts[1])
+        name = next((f.get("name") for f in uploads_mod.attachments_of(entity)
+                     if f.get("id") == asset_id), path.name) if entity else path.name
+        return FileResponse(
+            path,
+            media_type=uploads_mod.media_type_for(path),
+            filename=name,
+            headers={"X-Content-Type-Options": "nosniff"},
+        )
 
     async def tooltips_js(request):
         """The tooltip index, as a script so browsers cache it across pages.
@@ -395,6 +519,70 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         return render("Connect Claude",
                       _connect_page(person.name, f"{base}/mcp", token),
                       user=person.name)
+
+    # -- structure -------------------------------------------------------
+
+    async def structure_page(request):
+        """Edit the shape of the wiki: kinds, front page, name.
+
+        Open to everyone signed in, same as the MCP tools. The person who runs
+        this decided the table shares the shape of the world as well as its
+        contents, so there is no DM tier here.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        _, user = viewer_for(request)
+        schema.reload_if_changed()
+        message = error = ""
+
+        if request.method == "POST":
+            form = await request.form()
+            action = str(form.get("action", ""))
+            snapshot(f"{action or 'structure change'} from the site", user or "")
+
+            if action == "add_kind":
+                ok, note = schema_mod.add_kind(
+                    schema, str(form.get("key", "")), str(form.get("label", "")),
+                    nav=bool(form.get("in_nav")))
+            elif action == "rename_kind":
+                ok, note = schema_mod.rename_kind(
+                    schema, str(form.get("key", "")),
+                    str(form.get("rename_to", "")), library,
+                    label=str(form.get("label", "")))
+            elif action == "update_kind":
+                ok, note = schema_mod.update_kind(
+                    schema, str(form.get("key", "")),
+                    label=str(form.get("label", "")) or None,
+                    nav=bool(form.get("in_nav")))
+            elif action == "remove_kind":
+                ok, note = schema_mod.remove_kind(
+                    schema, str(form.get("key", "")), library,
+                    str(form.get("move_pages_to", "")))
+            elif action == "set_site":
+                ok, note = schema_mod.set_site(
+                    schema, str(form.get("name", "")), str(form.get("tagline", "")))
+            elif action == "set_home":
+                try:
+                    import yaml
+
+                    parsed = yaml.safe_load(str(form.get("home", ""))) or []
+                    if not isinstance(parsed, list):
+                        raise ValueError("expected a list of sections")
+                    ok, note = schema_mod.set_home(schema, parsed)
+                except (ValueError, TypeError) as exc:
+                    ok, note = False, f"That didn't parse: {exc}"
+                except Exception as exc:  # yaml.YAMLError and friends
+                    ok, note = False, f"That isn't valid YAML: {exc}"
+            else:
+                ok, note = False, "Unknown action."
+
+            message, error = (note, "") if ok else ("", note)
+
+        counts = {k: sum(1 for _ in library.all(k)) for k in schema.keys}
+        return render("Structure",
+                      _structure_page(schema, counts, message, error),
+                      user=user)
 
     # -- the Discord inbox ----------------------------------------------
 
@@ -523,7 +711,7 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
             values = form_values(None, viewer)
             for field in ("name", "summary", "body", "kind", "source"):
                 supplied = request.query_params.get(field, "").strip()
-                if supplied and (field != "kind" or supplied in KINDS):
+                if supplied and (field != "kind" or schema.has(supplied)):
                     values[field] = supplied
             return render("New page",
                           _edit_form(values, registry, withheld=0,
@@ -533,7 +721,7 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         form = await request.form()
         name = str(form.get("name", "")).strip()
         kind = str(form.get("kind", "")).strip()
-        if not name or kind not in KINDS:
+        if not name or not schema.has(kind):
             return render(
                 "New page",
                 _edit_form({**form_values(None, viewer), "name": name,
@@ -583,14 +771,108 @@ def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
         Route("/wiki/", index),
         Route("/wiki/index.html", index),
         Route("/wiki/tooltips.js", tooltips_js),
+        Route("/wiki/structure", structure_page, methods=["GET", "POST"]),
         Route("/wiki/inbox", inbox_page, methods=["GET", "POST"]),
         Route("/wiki/inbox/att/{channel}/{filename}", inbox_attachment),
         Route("/wiki/{kind}/{slug}/art", art_panel, methods=["GET", "POST"]),
+        Route("/wiki/{kind}/{slug}/files", files_panel, methods=["GET", "POST"]),
+        Route("/wiki/file/{asset:path}", file_download),
         Route("/wiki/art/id/{asset:path}.png", art_by_id),
         Route("/wiki/art/{filename}", art),
         Route("/wiki/{kind}/index.html", kind_index),
         Route("/wiki/{kind}/{slug}.html", page),
     ]
+
+
+def _structure_page(schema, counts: dict[str, int], message: str,
+                    error: str) -> str:
+    import yaml
+
+    note = f'<div class="notice">{html.escape(message)}</div>' if message else ""
+    err = f'<div class="error">{html.escape(error)}</div>' if error else ""
+
+    rows = []
+    for kind in schema.kinds:
+        n = counts.get(kind.key, 0)
+        others = "".join(
+            f'<option value="{html.escape(k.key)}">{html.escape(k.label)}</option>'
+            for k in schema.kinds if k.key != kind.key
+        )
+        removal = (
+            f'<form method="post" class="inline">'
+            f'<input type="hidden" name="action" value="remove_kind">'
+            f'<input type="hidden" name="key" value="{html.escape(kind.key)}">'
+            + (f'<select name="move_pages_to"><option value="">move '
+               f'{n} page(s) to...</option>{others}</select>' if n else "")
+            + f'<button type="submit">Remove</button></form>'
+        )
+        rows.append(f"""
+<div class="kindrow">
+  <form method="post" class="inline">
+    <input type="hidden" name="action" value="update_kind">
+    <input type="hidden" name="key" value="{html.escape(kind.key)}">
+    <code>{html.escape(kind.key)}</code>
+    <input name="label" value="{html.escape(kind.label)}" size="14">
+    <label class="cb"><input type="checkbox" name="in_nav"
+      {"checked" if kind.nav else ""}> in nav</label>
+    <button type="submit">Save</button>
+  </form>
+  <form method="post" class="inline">
+    <input type="hidden" name="action" value="rename_kind">
+    <input type="hidden" name="key" value="{html.escape(kind.key)}">
+    <input name="rename_to" placeholder="rename to" size="12">
+    <button type="submit">Rename</button>
+  </form>
+  {removal}
+  <span class="hint">{n} page{"s" if n != 1 else ""}</span>
+</div>""")
+
+    home_yaml = yaml.safe_dump([s.as_dict() for s in schema.home],
+                               sort_keys=False, allow_unicode=True)
+
+    return f"""
+<h1>Structure</h1>
+<p class="summary">What kinds of thing this world is made of, and how the front
+page is arranged. Anyone can change this.</p>
+{note}{err}
+<div class="notice">Every change here commits to git first, so anything that
+goes wrong can be undone. Renaming a kind moves its pages and repoints every
+link to them.</div>
+
+<h2>Kinds</h2>
+{"".join(rows)}
+
+<h3>Add a kind</h3>
+<form method="post" class="inline">
+  <input type="hidden" name="action" value="add_kind">
+  <input name="key" placeholder="ship" size="10" required>
+  <input name="label" placeholder="Ships" size="12">
+  <label class="cb"><input type="checkbox" name="in_nav" checked> in nav</label>
+  <button type="submit">Add</button>
+</form>
+<p class="hint">The key is lowercase and singular; it becomes the folder and the
+URL. The label is what people see.</p>
+
+<h2>The front page</h2>
+<p class="hint">One block of cards per section, in this order. A section needs a
+<code>kind</code>; <code>tag</code>, <code>any_tag</code> and <code>data</code>
+narrow it. Empty sections are skipped.</p>
+<form method="post" class="auth wide">
+  <input type="hidden" name="action" value="set_home">
+  <textarea name="home" rows="14">{html.escape(home_yaml)}</textarea>
+  <button type="submit">Save the front page</button>
+</form>
+
+<h2>Name</h2>
+<form method="post" class="auth wide">
+  <input type="hidden" name="action" value="set_site">
+  <label for="sn">Title</label>
+  <input id="sn" name="name" value="{html.escape(schema.name)}">
+  <label for="tl">Tagline <span class="hint">the line under it</span></label>
+  <input id="tl" name="tagline" value="{html.escape(schema.tagline)}">
+  <button type="submit">Save</button>
+</form>
+"""
 
 
 def _inbox_page(messages, total: int, channels: list[str],
@@ -678,8 +960,10 @@ def _edit_form(v: dict, registry: people_mod.People, withheld: int,
     title = "New page" if creating else f"Editing {v['name']}"
 
     kinds = "".join(
-        f'<option value="{k}"{" selected" if k == v["kind"] else ""}>{k}</option>'
-        for k in KINDS
+        f'<option value="{html.escape(k.key)}"'
+        f'{" selected" if k.key == v["kind"] else ""}>'
+        f'{html.escape(k.label)}</option>'
+        for k in site_mod.SCHEMA.kinds
     )
     kind_field = (
         f'  <label for="k">Type</label>\n  <select id="k" name="kind">{kinds}</select>'
@@ -757,6 +1041,19 @@ def _edit_form(v: dict, registry: people_mod.People, withheld: int,
 
 
 def _connect_page(name: str, url: str, token: str) -> str:
+    """Connection details for any MCP client, not one vendor's.
+
+    MCP is an open protocol with a lot of implementations, and the table
+    shouldn't all have to run the same assistant to use the wiki. So the page
+    leads with the three facts every client needs (endpoint, transport, header)
+    and treats the per-client recipes as convenience rather than the way in.
+    """
+    facts = (
+        f"Name:      buried-star\n"
+        f"Transport: HTTP (streamable HTTP, not SSE, not stdio)\n"
+        f"URL:       {url}\n"
+        f"Header:    Authorization: Bearer {token}"
+    )
     config = (
         '{\n'
         '  "mcpServers": {\n'
@@ -771,19 +1068,26 @@ def _connect_page(name: str, url: str, token: str) -> str:
         '}'
     )
     prompt = (
-        "Please set up an MCP server for me.\n\n"
+        "Please connect me to an MCP server.\n\n"
         f"  Name:      buried-star\n"
         f"  Transport: HTTP (streamable HTTP, not SSE, not stdio)\n"
         f"  URL:       {url}\n"
         f"  Auth:      an Authorization header with the value\n"
         f"             Bearer {token}\n\n"
-        "Work out how to add it for whichever Claude client you're running in, "
-        "do it if you can, and tell me if there's a step I have to take myself. "
-        "Then verify by calling whoami: it should come back with my name."
+        "Work out how MCP servers are added in whichever client you're running "
+        "in, do it if you can, and tell me if there's a step I have to take "
+        "myself. Then verify by calling whoami: it should come back with my name."
     )
     cli = (
         f"claude mcp add --transport http buried-star {url} "
         f'--header "Authorization: Bearer {token}"'
+    )
+    curl = (
+        f"curl -s {url} \\\n"
+        f'  -H "Authorization: Bearer {token}" \\\n'
+        f'  -H "Content-Type: application/json" \\\n'
+        f'  -H "Accept: application/json, text/event-stream" \\\n'
+        f"  -d '{{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}}'"
     )
 
     def block(idx: int, text: str) -> str:
@@ -793,25 +1097,40 @@ def _connect_page(name: str, url: str, token: str) -> str:
         )
 
     return f"""
-<h1>Connect Claude</h1>
+<h1>Connect an assistant</h1>
 <p class="summary">Signed in as {html.escape(name)}. Everything below already
 has your own details in it.</p>
 
-<p>This lets your Claude read the world and write to it. What you can see is
-tied to you, so use your own details and don't pass them around.</p>
+<p>This wiki speaks <a href="https://modelcontextprotocol.io">MCP</a>, which is
+an open protocol rather than one company's feature. Anything that speaks it can
+read this world and write to it: Claude, ChatGPT, Cursor, VS Code, Zed, Goose,
+Cline, or something you wrote yourself. What you can see is tied to you, so use
+your own details and don't pass them around.</p>
 
-<h2>Easiest: paste this into Claude</h2>
+<h2>The details, for any client</h2>
+{block(0, facts)}
+<p class="hint">Most clients ask for exactly these three things somewhere in
+their settings, under MCP, Connectors, or Tools.</p>
+
+<h2>Easiest: paste this into whatever you use</h2>
+<p class="hint">Assistants are generally good at configuring themselves.</p>
 {block(1, prompt)}
 
-<h2>Claude Code</h2>
+<h2>Claude Code, and other CLIs that copied its syntax</h2>
 {block(2, cli)}
 
-<h2>Or edit the config file yourself</h2>
+<h2>A config file</h2>
+<p class="hint">Claude Desktop, Cursor, Windsurf, Cline, Zed and most others use
+this shape, in their own settings file. Some spell the top-level key
+<code>servers</code> or <code>mcp.servers</code>; the inside is the same.</p>
 {block(3, config)}
 
 <h2>Check it worked</h2>
-<p>Ask your Claude: <em>call whoami on buried-star</em>. It should come back
+<p>Ask your assistant: <em>call whoami on buried-star</em>. It should come back
 with your name. If it says <em>guest</em>, the header didn't take.</p>
+
+<p class="hint">Or without an assistant at all, to prove the endpoint is up:</p>
+{block(4, curl)}
 
 <p class="hint">Treat this like a password: it can write to the campaign, and
 it decides whose secrets you're shown. If it leaks, tell your DM and it can be
@@ -830,8 +1149,9 @@ function cp(id, btn) {{
 
 
 def _art_form(entity, existing: list[str], candidates: list[str],
-              prompt: str, error: str) -> str:
+              prompt: str, error: str, message: str = "") -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""
+    note = f'<div class="notice">{html.escape(message)}</div>' if message else ""
     current = existing[-1] if existing else None
 
     def gallery(ids: list[str], heading: str, note: str = "") -> str:
@@ -872,7 +1192,7 @@ def _art_form(entity, existing: list[str], candidates: list[str],
     return f"""
 <div class="kind">Art<a class="edit" href="/wiki/{entity.kind}/{entity.slug}.html">Back</a></div>
 <h1>{html.escape(entity.name)}</h1>
-{err}
+{err}{note}
 <form class="auth wide" method="post" action="/wiki/{entity.kind}/{entity.slug}/art">
   <label for="p">Describe the picture
     <span class="hint">Physical and concrete works best: what you'd see,
@@ -883,7 +1203,65 @@ def _art_form(entity, existing: list[str], candidates: list[str],
 </form>
 <div class="slow">This runs on the GPU at home and takes roughly a minute for
 three pictures. Leave the tab open.</div>
+
+<h2>Or upload one</h2>
+<p class="hint">A picture you drew, commissioned or found. It goes straight on
+the page and joins the gallery below. PNG, JPEG, GIF or WEBP, up to 25MB.</p>
+<form class="auth wide" method="post" enctype="multipart/form-data"
+      action="/wiki/{entity.kind}/{entity.slug}/art">
+  <input type="hidden" name="action" value="upload">
+  <input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" required>
+  <button type="submit">Upload</button>
+</form>
 {picker}
+"""
+
+
+def _files_form(entity, files: list[dict], message: str, error: str) -> str:
+    err = f'<div class="error">{html.escape(error)}</div>' if error else ""
+    note = f'<div class="notice">{html.escape(message)}</div>' if message else ""
+
+    rows = []
+    for f in files:
+        size = f.get("size", 0)
+        readable = (f"{size / 1024 / 1024:.1f}MB" if size > 1024 * 1024
+                    else f"{max(1, size // 1024)}KB")
+        by = f" &middot; added by {html.escape(str(f['by']))}" if f.get("by") else ""
+        preview = (f'<img src="/wiki/file/{html.escape(f["id"])}" alt="" loading="lazy">'
+                   if str(f.get("type", "")).startswith("image/") else "")
+        rows.append(f"""
+<div class="filerow">
+  {preview}
+  <div class="what">
+    <a href="/wiki/file/{html.escape(f["id"])}">{html.escape(f.get("name", "file"))}</a>
+    <span class="hint">{html.escape(str(f.get("type", "")))} &middot; {readable}{by}</span>
+  </div>
+  <form method="post" class="inline">
+    <input type="hidden" name="action" value="remove">
+    <input type="hidden" name="file" value="{html.escape(f["id"])}">
+    <button type="submit">Remove</button>
+  </form>
+</div>""")
+
+    listing = ("".join(rows) if rows else
+               '<p class="hint">Nothing attached yet.</p>')
+
+    return f"""
+<div class="kind">Files<a class="edit" href="/wiki/{entity.kind}/{entity.slug}.html">Back</a></div>
+<h1>{html.escape(entity.name)}</h1>
+{err}{note}
+<p class="summary">Maps, handouts, PDFs, recordings: anything the table wants
+kept with this page.</p>
+{listing}
+
+<h2>Add a file</h2>
+<form class="auth wide" method="post" enctype="multipart/form-data">
+  <input type="file" name="file" required>
+  <button type="submit">Upload</button>
+</form>
+<p class="hint">Images, PDF, ZIP, MP3, OGG and MP4, up to 25MB. Not SVG: it can
+carry scripts, and it would run as part of this site. Removing a file takes it
+off the page but doesn't delete it, in case another page uses the same one.</p>
 """
 
 

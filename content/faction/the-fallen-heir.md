@@ -1,7 +1,7 @@
 ---
-name: For the Fallen Heir
+name: The Dissenters
 kind: faction
-summary: A rebellion against Laurelthel's current royalty.
+summary: A rebellion against Lorithal's current royalty.
 appearance: rebel banner, torn white cloth, a broken crown device
 tags:
 - faction
@@ -11,6 +11,9 @@ links:
 - place/laurelthel
 sources:
 - session-log:the-buried-star-tobias-log.txt
+- edited by The DM on the wiki
+- dm:dm:2026-08-13
+- updated by The DM
 art:
 - faction/the-fallen-heir/default-4510eec7
 ---

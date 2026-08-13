@@ -36,3 +36,7 @@ data/srd.json
 
 # Which Discord messages have been dealt with. Local state, like a cursor.
 .inbox.json
+
+# Uploaded attachments. NOT ignored: a scanned map or a handout cannot be
+# regenerated from anything, unlike assets/.
+# files/

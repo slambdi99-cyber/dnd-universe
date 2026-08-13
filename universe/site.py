@@ -16,25 +16,26 @@ import markdown as md
 
 from . import secrets as secrets_mod
 from . import tooltips as tooltips_mod
+from pathlib import Path
+
+from . import schema as schema_mod
 from .entities import Entity, Library
 
-KIND_LABEL = {
-    "place": "Places",
-    "character": "Characters",
-    "faction": "Factions",
-    "item": "Items",
-    "deity": "Deities",
-    "creature": "Creatures",
-    "event": "Events",
-    "session": "Sessions",
-    "lore": "Lore",
-}
+# The kinds of thing that exist, the front page layout and the site's name all
+# come from config.yaml now, so the table can change them without editing code.
+# Set once at startup by `use()`; until then a default schema stands in, which
+# is what the seed scripts and tests get.
+SCHEMA = schema_mod.load(Path(__file__).resolve().parent.parent)
 
-# The campaign's name, which is not the region's name. Kept in one place
-# because the two used to be the same string, and the front page rendered as
-# "Copper Vale - Copper Vale" while the region page of the same name sat one
-# click away.
-SITE_NAME = "The Buried Star"
+
+def use(schema: schema_mod.Schema) -> None:
+    """Point rendering at a particular schema (the server's, or a test's)."""
+    global SCHEMA
+    SCHEMA = schema
+
+
+def label_for(kind: str) -> str:
+    return SCHEMA.label(kind)
 
 CSS = """
 :root {
@@ -184,6 +185,29 @@ details.newperson summary { cursor: pointer; color: var(--accent);
 .artgrid figure.current button { color: var(--muted); cursor: default; }
 .slow { border-left: 3px solid var(--accent); background: var(--accent-soft);
   padding: .6rem 1rem; margin: 1rem 0; font-size: .9rem; border-radius: 0 4px 4px 0; }
+/* Uploaded files */
+ul.filelist { list-style: none; padding: 0; }
+ul.filelist li { padding: .35rem 0; border-bottom: 1px solid var(--line); }
+.filerow { display: flex; gap: .8rem; align-items: center; padding: .6rem .8rem;
+  border: 1px solid var(--line); border-radius: 6px; background: var(--panel);
+  margin: .5rem 0; }
+.filerow img { width: 3.5rem; height: 3.5rem; object-fit: cover; border-radius: 4px; }
+.filerow .what { flex: 1; display: flex; flex-direction: column; }
+input[type=file] { font: inherit; font-size: .9rem; padding: .4rem 0; }
+/* Structure editor */
+.kindrow { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center;
+  padding: .5rem .7rem; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--panel); margin: .4rem 0; }
+.kindrow code { background: var(--accent-soft); padding: .1rem .4rem;
+  border-radius: 3px; font-size: .85rem; }
+form.inline { display: inline-flex; gap: .4rem; align-items: center; margin: 0; }
+form.inline input, form.inline select { padding: .25rem .4rem; font: inherit;
+  font-size: .85rem; border: 1px solid var(--line); border-radius: 4px;
+  background: var(--bg); color: var(--ink); width: auto; }
+form.inline button { border: 1px solid var(--line); border-radius: 4px;
+  padding: .25rem .7rem; background: var(--bg); color: var(--ink); font: inherit;
+  font-size: .85rem; cursor: pointer; }
+form.inline button:hover { background: var(--accent-soft); }
 /* Discord inbox */
 .tabs { display: flex; gap: .8rem; flex-wrap: wrap; font-size: .85rem;
   border-bottom: 1px solid var(--line); padding-bottom: .5rem; margin: 1rem 0; }
@@ -268,17 +292,18 @@ def shell(title: str, base: str, body: str, index_json: str,
     # The live server routes /wiki/guide; a static export has to be a real file
     # with an .html extension, or the browser downloads it instead of showing it.
     guide_href = f"{base}guide" if live else f"{base}guide.html"
+    SCHEMA.reload_if_changed()
     nav = "".join(
-        f'<a href="{base}{kind}/index.html">{label}</a>'
-        for kind, label in KIND_LABEL.items()
+        f'<a href="{base}{k.key}/index.html">{html.escape(k.label)}</a>'
+        for k in SCHEMA.nav
     ) + f'<a href="{guide_href}">Guide</a>'
     # ASCII separators on purpose: these strings get rewritten by tooling now
     # and then, and a stray encoding round-trip turns punctuation into mojibake.
-    full = title if title == SITE_NAME else f"{title} - {SITE_NAME}"
+    full = title if title == SCHEMA.name else f"{title} - {SCHEMA.name}"
     if live:
         account = (
             f'<span class="who">{html.escape(user)} &middot; '
-            f'<a href="{base}connect">connect Claude</a> &middot; '
+            f'<a href="{base}connect">connect an assistant</a> &middot; '
             f'<a href="{base}logout">sign out</a></span>'
             if user else f'<span class="who"><a href="{base}login">sign in</a></span>'
         )
@@ -292,7 +317,7 @@ def shell(title: str, base: str, body: str, index_json: str,
 <style>{CSS}{tooltips_mod.TOOLTIP_CSS if tips else ""}</style>
 </head><body>
 <header class="top">
-  <a class="home" href="{base}index.html">{SITE_NAME}</a>
+  <a class="home" href="{base}index.html">{html.escape(SCHEMA.name)}</a>
   <nav>{nav}{extra}</nav>
   {account}
   <input id="q" type="search" placeholder="Search the world..." autocomplete="off">
@@ -330,10 +355,11 @@ def render_body(entity: Entity, library: Library, images: dict[str, str],
     edit_link = (
         f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/edit">Edit</a>'
         f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/art">Art</a>'
+        f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/files">Files</a>'
         if editable else ""
     )
     parts = [
-        f'<div class="kind">{html.escape(KIND_LABEL.get(entity.kind, entity.kind))}'
+        f'<div class="kind">{html.escape(SCHEMA.label(entity.kind))}'
         f"{edit_link}</div>",
         f"<h1>{html.escape(entity.name)}</h1>",
     ]
@@ -371,6 +397,25 @@ def render_body(entity: Entity, library: Library, images: dict[str, str],
         if items:
             parts.append(f"<h2>{heading}</h2>")
             parts.append(f'<ul class="links">{"".join(items)}</ul>')
+
+    # Attachments, before the cross-links: a handout or a battle map is part of
+    # the page, where Related is navigation away from it. Only shown live; the
+    # static export has no route that can check who may download them.
+    files = [f for f in (entity.data.get("files") or [])
+             if isinstance(f, dict) and f.get("id")]
+    if files and editable:
+        rows = []
+        for f in files:
+            size = int(f.get("size", 0) or 0)
+            readable = (f"{size / 1024 / 1024:.1f}MB" if size > 1024 * 1024
+                        else f"{max(1, size // 1024)}KB")
+            rows.append(
+                f'<li><a href="{base}file/{html.escape(str(f["id"]))}">'
+                f'{html.escape(str(f.get("name", "file")))}</a> '
+                f'<span class="hint">{readable}</span></li>'
+            )
+        parts.append("<h2>Files</h2>")
+        parts.append(f'<ul class="filelist">{"".join(rows)}</ul>')
 
     link_list(entity.links, "Related")
     link_list(
@@ -441,37 +486,34 @@ def _cards(items: list[Entity], images: dict[str, str], base: str) -> str:
 
 def render_index(entities: list[Entity], images: dict[str, str], base: str,
                  editable: bool = False) -> str:
-    by_kind: dict[str, list[Entity]] = defaultdict(list)
-    for e in entities:
-        by_kind[e.kind].append(e)
+    """The front page, assembled from the sections in config.yaml.
 
+    Each section is a heading and a filter. An empty one is skipped rather than
+    rendered as a bare heading, so a section for a kind nobody has written yet
+    costs nothing to leave configured.
+    """
+    SCHEMA.reload_if_changed()
     parts = [
         f'<a class="newpage" href="{base}new">+ New page</a>' if editable else "",
-        f"<h1>{SITE_NAME}</h1>",
-        '<p class="summary">The DM\'s campaign, set in Copper Vale: a low-lying '
-        "landscape where scattered civilization clings to dwindling natural "
-        "resources.</p>",
+        f"<h1>{html.escape(SCHEMA.name)}</h1>",
+        f'<p class="summary">{html.escape(SCHEMA.tagline)}</p>'
+        if SCHEMA.tagline else "",
     ]
-    places = [e for e in by_kind.get("place", [])
-              if e.data.get("map_type") in {"region", "settlement"}]
-    if places:
-        parts += ["<h2>Where</h2>", _cards(places, images, base)]
-    pcs = [e for e in by_kind.get("character", []) if "player-character" in e.tags]
-    if pcs:
-        parts += ["<h2>The Party</h2>", _cards(pcs, images, base)]
-    gone = [e for e in by_kind.get("character", [])
-            if "former-party-member" in e.tags or "deceased" in e.tags]
-    if gone:
-        parts += ["<h2>Gone</h2>", _cards(gone, images, base)]
-    if by_kind.get("faction"):
-        parts += ["<h2>Factions</h2>", _cards(by_kind["faction"], images, base)]
+    for section in SCHEMA.home:
+        matched = [e for e in entities if section.matches(e)]
+        if not matched:
+            continue
+        if section.title:
+            parts.append(f"<h2>{html.escape(section.title)}</h2>")
+        parts.append(_cards(matched, images, base))
+
     parts.append(f'<p class="meta">{len(entities)} pages.</p>')
     return "\n".join(parts)
 
 
 def render_kind_index(kind: str, items: list[Entity], images: dict[str, str],
                       base: str) -> str:
-    label = KIND_LABEL.get(kind, kind.capitalize())
+    label = SCHEMA.label(kind)
     return (f"<h1>{label}</h1><p class=\"summary\">{len(items)} pages.</p>"
             + _cards(items, images, base))
 
@@ -482,7 +524,7 @@ def search_index(entities: list[Entity], viewer: frozenset[str]) -> str:
         [
             {
                 "n": e.name,
-                "k": KIND_LABEL.get(e.kind, e.kind).rstrip("s"),
+                "k": SCHEMA.label(e.kind).rstrip("s"),
                 "s": e.summary[:120],
                 "u": page_url(e.ref),
                 "h": " ".join(

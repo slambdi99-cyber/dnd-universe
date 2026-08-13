@@ -1,7 +1,9 @@
 ﻿"""MCP server over The Buried Star campaign wiki.
 
-Lets everyone at the table point their own Claude at the world and read or
-write it directly, instead of everything routing through one person.
+Lets everyone at the table point their own AI assistant at the world and read
+or write it directly, instead of everything routing through one person. MCP is
+an open protocol, so which assistant is up to them: Claude, ChatGPT, Cursor,
+Zed, or anything else that speaks it.
 
 ## Secrets
 
@@ -54,8 +56,10 @@ from mcp.server.mcpserver import Context, MCPServer  # noqa: E402
 from universe import config as config_mod  # noqa: E402
 from universe import inbox as inbox_mod  # noqa: E402
 from universe import people as people_mod  # noqa: E402
+from universe import schema as schema_mod  # noqa: E402
+from universe import uploads as uploads_mod  # noqa: E402
 from universe import secrets as secrets_mod  # noqa: E402
-from universe.entities import KINDS, Entity, Library, slugify  # noqa: E402
+from universe.entities import Entity, Library, slugify  # noqa: E402
 
 GUEST = frozenset({"guest"})
 
@@ -100,7 +104,10 @@ def build_server(
     read_only: bool,
     default_identity: frozenset[str],
     default_name: str,
+    schema: schema_mod.Schema | None = None,
 ) -> MCPServer:
+    schema = schema or schema_mod.load(Path(cfg.root))
+
     server = MCPServer(
         name="buried-star",
         title="The Buried Star",
@@ -228,7 +235,7 @@ def build_server(
     def search_world(
         ctx: Context,
         query: Annotated[str, "Words to look for, e.g. 'vampire' or 'Brindlewood'"],
-        kind: Annotated[str | None, f"Limit to one of: {', '.join(KINDS)}"] = None,
+        kind: Annotated[str | None, "Limit to one kind. See get_structure."] = None,
         limit: Annotated[int, "Maximum results"] = 10,
     ) -> dict:
         ids, _ = viewer(ctx)
@@ -259,7 +266,7 @@ def build_server(
     @server.tool(description="List pages, optionally filtered by kind and tag.")
     def list_pages(
         ctx: Context,
-        kind: Annotated[str | None, f"One of: {', '.join(KINDS)}"] = None,
+        kind: Annotated[str | None, "One kind. See get_structure."] = None,
         tag: Annotated[str | None, "Only pages carrying this tag"] = None,
         limit: Annotated[int, "Maximum results"] = 100,
     ) -> dict:
@@ -325,6 +332,227 @@ def build_server(
     if read_only:
         return server
 
+    # -- structure -----------------------------------------------------
+    #
+    # Everyone connected can reshape the world, not just the DM. That was a
+    # deliberate call by the person who runs this: the table shares the
+    # campaign, so it shares the shape of it. The safety net is git rather than
+    # permissions, so every structural change snapshots first and anything
+    # regrettable is one `git revert` away.
+
+    def snapshot(what: str, who: str) -> None:
+        """Commit the current state before reshaping anything.
+
+        A rename touches every file in content/. Without a commit first there
+        is no before to go back to, and "I renamed a kind and now the wiki
+        looks wrong" becomes unrecoverable rather than annoying.
+        """
+        import subprocess
+
+        try:
+            subprocess.run(["git", "add", "-A"], cwd=cfg.root, check=False,
+                           capture_output=True, timeout=30)
+            subprocess.run(
+                ["git", "commit", "-q", "-m", f"before: {what} ({who})"],
+                cwd=cfg.root, check=False, capture_output=True, timeout=30,
+            )
+        except (OSError, subprocess.SubprocessError):
+            # No git, or no repo. The change still goes ahead; the person asked
+            # for it, and refusing to work without version control would be a
+            # strange place to draw a line.
+            pass
+
+    @server.tool(
+        description="The shape of the world: what kinds of page exist, how the "
+        "front page is laid out, and what the site is called. Read this before "
+        "changing any of it."
+    )
+    def get_structure(ctx: Context) -> dict:
+        schema.reload_if_changed()
+        counts = {k: sum(1 for _ in library.all(k)) for k in schema.keys}
+        stray = sorted(
+            d.name for d in Path(library.root).iterdir()
+            if d.is_dir() and not schema.has(d.name)
+        ) if Path(library.root).exists() else []
+        return {
+            "site": {"name": schema.name, "tagline": schema.tagline},
+            "kinds": [{**k.as_dict(), "pages": counts.get(k.key, 0)}
+                      for k in schema.kinds],
+            "home_sections": [s.as_dict() for s in schema.home],
+            "folders_with_no_kind": stray,
+            "note": "Anyone connected can change all of this. Changes are "
+                    "committed to git first, so they can be undone.",
+        }
+
+    @server.tool(
+        description="Add a kind of page, e.g. 'ship' or 'quest'. Use this when "
+        "the campaign has a category of thing the wiki has no home for."
+    )
+    def add_kind(
+        ctx: Context,
+        key: Annotated[str, "Lowercase, singular, e.g. 'ship'"],
+        label: Annotated[str, "Plural, as shown in the nav, e.g. 'Ships'"] = "",
+        in_nav: Annotated[bool, "Show it in the top nav bar"] = True,
+    ) -> dict:
+        if read_only:
+            return {"error": "This connection is read-only."}
+        _, who = viewer(ctx)
+        schema.reload_if_changed()
+        ok, message = schema_mod.add_kind(schema, key, label, nav=in_nav)
+        return {"ok": ok, "message": message, "kinds": list(schema.keys)} if ok \
+            else {"error": message}
+
+    @server.tool(
+        description="Rename a kind, or change its label, nav visibility or "
+        "position. Renaming moves every page and repoints every link."
+    )
+    def change_kind(
+        ctx: Context,
+        key: Annotated[str, "The kind to change"],
+        rename_to: Annotated[str, "New key. Moves all its pages."] = "",
+        label: Annotated[str, "New label for the nav"] = "",
+        in_nav: Annotated[bool | None, "Show or hide it in the nav"] = None,
+        position: Annotated[int | None, "0-based position in the nav"] = None,
+    ) -> dict:
+        if read_only:
+            return {"error": "This connection is read-only."}
+        _, who = viewer(ctx)
+        schema.reload_if_changed()
+
+        if rename_to.strip():
+            snapshot(f"rename kind {key} to {rename_to}", who)
+            ok, message = schema_mod.rename_kind(schema, key, rename_to,
+                                                 library, label=label)
+            if not ok:
+                return {"error": message}
+            if in_nav is not None or position is not None:
+                schema_mod.update_kind(schema, rename_to, nav=in_nav,
+                                       position=position)
+            return {"ok": True, "message": message, "kinds": list(schema.keys)}
+
+        ok, message = schema_mod.update_kind(
+            schema, key, label=label or None, nav=in_nav, position=position)
+        return {"ok": ok, "message": message} if ok else {"error": message}
+
+    @server.tool(
+        description="Remove a kind. Its pages have to go somewhere, so pass "
+        "move_pages_to unless it's empty."
+    )
+    def remove_kind(
+        ctx: Context,
+        key: Annotated[str, "The kind to remove"],
+        move_pages_to: Annotated[str, "Kind to move its pages into"] = "",
+    ) -> dict:
+        if read_only:
+            return {"error": "This connection is read-only."}
+        _, who = viewer(ctx)
+        schema.reload_if_changed()
+        snapshot(f"remove kind {key}", who)
+        ok, message = schema_mod.remove_kind(schema, key, library, move_pages_to)
+        return {"ok": ok, "message": message, "kinds": list(schema.keys)} if ok \
+            else {"error": message}
+
+    @server.tool(
+        description="Move one page to a different kind, keeping its links."
+    )
+    def move_page(
+        ctx: Context,
+        ref: Annotated[str, "The page, as kind/slug"],
+        to_kind: Annotated[str, "The kind to move it to"],
+    ) -> dict:
+        if read_only:
+            return {"error": "This connection is read-only."}
+        ids, _ = viewer(ctx)
+        schema.reload_if_changed()
+        entity = find(ref, ids)
+        if entity is None:
+            return {"error": f"Nothing found for {ref!r}."}
+        ok, message = schema_mod.move_page(library, entity.ref, to_kind, schema)
+        return {"ok": ok, "message": message} if ok else {"error": message}
+
+    @server.tool(
+        description="Rename the site, or change the line under the title on "
+        "the front page."
+    )
+    def set_site(
+        ctx: Context,
+        name: Annotated[str, "What the wiki is called"] = "",
+        tagline: Annotated[str, "One line under the title"] = "",
+    ) -> dict:
+        if read_only:
+            return {"error": "This connection is read-only."}
+        schema.reload_if_changed()
+        ok, message = schema_mod.set_site(schema, name, tagline)
+        return {"ok": ok, "message": message} if ok else {"error": message}
+
+    @server.tool(
+        description="Rebuild the front page. Each section is a heading over a "
+        "filtered set of pages: {title, kind, tag?, any_tag?, data?}. Call "
+        "get_structure first and send back a modified list; this replaces all "
+        "of them."
+    )
+    def set_home_sections(
+        ctx: Context,
+        sections: Annotated[
+            list[dict],
+            "In display order, e.g. [{'title':'The Party','kind':'character',"
+            "'tag':'player-character'}]",
+        ],
+    ) -> dict:
+        if read_only:
+            return {"error": "This connection is read-only."}
+        _, who = viewer(ctx)
+        schema.reload_if_changed()
+        snapshot("rebuild the front page", who)
+        ok, message = schema_mod.set_home(schema, sections)
+        return {"ok": ok, "message": message,
+                "home_sections": [s.as_dict() for s in schema.home]} if ok \
+            else {"error": message}
+
+    # -- files ---------------------------------------------------------
+
+    @server.tool(
+        description="List the files attached to a page: maps, handouts, PDFs, "
+        "recordings. Returns download URLs."
+    )
+    def list_files(
+        ctx: Context,
+        ref: Annotated[str, "Name, slug, or kind/slug"],
+    ) -> dict:
+        ids, _ = viewer(ctx)
+        entity = find(ref, ids)
+        if entity is None:
+            return {"error": f"Nothing found for {ref!r}."}
+        files = uploads_mod.attachments_of(entity)
+        return {
+            "page": entity.ref,
+            "files": [
+                {**f, "url": f"/wiki/file/{f['id']}"} for f in files
+            ],
+            "note": "Uploading is done on the website: open the page and click "
+                    "Files. Assistants can read and remove them from here.",
+        }
+
+    @server.tool(
+        description="Take a file off a page. The file itself is kept, in case "
+        "another page uses it."
+    )
+    def remove_file(
+        ctx: Context,
+        ref: Annotated[str, "Name, slug, or kind/slug"],
+        file_id: Annotated[str, "The file's id, from list_files"],
+    ) -> dict:
+        if read_only:
+            return {"error": "This connection is read-only."}
+        ids, _ = viewer(ctx)
+        entity = find(ref, ids)
+        if entity is None:
+            return {"error": f"Nothing found for {ref!r}."}
+        if not uploads_mod.detach_file(entity, file_id.strip()):
+            return {"error": f"{file_id} isn't attached to {entity.ref}."}
+        library.save(entity)
+        return {"ok": True, "message": f"Removed from {entity.ref}."}
+
     # -- the Discord inbox ---------------------------------------------
 
     lore_dir = cfg.raw.get("lore_dir")
@@ -388,7 +616,7 @@ def build_server(
     )
     def create_page(
         ctx: Context,
-        kind: Annotated[str, f"One of: {', '.join(KINDS)}"],
+        kind: Annotated[str, "A kind from get_structure, e.g. 'place'"],
         name: Annotated[str, "Display name, e.g. 'Sister Lethra'"],
         summary: Annotated[str, "One sentence on what this is"] = "",
         appearance: Annotated[
@@ -409,8 +637,10 @@ def build_server(
         ] = None,
     ) -> dict:
         ids, who = viewer(ctx)
-        if kind not in KINDS:
-            return {"error": f"kind must be one of: {', '.join(KINDS)}"}
+        schema.reload_if_changed()
+        if not schema.has(kind):
+            return {"error": f"kind must be one of: {', '.join(schema.keys)}. "
+                             f"Add one with add_kind if the world needs it."}
         slug = slugify(name)
         if library.exists(kind, slug):
             return {"error": f"{kind}/{slug} already exists. Use update_page instead."}
@@ -651,8 +881,11 @@ def main(argv: list[str]) -> int:
             return 1
         default_identity, default_name = person.identities, person.name
 
+    # One schema object shared by the tools and the wiki, so a kind added
+    # through Claude appears in the site's nav without a restart.
+    schema = schema_mod.load(cfg.root)
     server = build_server(cfg, library, registry, args.read_only,
-                          default_identity, default_name)
+                          default_identity, default_name, schema=schema)
     count = sum(1 for _ in library.all())
     mode = "read-only" if args.read_only else "read/write"
     secret_pages = sum(
@@ -693,7 +926,7 @@ def main(argv: list[str]) -> int:
 
             secret_path.write_text(pysecrets.token_urlsafe(32), encoding="utf-8")
         session_secret = secret_path.read_text(encoding="utf-8").strip()
-        live_routes = webapp.build(cfg, library, registry)
+        live_routes = webapp.build(cfg, library, registry, schema=schema)
         print(
             f"[mcp] wiki: live, {len(registry.members)} name(s) to pick from, "
             "no password",

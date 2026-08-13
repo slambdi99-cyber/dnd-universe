@@ -1,0 +1,47 @@
+# The shape of this wiki: what kinds of thing exist, how the front page is
+# arranged, and what the site is called.
+#
+# Rewritten by software whenever someone changes the structure through Claude
+# or the Structure page, so don't put comments below this line: they won't
+# survive. Hand-edit it freely otherwise; the site picks changes up without a
+# restart.
+site:
+  name: The Buried Star
+  tagline: 'The DM''s campaign, set in Copper Vale: a low-lying landscape where scattered
+    civilization clings to dwindling natural resources.'
+kinds:
+- key: place
+  label: Places
+- key: character
+  label: Characters
+- key: faction
+  label: Factions
+- key: item
+  label: Items
+- key: deity
+  label: Deities
+- key: creature
+  label: Creatures
+- key: event
+  label: Events
+- key: session
+  label: Sessions
+- key: lore
+  label: Lore
+home:
+- title: Where
+  kind: place
+  data:
+    map_type:
+    - region
+    - settlement
+- title: The Party
+  kind: character
+  tag: player-character
+- title: Gone
+  kind: character
+  any_tag:
+  - former-party-member
+  - deceased
+- title: Factions
+  kind: faction

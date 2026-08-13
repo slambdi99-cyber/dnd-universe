@@ -25,6 +25,16 @@ class Config:
         return self.root / str(self.raw.get("assets_dir", "assets"))
 
     @property
+    def files_dir(self) -> Path:
+        """Uploaded attachments. Separate from assets/, which is regenerable.
+
+        Art can be redrawn from the content and the config; a map someone
+        scanned cannot. Keeping them apart means `assets/` stays safe to delete
+        and stays out of git, while this doesn't.
+        """
+        return self.root / str(self.raw.get("files_dir", "files"))
+
+    @property
     def art(self) -> dict[str, Any]:
         return self.raw.get("art", {})
 

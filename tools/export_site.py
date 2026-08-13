@@ -95,14 +95,14 @@ def main() -> int:
     for kind, items in by_kind.items():
         (site / kind / "index.html").write_text(
             site_mod.shell(
-                site_mod.KIND_LABEL.get(kind, kind), "../",
+                site_mod.SCHEMA.label(kind), "../",
                 site_mod.render_kind_index(kind, items, images, "../"), index_json,
             ),
             encoding="utf-8",
         )
 
     (site / "index.html").write_text(
-        site_mod.shell(site_mod.SITE_NAME, "",
+        site_mod.shell(site_mod.SCHEMA.name, "",
                        site_mod.render_index(entities, images, ""), index_json,
                        tips=True),
         encoding="utf-8",
@@ -122,7 +122,7 @@ def main() -> int:
     size = sum(f.stat().st_size for f in site.rglob("*") if f.is_file()) / 1024 / 1024
     print(f"Exported {len(entities)} pages to {site}  ({size:.0f} MB)")
     for kind, n in sorted(counts.items()):
-        print(f"  {n:>3}  {site_mod.KIND_LABEL.get(kind, kind)}")
+        print(f"  {n:>3}  {site_mod.SCHEMA.label(kind)}")
     print(f"  {len(images):>3}  images")
     if restricted:
         print(f"  {len(restricted):>3}  restricted page(s) excluded")

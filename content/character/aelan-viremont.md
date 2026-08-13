@@ -1,7 +1,7 @@
 ---
 name: Aelan Viremont
 kind: character
-summary: Human illusionist wizard. Joined the party on the road to Laurelthel in August
+summary: Human illusionist wizard. Joined the party on the road to Lorithal in August
   2026.
 appearance: human wizard, travelling robes over practical clothes, hooded cloak, spellbook
   at the hip, faint shimmer of illusion at the fingertips
@@ -17,6 +17,8 @@ sources:
 - discord:Party-Chat-voice
 - session-log:the-buried-star-tobias-log.txt
 - dndbeyond:campaign/6916676
+- dm:dm:2026-08-13
+- updated by The DM
 art:
 - character/aelan-viremont/default-f654d93a
 - character/aelan-viremont/default-9d3422dd

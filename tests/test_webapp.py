@@ -305,6 +305,95 @@ check("refuses traversal",
 check("attachments need a login",
       client().get("/wiki/inbox/att/lore-drop/9-map.png").status_code == 303)
 
+print("\n== uploading a picture ==")
+PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 64
+SVG = b'<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>'
+r = wren.post("/wiki/character/wren/art",
+              data={"action": "upload"},
+              files={"file": ("mine.png", PNG, "image/png")})
+check("uploaded art lands on the page", r.status_code == 303, str(r.status_code))
+after = lib.load("character", "wren")
+check("recorded as current", after.art[-1].startswith("character/wren/upload-"),
+      str(after.art[-1]))
+check("and it serves",
+      wren.get(f"/wiki/art/id/{after.art[-1]}.png").status_code == 200)
+bad = wren.post("/wiki/character/wren/art", data={"action": "upload"},
+                files={"file": ("evil.png", SVG, "image/svg+xml")})
+# Apostrophes come back HTML-escaped, so match on text that has none.
+check("an SVG named .png is refused",
+      "accepted" in bad.text and "SVG" in bad.text,
+      "the bytes decide, not the name")
+
+print("\n== files on a page ==")
+panel = wren.get("/wiki/character/wren/files")
+check("panel renders", panel.status_code == 200)
+check("says nothing is attached yet", "Nothing attached yet" in panel.text)
+r = wren.post("/wiki/character/wren/files",
+              files={"file": ("map.pdf", b"%PDF-1.7\n" + b"\x00" * 40,
+                              "application/pdf")})
+check("upload accepted", "Added map.pdf" in r.text)
+check("listed on the page",
+      "map.pdf" in wren.get("/wiki/character/wren.html").text)
+entity = lib.load("character", "wren")
+file_id = entity.data["files"][0]["id"]
+got = wren.get(f"/wiki/file/{file_id}")
+check("downloads", got.status_code == 200)
+check("as an attachment, never inline",
+      "attachment" in got.headers.get("content-disposition", ""),
+      got.headers.get("content-disposition", ""))
+check("with the right type", got.headers["content-type"].startswith("application/pdf"))
+check("and nosniff", got.headers.get("x-content-type-options") == "nosniff")
+check("a viewer who can't see the page can't have the file",
+      tobias.get(f"/wiki/file/{file_id}").status_code in (200, 404),
+      "wren is public, so this is only a smoke test")
+check("signed out cannot download",
+      client().get(f"/wiki/file/{file_id}").status_code == 303)
+check("traversal refused",
+      wren.get("/wiki/file/../../people.yaml").status_code in (404, 400, 303))
+
+# The real permission check: a file on a page only The DM can see.
+sam_entity = lib.load("lore", "dm-notes")
+sam_entity.data["files"] = [{"id": "lore/dm-notes/upload-deadbeef",
+                             "name": "plot.pdf", "type": "application/pdf",
+                             "size": 10}]
+lib.save(sam_entity)
+check("wren cannot fetch a restricted page's file",
+      wren.get("/wiki/file/lore/dm-notes/upload-deadbeef").status_code == 404)
+
+r = wren.post("/wiki/character/wren/files",
+              data={"action": "remove", "file": file_id})
+check("removing works", "Removed from this page" in r.text)
+check("gone from the page",
+      "map.pdf" not in wren.get("/wiki/character/wren.html").text)
+
+print("\n== structure ==")
+s = wren.get("/wiki/structure")
+check("renders", s.status_code == 200)
+check("lists the kinds", "character" in s.text and "Places" in s.text)
+check("in the nav", "/wiki/structure" in wren.get("/wiki/").text)
+check("signed out cannot open it",
+      client().get("/wiki/structure").status_code == 303)
+r = wren.post("/wiki/structure", data={"action": "add_kind", "key": "ship",
+                                       "label": "Ships", "in_nav": "on"})
+check("a player can add a kind", "Added ship" in r.text,
+      "no DM tier: anyone connected can reshape the world")
+check("it appears in the nav", ">Ships<" in wren.get("/wiki/").text)
+check("and in the new-page form", ">Ships<" in wren.get("/wiki/new").text)
+r = wren.post("/wiki/structure", data={"action": "add_kind", "key": "ship"})
+check("duplicates refused", "already exists" in r.text)
+r = wren.post("/wiki/structure", data={"action": "remove_kind", "key": "ship"})
+check("and removed again", "Removed ship" in r.text)
+r = wren.post("/wiki/structure", data={"action": "set_site",
+                                       "name": "Test Title", "tagline": "A line."})
+check("the site can be renamed", "Test Title" in r.text)
+check("the header changes", "Test Title" in wren.get("/wiki/").text)
+wren.post("/wiki/structure", data={"action": "set_site", "name": "The Buried Star"})
+r = wren.post("/wiki/structure", data={"action": "set_home",
+                                       "home": "not: valid: yaml: at: all"})
+check("bad YAML is reported, not raised",
+      "valid YAML" in r.text or "parse" in r.text,
+      "a broken paste must not 500 the page")
+
 print("\n== the guide ==")
 g = client().get("/wiki/guide")
 check("readable signed out", g.status_code == 200)

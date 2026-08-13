@@ -7,7 +7,8 @@ our Discord, The DM's wiki pages, Tobias Goreguts' session notes and the D&D Bey
 There are two ways in. You probably want both.
 
 - **The website** for reading. Works on your phone.
-- **Your own Claude** for asking questions and writing things down.
+- **Your own AI assistant** for asking questions and writing things down.
+  Claude, ChatGPT, Cursor, whatever you already use.
 
 ---
 
@@ -45,7 +46,7 @@ Root Covenant** for what we're up against, or your own character.
 
 ### Adding and changing things
 
-You don't need Claude for this. Every page has an **Edit** button in the top
+You don't need an assistant for this. Every page has an **Edit** button in the top
 right, and **+ New** sits in the nav bar on every page, so writing something
 down never means going back to the front page first.
 
@@ -102,7 +103,7 @@ Nothing is ever added to the wiki automatically. A machine summarising four
 years of our arguments into confident wiki pages would be worse than useless,
 so a person decides every time. That person can be any of us.
 
-Your Claude can work the queue too, which is faster: *"check what's new and
+Your assistant can work the queue too, which is faster: *"check what's new and
 write up anything worth keeping."*
 
 ### Secrets
@@ -112,33 +113,41 @@ appears highlighted with a note saying who else can see it. Worth glancing at
 before you repeat something at the table.
 
 If you can't, you'll see a page that reads slightly short, and that's all. You
-won't be told what you're missing, and neither will your Claude.
+won't be told what you're missing, and neither will your assistant.
 
 Only The DM can hide things from everyone. Any of us can keep something to
 ourselves.
 
 ---
 
-## 2. Connecting your own Claude
+## 2. Connecting your assistant
 
-This is the good part. Your Claude can read the whole world, answer questions
-about it, and write new pages properly linked into everything else.
+This is the good part. It can read the whole world, answer questions about it,
+and write new pages properly linked into everything else.
+
+The wiki speaks MCP, which is an open protocol, so this isn't Claude-only:
+ChatGPT, Cursor, VS Code, Zed and most others can connect to it too. Use
+whatever you already have.
 
 You don't need to ask anyone for anything. Once you're signed in to the
-website, click **connect Claude** in the top right.
+website, click **connect an assistant** in the top right.
 
-That page has your own connection details already filled in, three ways:
+That page has your own connection details already filled in, several ways:
 
-- **A prompt to paste into Claude**, which works out your particular client and
-  sets it up for you. Easiest, and what most people should use.
-- **A one-line command** if you use Claude Code.
-- **The raw config**, if you'd rather edit the file yourself.
+- **The three facts any MCP client needs** (URL, transport, auth header), which
+  is all you need if your client has a settings box for them.
+- **A prompt to paste in**, which gets your assistant to work out its own client
+  and set itself up. Easiest, and what most people should use.
+- **A one-line command** for Claude Code and the CLIs that copied its syntax.
+- **The raw config**, which is the same shape in Claude Desktop, Cursor,
+  Windsurf, Cline and Zed.
+- **A curl command**, to prove the endpoint is up without any assistant at all.
 
 Each has a Copy button. Pick whichever suits and paste it.
 
 ### Check it worked
 
-Ask your Claude: **"call whoami on buried-star"**. It should come back with
+Ask your assistant: **"call whoami on buried-star"**. It should come back with
 your name, and how many pages you can see. If it says *guest*, the header
 didn't take: go back to the connect page and try one of the other options.
 
@@ -150,7 +159,7 @@ If it does get out, tell The DM and it can be replaced.
 
 ---
 
-## 3. Getting Claude oriented
+## 3. Getting your assistant oriented
 
 Paste this once, at the start of a conversation. It saves a lot of
 back-and-forth.
@@ -249,8 +258,8 @@ Using buried-star: add to my character's page, as a secret only The DM and I can
 read: <the thing>.
 ```
 
-Your Claude passes `secret_audience` and it's invisible to everyone else, on
-the website and through their Claude.
+Your assistant passes `secret_audience` and it's invisible to everyone else,
+on the website and through theirs.
 
 ### Fill a gap
 
@@ -274,6 +283,8 @@ that's the most useful thing you can add.
 ---
 
 ## 5. The tools, if you're curious
+
+Eleven of them, whatever client you use:
 
 | | |
 |---|---|
@@ -305,15 +316,16 @@ hour, and it only counts the channels that were imported. Ask Timothy Tuttle.
 is one graphics card. If someone else hit generate first, yours waits. Give it
 a couple of minutes before assuming it's stuck.
 
-**Claude says 401.** The header didn't copy cleanly. Go back to **connect
-Claude** on the website and use the Copy button rather than selecting by hand.
+**It says 401.** The header didn't copy cleanly. Go back to **connect
+an assistant** on the website and use the Copy button rather than selecting by
+hand.
 
-**Claude can't connect at all, or the site won't load.** The whole thing runs
-on Timothy Tuttle's PC. If it's off, the wiki and Claude both stop working. It isn't
+**It can't connect at all, or the site won't load.** The whole thing runs
+on Timothy Tuttle's PC. If it's off, the wiki and the MCP both stop working. It isn't
 broken, it's asleep. Timothy Tuttle: `powershell -ExecutionPolicy Bypass -File
 .\start.ps1` from `C:\Claude\dnd-universe`.
 
-**Claude says something that's wrong.** Tell The DM, and check the page's Sources
+**It says something that's wrong.** Tell The DM, and check the page's Sources
 line: it records where each fact came from. Some of it was reconstructed from
 Discord history and a bit of it is guesswork. It's a wiki, not scripture.
 
@@ -324,7 +336,7 @@ Discord history and a bit of it is guesswork. It's a wiki, not scripture.
 **Write things down after sessions.** Five minutes each is better than The DM
 doing all of it.
 
-**Don't overwrite people's prose.** Append. Your Claude knows to, if you don't
+**Don't overwrite people's prose.** Append. Your assistant knows to, if you don't
 push it.
 
 **Don't invent lore to fill a gap.** A page saying "we don't know" is more
