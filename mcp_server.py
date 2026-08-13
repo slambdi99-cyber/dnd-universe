@@ -319,11 +319,34 @@ def build_server(library: Library, read_only: bool) -> MCPServer:
     return server
 
 
+def _basic_ok(header: str, password: str) -> bool:
+    """Check an HTTP Basic header against the wiki password.
+
+    The username is ignored: there is one shared secret, and asking five
+    friends to remember a username as well helps nobody. Comparison is
+    constant-time.
+    """
+    import base64
+    import binascii
+    import hmac
+
+    scheme, _, encoded = header.partition(" ")
+    if scheme.lower() != "basic" or not encoded:
+        return False
+    try:
+        decoded = base64.b64decode(encoded, validate=True).decode("utf-8")
+    except (binascii.Error, UnicodeDecodeError):
+        return False
+    _, _, supplied = decoded.partition(":")
+    return hmac.compare_digest(supplied, password)
+
+
 def http_app(
     server: MCPServer,
     token: str,
     allowed_hosts: list[str],
     wiki_dir: Path | None = None,
+    wiki_password: str = "",
 ):
     """Wrap the MCP app with bearer-token auth for anything exposed publicly.
 
@@ -336,16 +359,25 @@ def http_app(
     from starlette.applications import Starlette
     from starlette.middleware import Middleware
     from starlette.middleware.base import BaseHTTPMiddleware
-    from starlette.responses import JSONResponse
+    from starlette.responses import JSONResponse, Response
     from starlette.routing import Mount
 
     class BearerAuth(BaseHTTPMiddleware):
         async def dispatch(self, request, call_next):
-            # The wiki is a read-only rendering meant to be opened from a plain
-            # link, so it sits outside the token. The MCP tools, which can
-            # rewrite the campaign, do not.
+            # The wiki is a read-only rendering opened from a shared link, so it
+            # uses HTTP Basic rather than the bearer token: browsers prompt for
+            # it, remember it, and it works on a phone. The MCP tools, which can
+            # rewrite the campaign, always require the token.
             if wiki_dir is not None and request.url.path.startswith("/wiki"):
-                return await call_next(request)
+                if not wiki_password:
+                    return await call_next(request)
+                if _basic_ok(request.headers.get("authorization", ""), wiki_password):
+                    return await call_next(request)
+                return Response(
+                    "Copper Vale is private.",
+                    status_code=401,
+                    headers={"WWW-Authenticate": 'Basic realm="Copper Vale"'},
+                )
 
             supplied = request.headers.get("authorization", "")
             expected = f"Bearer {token}"
@@ -395,6 +427,12 @@ def main(argv: list[str]) -> int:
         "--wiki",
         help="Serve a static site folder at /wiki, readable without a token. "
         "Build it with tools/export_site.py.",
+    )
+    ap.add_argument(
+        "--wiki-password",
+        default=os.environ.get("UNIVERSE_WIKI_PASSWORD", ""),
+        help="Password for /wiki via HTTP Basic. Or set UNIVERSE_WIKI_PASSWORD. "
+        "Omit to leave the wiki open to anyone with the link.",
     )
     ap.add_argument(
         "--allowed-host",
@@ -462,14 +500,19 @@ def main(argv: list[str]) -> int:
         f"[mcp] copper-vale, {count} pages, {mode}\n"
         f"[mcp] http://{args.host}:{args.port}/mcp (bearer token required)\n"
         + (
-            f"[mcp] http://{args.host}:{args.port}/wiki (open, no token)\n"
+            "[mcp] http://{}:{}/wiki ({})\n".format(
+                args.host, args.port,
+                "password protected" if args.wiki_password
+                else "OPEN - anyone with the link can read the campaign",
+            )
             if wiki_dir else ""
         )
         + f"[mcp] accepting Host: {', '.join(dict.fromkeys(hosts))}",
         file=sys.stderr,
     )
     uvicorn.run(
-        http_app(server, args.token, list(dict.fromkeys(hosts)), wiki_dir),
+        http_app(server, args.token, list(dict.fromkeys(hosts)), wiki_dir,
+                 args.wiki_password),
         host=args.host,
         port=args.port,
         log_level="warning",

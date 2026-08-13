@@ -288,12 +288,28 @@ The split is deliberate. The wiki is a read-only rendering meant to be opened
 from a shared link. The MCP tools can rewrite the campaign, so they stay behind
 the bearer token.
 
-**Understand what that means: anyone with the wiki URL can read the whole
-campaign.** The hostname is not guessable, but it isn't a secret either, and
-there's no login. That's the right trade for a group of friends and the wrong
-one if your world contains anything you'd mind a stranger reading. If you want
-it locked down, serve it on the tailnet without Funnel, or ask and I'll put a
-password on it.
+### Putting a password on it
+
+Without `--wiki-password` the wiki is readable by anyone with the link. To lock
+it:
+
+```powershell
+.\.venv\Scripts\python.exe tools\make_wiki_password.py
+```
+
+That writes a five-word passphrase to `.wiki-password` (gitignored). Words
+rather than random characters, because five people have to type it on phones,
+and a passphrase they'll use beats a stronger one they lose. Then:
+
+```powershell
+$env:UNIVERSE_WIKI_PASSWORD = (Get-Content .wiki-password -Raw).Trim()
+```
+
+and start the server as above. Browsers prompt once and remember it. The
+username is ignored; there's one shared secret.
+
+Pages and images are both covered, and the MCP token is entirely separate, so
+changing one never affects the other.
 
 Re-run `export_site.py` after changing content; the folder is rewritten each
 time.
