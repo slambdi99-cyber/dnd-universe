@@ -8,12 +8,10 @@
 #
 # Options:
 #   -Port 8787            listen somewhere else
-#   -RequireInvite        registration needs a one-time code
 #   -ReadOnly             serve without the MCP write tools
 
 param(
     [int]$Port = 8787,
-    [switch]$RequireInvite,
     [switch]$ReadOnly
 )
 
@@ -56,7 +54,6 @@ if (Test-Path $ts) {
 $args = @("mcp_server.py", "--http", "--host", "127.0.0.1", "--port", "$Port",
           "--wiki-live")
 if ($hostname) { $args += @("--allowed-host", $hostname) }
-if ($RequireInvite) { $args += "--require-invite" }
 if ($ReadOnly) { $args += "--read-only" }
 
 Write-Host ""

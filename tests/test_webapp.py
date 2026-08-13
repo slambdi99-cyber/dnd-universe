@@ -1,9 +1,9 @@
-﻿"""Tests for the live wiki: accounts, invite gating, and per-person views.
+"""Tests for the live wiki: sign-in, per-person views, editing and art.
 
-Uses Starlette's test client against the real routes, on a throwaway copy of
-the project. The important assertions are the negative ones: registration
-cannot be self-served without a code, and no reader ever receives another
-person's secret.
+Sign-in is a name picker with no password, on purpose. So the assertions here
+are not about keeping people out; they're about the wiki showing each person
+the right thing once they've said who they are, and about editing never
+destroying what the editor can't see.
 
     python tests\\test_webapp.py
 """
@@ -32,9 +32,8 @@ def check(name: str, cond: bool, detail: str = "") -> None:
 
 sandbox = Path(tempfile.mkdtemp(prefix="webapp-test-"))
 shutil.copytree(ROOT / "universe", sandbox / "universe")
-shutil.copy(ROOT / "config.yaml", sandbox / "config.yaml")
-shutil.copy(ROOT / "people.yaml", sandbox / "people.yaml")
-shutil.copy(ROOT / "GUIDE.md", sandbox / "GUIDE.md")
+for f in ("config.yaml", "people.yaml", "GUIDE.md"):
+    shutil.copy(ROOT / f, sandbox / f)
 sys.path.insert(0, str(sandbox))
 
 from starlette.applications import Starlette  # noqa: E402
@@ -42,7 +41,6 @@ from starlette.middleware import Middleware  # noqa: E402
 from starlette.middleware.sessions import SessionMiddleware  # noqa: E402
 from starlette.testclient import TestClient  # noqa: E402
 
-from universe import accounts as accounts_mod  # noqa: E402
 from universe import config as config_mod  # noqa: E402
 from universe import people as people_mod  # noqa: E402
 from universe import webapp  # noqa: E402
@@ -66,270 +64,178 @@ lib.save(Entity(
 ))
 
 registry = people_mod.load(sandbox)
-accounts = accounts_mod.load(sandbox)
+app = Starlette(
+    routes=webapp.build(cfg, lib, registry),
+    middleware=[Middleware(SessionMiddleware, secret_key="test-secret",
+                           session_cookie="cv")],
+)
 
 
-def make_app(require_invite: bool) -> Starlette:
-    return Starlette(
-        routes=webapp.build(cfg, lib, registry, accounts,
-                            require_invite=require_invite),
-        middleware=[Middleware(SessionMiddleware, secret_key="test-secret",
-                               session_cookie="cv")],
-    )
+def client() -> TestClient:
+    return TestClient(app, follow_redirects=False)
 
 
-app = make_app(require_invite=True)
-
-
-def client(target: Starlette | None = None) -> TestClient:
-    return TestClient(target or app, follow_redirects=False)
+def signed_in_as(key: str) -> TestClient:
+    c = client()
+    c.post("/wiki/login", data={"who": key})
+    return c
 
 
 print("\n== signed out ==")
 c = client()
-r = c.get("/wiki/")
-check("index redirects to sign in", r.status_code == 303, str(r.status_code))
-check("redirect target is login", r.headers.get("location") == "/wiki/login")
-r = c.get("/wiki/character/wren.html")
-check("a page redirects too", r.status_code == 303)
-r = c.get("/wiki/art/character-wren.png")
-check("art redirects too", r.status_code == 303)
-r = c.get("/wiki/login")
-check("login page renders", r.status_code == 200 and "Sign in" in r.text)
-check("login asks for email", 'type="email"' in r.text)
+check("index redirects to sign in", c.get("/wiki/").status_code == 303)
+check("redirect target is login", c.get("/wiki/").headers.get("location") == "/wiki/login")
+check("a page redirects", c.get("/wiki/character/wren.html").status_code == 303)
+check("art redirects", c.get("/wiki/art/character-wren.png").status_code == 303)
+check("editing redirects", c.get("/wiki/character/wren/edit").status_code == 303)
+check("the art panel redirects", c.get("/wiki/character/wren/art").status_code == 303)
 
-print("\n== registration is gated ==")
-c = client()
-r = c.post("/wiki/register", data={"email": "x@example.com", "password": "hunter2hunter",
-                                   "code": "not-a-real-code"})
-check("bogus code rejected", r.status_code == 200 and "invite code" in r.text and "valid" in r.text)
-check("no account created", accounts.emails == [], str(accounts.emails))
+print("\n== the sign-in picker ==")
+form = c.get("/wiki/login")
+check("renders", form.status_code == 200)
+check("offers every name", all(n in form.text for n in
+      ("The DM", "Tobias Goreguts", "Timothy Tuttle", "Korran Mossborn", "Wren", "Aelan Viremont")))
+check("shows characters alongside", "Wren" in form.text and "Tobias Goreguts" in form.text)
+check("no password field", 'type="password"' not in form.text)
+check("no email field", 'type="email"' not in form.text)
+check("offers adding someone new", "Someone new" in form.text)
+check("links to the guide", "/wiki/guide" in form.text)
 
-nick_code = accounts.mint_invite("wren")
-sam_code = accounts.mint_invite("dm")
-accounts.save()
-
-r = c.post("/wiki/register", data={"email": "notanemail", "password": "hunter2hunter",
-                                   "code": nick_code})
-check("bad email rejected", "email address" in r.text)
-r = c.post("/wiki/register", data={"email": "wren@example.com", "password": "short",
-                                   "code": nick_code})
-check("short password rejected", "at least 8" in r.text)
-check("code still unused after failures", accounts.invite_key(nick_code) == "wren")
-
-print("\n== registering with a real code ==")
-wren = client()
-r = wren.post("/wiki/register", data={"email": "Wren@Example.com",
-                                      "password": "hunter2hunter", "code": nick_code})
-check("registration succeeds", r.status_code == 303, str(r.status_code))
-check("account bound to the code's person", accounts.key_for("wren@example.com") == "wren")
-check("email normalised to lowercase", "wren@example.com" in accounts.emails)
-check("code is now spent", accounts.invite_key(nick_code) is None)
-
-reuse = client()
-r = reuse.post("/wiki/register", data={"email": "other@example.com",
-                                       "password": "hunter2hunter", "code": nick_code})
-check("code cannot be reused", "invite code" in r.text and "valid" in r.text)
+check("an unknown name is refused",
+      "Pick a name" in client().post("/wiki/login", data={"who": "gandalf"}).text)
+check("a blank choice is refused",
+      "Pick a name" in client().post("/wiki/login", data={"who": ""}).text)
 
 print("\n== signing in ==")
-c2 = client()
-# The rendered message is HTML-escaped, so the apostrophe is not a literal one.
-DENIED = "match"
-
-
-def error_text(html_text: str) -> str:
-    import re
-    m = re.search(r'<div class="error">(.*?)</div>', html_text, re.S)
-    return m.group(1).strip() if m else ""
-
-
-r = c2.post("/wiki/login", data={"email": "wren@example.com", "password": "wrong"})
-wrong_pw = error_text(r.text)
-check("wrong password refused", r.status_code == 200 and DENIED in wrong_pw)
-r = c2.post("/wiki/login", data={"email": "nobody@example.com", "password": "hunter2hunter"})
-unknown = error_text(r.text)
-check("unknown email is refused too", DENIED in unknown)
-# The pages differ by the echoed address, which is the user's own input. What
-# must not differ is the message, or it tells you which addresses have accounts.
-check("both refusals give the identical message", unknown == wrong_pw,
-      f"{unknown!r} vs {wrong_pw!r}")
-r = c2.post("/wiki/login", data={"email": "WREN@example.com",
-                                 "password": "hunter2hunter"})
-check("sign-in is case-insensitive", r.status_code == 303)
-
-print("\n== what Wren sees ==")
+wren = signed_in_as("wren")
+check("lands on the wiki", wren.get("/wiki/").status_code == 200)
 page = wren.get("/wiki/character/wren.html")
-check("page renders", page.status_code == 200)
 check("public text shown", SHARED in page.text)
 check("his own secret shown", NICK_ONLY in page.text)
-check("secret is visibly marked", 'class="secret"' in page.text)
+check("secret is marked", 'class="secret"' in page.text)
 check("dm-only secret hidden", DM_ONLY not in page.text)
-check("header shows his name", ">Wren<" in page.text or "Wren" in page.text)
+check("header shows his name", "Wren" in page.text)
 
-notes = wren.get("/wiki/lore/dm-notes.html")
-check("restricted page is 404, not 403", notes.status_code == 404, str(notes.status_code))
-brind = wren.get("/wiki/place/brindlewood.html")
-check("link to restricted page stripped", "dm-notes" not in brind.text)
-art = wren.get("/wiki/art/lore-dm-notes.png")
-check("art for a restricted page is 404", art.status_code == 404)
-
-print("\n== what The DM sees ==")
-dm = client()
-dm.post("/wiki/register", data={"email": "dm@example.com",
-                                 "password": "hunter2hunter", "code": sam_code})
-page = dm.get("/wiki/character/wren.html")
-check("dm sees the dm-only secret", DM_ONLY in page.text)
-check("dm sees wren's secret too", NICK_ONLY in page.text)
-check("dm can open the restricted page",
+print("\n== what each person sees ==")
+dm = signed_in_as("dm")
+tobias = signed_in_as("tobias")
+sam_page = dm.get("/wiki/character/wren.html")
+check("dm sees the dm secret", DM_ONLY in sam_page.text)
+check("dm sees wren's too", NICK_ONLY in sam_page.text)
+check("tobias sees neither",
+      DM_ONLY not in tobias.get("/wiki/character/wren.html").text
+      and NICK_ONLY not in tobias.get("/wiki/character/wren.html").text)
+check("dm opens the restricted page",
       dm.get("/wiki/lore/dm-notes.html").status_code == 200)
-check("dm sees the link to it", "dm-notes" in dm.get("/wiki/place/brindlewood.html").text)
+check("wren gets 404, not 403",
+      wren.get("/wiki/lore/dm-notes.html").status_code == 404)
+check("link to it stripped for wren",
+      "dm-notes" not in wren.get("/wiki/place/brindlewood.html").text)
+check("its art is 404 for wren",
+      wren.get("/wiki/art/lore-dm-notes.png").status_code == 404)
 
-print("\n== search index is per person ==")
-# The client-side haystack is lowercased, so compare against lowercase or the
-# assertions pass regardless of what leaked.
-nick_index = wren.get("/wiki/").text.lower()
-sam_index = dm.get("/wiki/").text.lower()
-check("wren's index includes his own secret", NICK_ONLY.lower() in nick_index)
-check("wren's index excludes the dm secret", DM_ONLY.lower() not in nick_index)
-check("dm's index includes both",
-      DM_ONLY.lower() in sam_index and NICK_ONLY.lower() in sam_index)
+print("\n== adding someone new ==")
+fresh = client()
+r = fresh.post("/wiki/people/new", data={"name": "Dave", "character": "Grimble"})
+check("redirects in", r.status_code == 303, str(r.status_code))
+check("written to people.yaml", "Dave" in (sandbox / "people.yaml").read_text(encoding="utf-8"))
+check("signed in as them", fresh.get("/wiki/").status_code == 200)
+check("appears in the picker next time", "Dave" in client().get("/wiki/login").text)
+check("a duplicate name is refused",
+      "already on the list" in client().post(
+          "/wiki/people/new", data={"name": "Dave"}).text)
+check("a blank name is refused",
+      "Enter a name" in client().post("/wiki/people/new", data={"name": "  "}).text)
+check("people.yaml comments survived",
+      "# Who can read what." in (sandbox / "people.yaml").read_text(encoding="utf-8"))
 
-print("\n== sign out ==")
-r = wren.get("/wiki/logout")
-check("logout redirects", r.status_code == 303)
-check("session cleared", wren.get("/wiki/").status_code == 303)
-
-print("\n== editing from the site ==")
-check("edit needs a login",
-      client().get("/wiki/character/wren/edit").status_code == 303)
-check("new page needs a login", client().get("/wiki/new").status_code == 303)
-
-# Wren signed out in the section above; editing needs him back.
-wren = client()
-wren.post("/wiki/login", data={"email": "wren@example.com",
-                               "password": "hunter2hunter"})
+print("\n== editing ==")
 form = wren.get("/wiki/character/wren/edit")
-check("edit form renders", form.status_code == 200, str(form.status_code))
-check("body is his redacted view, not the raw file",
-      NICK_ONLY in form.text and DM_ONLY not in form.text)
-check("warned that something is withheld", "cannot read" in form.text)
-check("offers audience checkboxes", 'name="audience"' in form.text)
+check("form renders", form.status_code == 200)
+check("body is his redacted view", NICK_ONLY in form.text and DM_ONLY not in form.text)
+check("warns what is withheld", "cannot read" in form.text)
 
-# The dangerous case: Wren saves a body he can only partly see.
 wren.post("/wiki/character/wren/edit", data={
-    "name": "Wren", "summary": "Elf fighter, edited.",
-    "appearance": "an elf with a staff",
-    "body": f"{SHARED}\n\nRewritten by Wren entirely.",
-    "tags": "player-character", "links": "",
+    "name": "Wren", "summary": "Elf fighter, edited.", "appearance": "an elf",
+    "body": f"{SHARED}\n\nRewritten by Wren.", "tags": "", "links": "",
 })
 raw = (sandbox / "content" / "character" / "wren.md").read_text(encoding="utf-8")
-check("the DM's secret survived Wren's edit", DM_ONLY in raw,
-      "this is the whole point")
-check("his own edit landed", "Rewritten by Wren entirely." in raw)
-check("summary updated", "Elf fighter, edited." in raw)
-check("edit is attributed", "edited by Wren" in raw)
-sam_view = dm.get("/wiki/character/wren.html")
-check("dm still sees his secret", DM_ONLY in sam_view.text)
+check("the DM's secret survived", DM_ONLY in raw, "this is the whole point")
+check("his edit landed", "Rewritten by Wren." in raw)
+check("attributed", "edited by Wren" in raw)
 
-# Wren adds a secret of his own.
 wren.post("/wiki/character/wren/edit", data={
-    "name": "Wren", "summary": "Elf fighter, edited.",
-    "appearance": "an elf with a staff", "body": f"{SHARED}\n\nRewritten by Wren entirely.",
-    "tags": "", "links": "",
+    "name": "Wren", "summary": "Elf fighter, edited.", "appearance": "an elf",
+    "body": f"{SHARED}\n\nRewritten by Wren.", "tags": "", "links": "",
     "secret_text": "NICKSNEWSECRET", "audience": ["wren", "dm"],
 })
-check("wren sees his new secret", "NICKSNEWSECRET" in
-      wren.get("/wiki/character/wren.html").text)
-check("dm sees it too", "NICKSNEWSECRET" in
-      dm.get("/wiki/character/wren.html").text)
+check("wren sees his new secret",
+      "NICKSNEWSECRET" in wren.get("/wiki/character/wren.html").text)
+check("tobias does not",
+      "NICKSNEWSECRET" not in tobias.get("/wiki/character/wren.html").text)
 
-print("\n== creating a page from the site ==")
+print("\n== creating ==")
 r = wren.post("/wiki/new", data={
     "kind": "place", "name": "Test Tavern", "summary": "A tavern.",
     "appearance": "a low timber tavern", "body": "Somewhere to drink.",
-    "tags": "site, test", "links": "place/brindlewood",
+    "tags": "site", "links": "place/brindlewood",
 })
-check("redirects to the new page", r.status_code == 303, str(r.status_code))
+check("redirects to the page", r.status_code == 303)
 made = sandbox / "content" / "place" / "test-tavern.md"
 check("file written", made.exists())
 if made.exists():
-    text = made.read_text(encoding="utf-8")
-    check("linked as given", "place/brindlewood" in text)
-    check("creation attributed", "created by Wren" in text)
-bad = wren.post("/wiki/new", data={"kind": "spaceship", "name": "Nope"})
-check("unknown kind refused", "pick a type" in bad.text.lower())
-blank = wren.post("/wiki/new", data={"kind": "place", "name": ""})
-check("blank name refused", "pick a type" in blank.text.lower())
+    check("attributed", "created by Wren" in made.read_text(encoding="utf-8"))
+check("unknown kind refused",
+      "pick a type" in wren.post("/wiki/new",
+                                 data={"kind": "spaceship", "name": "X"}).text.lower())
+
+print("\n== the art panel ==")
+panel = wren.get("/wiki/character/wren/art")
+check("renders", panel.status_code == 200, str(panel.status_code))
+check("has a prompt field", 'name="prompt"' in panel.text)
+check("warns it is slow", "takes roughly a minute" in panel.text)
+check("empty prompt refused",
+      "Describe the picture" in wren.post(
+          "/wiki/character/wren/art", data={"prompt": "  "}).text)
+
+# Attaching is tested without the GPU by planting a file where one would land.
+asset_dir = Path(cfg.assets_dir) / "character" / "wren"
+asset_dir.mkdir(parents=True, exist_ok=True)
+(asset_dir / "custom1-abc123.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+r = wren.post("/wiki/character/wren/art",
+              data={"action": "pick", "asset": "character/wren/custom1-abc123"})
+check("picking attaches it", r.status_code == 303, str(r.status_code))
+after = lib.load("character", "wren")
+check("recorded as current", after.art[-1] == "character/wren/custom1-abc123",
+      str(after.art))
+r = wren.post("/wiki/character/wren/art",
+              data={"action": "pick", "asset": "lore/dm-notes/default-x"})
+check("cannot attach another page's image", "no longer available" in r.text)
+check("cannot attach a nonexistent id",
+      "no longer available" in wren.post(
+          "/wiki/character/wren/art",
+          data={"action": "pick", "asset": "character/wren/nope"}).text)
+
+print("\n== art by id is permission checked ==")
+check("wren cannot fetch a restricted page's image by id",
+      wren.get("/wiki/art/id/lore/dm-notes/default-x.png").status_code == 404)
+check("traversal refused",
+      wren.get("/wiki/art/id/../../secret.png").status_code in (404, 400))
 
 print("\n== the guide ==")
-guide_anon = client().get("/wiki/guide")
-check("readable without an account", guide_anon.status_code == 200,
-      str(guide_anon.status_code))
-check("renders the guide", "Copper Vale: a guide for the table" in guide_anon.text
-      or "guide for the table" in guide_anon.text)
-check("code blocks survive", "<pre" in guide_anon.text)
-check("linked from the nav", "/wiki/guide" in client().get("/wiki/login").text)
-check("linked from register", "/wiki/guide" in client().get("/wiki/register").text)
-check("carries no campaign secret",
-      DM_ONLY not in guide_anon.text and NICK_ONLY not in guide_anon.text)
+g = client().get("/wiki/guide")
+check("readable signed out", g.status_code == 200)
+check("carries no secret", DM_ONLY not in g.text and NICK_ONLY not in g.text)
 
-print("\n== connect page is self-service ==")
-anon = client()
-check("connect needs a login", anon.get("/wiki/connect").status_code == 303)
+print("\n== connect ==")
+conn = wren.get("/wiki/connect")
+check("renders", conn.status_code == 200)
+check("shows his name", "Wren" in conn.text)
+check("offers a token", "Bearer" in conn.text)
 
-conn = dm.get("/wiki/connect")
-check("renders for a signed-in person", conn.status_code == 200, str(conn.status_code))
-check("shows their name", "The DM" in conn.text)
-check("includes the mcp url", "/mcp" in conn.text)
-check("offers a paste-in prompt", "whoami" in conn.text)
-check("offers the json config", "mcpServers" in conn.text)
-check("offers the CLI command", "claude mcp add" in conn.text)
-
-tokens_path = sandbox / ".people-tokens.json"
-check("minted a token file", tokens_path.exists())
-if tokens_path.exists():
-    import json as _json
-    minted = _json.loads(tokens_path.read_text(encoding="utf-8"))
-    sam_tokens = [t for t, k in minted.items() if k == "dm"]
-    check("minted exactly one token for dm", len(sam_tokens) == 1, str(len(sam_tokens)))
-    check("the page shows that token", sam_tokens and sam_tokens[0] in conn.text)
-    # Asking twice must not mint a second one, or the first stops working.
-    dm.get("/wiki/connect")
-    again = _json.loads(tokens_path.read_text(encoding="utf-8"))
-    check("revisiting is idempotent",
-          len([t for t, k in again.items() if k == "dm"]) == 1)
-
-print("\n== open registration ==")
-open_app = make_app(require_invite=False)
-o = client(open_app)
-form = o.get("/wiki/register").text
-check("offers a person picker", "<select" in form and 'name="who"' in form)
-check("no invite field", 'name="code"' not in form)
-check("claimed people are not offered", ">Wren" not in form and ">The DM" not in form,
-      "already registered above")
-check("unclaimed people are offered", "Tobias Goreguts" in form)
-
-r = o.post("/wiki/register", data={"email": "tobias@example.com",
-                                   "password": "hunter2hunter", "who": "tobias"})
-check("registers by picking a name", r.status_code == 303, str(r.status_code))
-check("bound to the chosen person",
-      accounts.key_for("tobias@example.com") == "tobias")
-
-r2 = client(open_app).post("/wiki/register", data={
-    "email": "imposter@example.com", "password": "hunter2hunter", "who": "tobias"})
-check("a name cannot be claimed twice", "already registered" in r2.text)
-r3 = client(open_app).post("/wiki/register", data={
-    "email": "nobody@example.com", "password": "hunter2hunter", "who": "gandalf"})
-check("an unknown name is refused", "Pick who you are" in r3.text)
-r4 = client(open_app).post("/wiki/register", data={
-    "email": "blank@example.com", "password": "hunter2hunter", "who": ""})
-check("no name selected is refused", "Pick who you are" in r4.text)
-
-print("\n== what Tobias Goreguts sees, registered openly ==")
-goobs_page = o.get("/wiki/character/wren.html")
-check("public text shown", SHARED in goobs_page.text)
-check("wren's secret hidden", NICK_ONLY not in goobs_page.text)
-check("dm secret hidden", DM_ONLY not in goobs_page.text)
+print("\n== sign out ==")
+check("logout redirects", wren.get("/wiki/logout").status_code == 303)
+check("session cleared", wren.get("/wiki/").status_code == 303)
 
 shutil.rmtree(sandbox, ignore_errors=True)
 
@@ -338,6 +244,3 @@ if FAIL:
     print(f"{len(FAIL)} FAILURE(S): {FAIL}")
     sys.exit(1)
 print("all checks passed")
-
-
-

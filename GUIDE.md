@@ -15,21 +15,19 @@ There are two ways in. You probably want both.
 
 **https://the-wiki.example/wiki**
 
-### Making an account
+### Signing in
 
-Click **Create one** at the bottom of the sign-in page, then:
+There's no password. Open the link and click your own name.
 
-1. **Pick your name** from the dropdown. Choose your own, honestly. It decides
-   whose secrets you're shown, and the world genuinely looks different for
-   different people.
-2. **Email and password.** Your email is only a sign-in name. Nothing is sent
-   to it, ever, and there's no confirmation email to wait for. Password needs
-   8 characters or more.
+That's the whole thing. Your name decides whose secrets you're shown, and the
+world genuinely looks different for different people, so pick yours honestly.
+Nothing stops you clicking someone else's; we're trusting each other here.
 
-You'll be signed in straight away, and stay signed in for about a month.
+You stay signed in for about a month. **Not you?** at the bottom of any page
+switches.
 
-If your name isn't in the dropdown, someone already registered as you. Try
-signing in, or tell The DM.
+If your name isn't there, click **Someone new**, type your name and your
+character's, and you're in.
 
 ### Reading it
 
@@ -69,6 +67,22 @@ your own version, so the box you're typing in doesn't contain other people's
 secret sections. They're kept exactly as they are and put back when you save,
 and the form tells you how many are being preserved. You can't accidentally
 delete something you can't see.
+
+### Making a picture for a page
+
+Every page has an **Art** button next to Edit. Type what you want to see and it
+draws three versions on the machine in The DM's office. Click the one you like and
+it becomes the page's picture.
+
+It takes roughly a minute, so leave the tab open. Nothing is attached until you
+pick one, so a prompt that comes out badly costs nothing but the wait. The
+earlier pictures for that page stay listed underneath, and you can go back to
+one at any time.
+
+Describe what you'd see, not what it is. "Weathered stone bridge over a dry
+riverbed, dusk, low mist" gets you something; "the bridge" gets you a bridge
+from nowhere in particular. Game words mean nothing to it, so say "green scaled
+turtle-folk with a domed shell" rather than "tortle".
 
 ### Secrets
 
@@ -252,11 +266,12 @@ You don't need to name them. Just ask for what you want.
 
 ## 6. When something goes wrong
 
-**"I can't sign in."** Passwords are case-sensitive, emails aren't. If you're
-sure, ask The DM to reset it.
+**"My name isn't on the sign-in page."** Click **Someone new** and add
+yourself. It takes ten seconds and nobody has to approve it.
 
-**"My name isn't in the dropdown."** Someone registered as you already. Try
-signing in instead.
+**"The art button is spinning forever."** One picture at a time, and the queue
+is one graphics card. If someone else hit generate first, yours waits. Give it
+a couple of minutes before assuming it's stuck.
 
 **Claude says 401.** The header didn't copy cleanly. Go back to **connect
 Claude** on the website and use the Copy button rather than selecting by hand.

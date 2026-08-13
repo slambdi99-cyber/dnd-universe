@@ -558,14 +558,8 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--wiki", help="Serve a static site folder at /wiki")
     ap.add_argument(
         "--wiki-live", action="store_true",
-        help="Serve the wiki live at /wiki with accounts, so each person signs "
-             "in and sees their own secrets. Replaces --wiki.",
-    )
-    ap.add_argument(
-        "--require-invite", action="store_true",
-        help="Require a one-time invite code to register. Without this, "
-             "registration is open and people pick their own name from the "
-             "roster, which trusts anyone with the link to be honest.",
+        help="Serve the wiki live at /wiki, so each person picks their name and "
+             "sees their own secrets. Replaces --wiki.",
     )
     ap.add_argument("--wiki-password",
                     default=os.environ.get("UNIVERSE_WIKI_PASSWORD", ""),
@@ -629,10 +623,8 @@ def main(argv: list[str]) -> int:
     live_routes = None
     session_secret = ""
     if args.wiki_live:
-        from universe import accounts as accounts_mod
         from universe import webapp
 
-        accounts = accounts_mod.load(cfg.root)
         # A stable secret, so sign-ins survive a restart. Generated once.
         secret_path = cfg.root / ".session-secret"
         if not secret_path.exists():
@@ -640,14 +632,10 @@ def main(argv: list[str]) -> int:
 
             secret_path.write_text(pysecrets.token_urlsafe(32), encoding="utf-8")
         session_secret = secret_path.read_text(encoding="utf-8").strip()
-        live_routes = webapp.build(cfg, library, registry, accounts,
-                                   require_invite=args.require_invite)
-        unclaimed = len(set(registry.members) - accounts.claimed_keys)
-        gate = (f"invite required, {len(accounts.open_invites())} unused code(s)"
-                if args.require_invite
-                else f"OPEN registration, {unclaimed} name(s) unclaimed")
+        live_routes = webapp.build(cfg, library, registry)
         print(
-            f"[mcp] wiki: live, {len(accounts.emails)} account(s), {gate}",
+            f"[mcp] wiki: live, {len(registry.members)} name(s) to pick from, "
+            "no password",
             file=sys.stderr,
         )
 

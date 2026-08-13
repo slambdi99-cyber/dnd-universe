@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hmac
 import json
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -62,6 +63,53 @@ class People:
 
     def __bool__(self) -> bool:
         return bool(self.members)
+
+
+SLUG = re.compile(r"[^a-z0-9]+")
+
+
+def make_key(name: str, taken: set[str]) -> str:
+    base = SLUG.sub("-", name.strip().lower()).strip("-") or "player"
+    key = base
+    n = 2
+    while key in taken:
+        key = f"{base}-{n}"
+        n += 1
+    return key
+
+
+def add_person(root: Path, name: str, character: str = "",
+               role: str = "player") -> Person | None:
+    """Append a new person to people.yaml.
+
+    Appended as text rather than re-dumped through the YAML writer, because a
+    round-trip would strip every comment in the file, and those comments are
+    the only documentation of what the keys mean.
+    """
+    name = " ".join(name.split())
+    if not name or len(name) > 60:
+        return None
+
+    existing = load(root)
+    if any(p.name.lower() == name.lower() for p in existing.members.values()):
+        return None
+
+    key = make_key(name, set(existing.members))
+    path = root / "people.yaml"
+    text = path.read_text(encoding="utf-8") if path.exists() else "people:\n"
+    if not text.endswith("\n"):
+        text += "\n"
+
+    block = f"\n  - key: {key}\n    name: {_yaml_str(name)}\n    role: {role}\n"
+    if character.strip():
+        block += f"    character: {_yaml_str(' '.join(character.split()))}\n"
+    path.write_text(text + block, encoding="utf-8")
+
+    return Person(key=key, name=name, role=role, character=character.strip())
+
+
+def _yaml_str(value: str) -> str:
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
 def ensure_token(root: Path, key: str) -> str:

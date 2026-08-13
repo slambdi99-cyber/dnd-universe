@@ -144,6 +144,31 @@ label.cb input { width: auto; }
 .notice { border-left: 3px solid var(--accent); background: var(--accent-soft);
   padding: .6rem 1rem; margin: 1rem 0; font-size: .9rem; border-radius: 0 4px 4px 0; }
 .newpage { float: right; font-size: .85rem; }
+.whogrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: .7rem; margin: 1.4rem 0; }
+button.who { display: flex; flex-direction: column; gap: .15rem; text-align: left;
+  padding: .8rem 1rem; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
+button.who:hover { border-color: var(--accent); }
+button.who .n { font-weight: bold; }
+button.who .c { font-size: .8rem; color: var(--muted); }
+details.newperson { margin-top: 2rem; border-top: 1px solid var(--line);
+  padding-top: 1rem; }
+details.newperson summary { cursor: pointer; color: var(--accent);
+  font-size: .9rem; }
+.artgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+  gap: .8rem; margin: 1rem 0; }
+.artgrid figure { margin: 0; border: 1px solid var(--line); border-radius: 6px;
+  overflow: hidden; background: var(--panel); }
+.artgrid img { width: 100%; display: block; aspect-ratio: 1/1; object-fit: cover; }
+.artgrid button { width: 100%; border: 0; border-top: 1px solid var(--line);
+  padding: .45rem; background: var(--panel); color: var(--accent); font: inherit;
+  font-size: .85rem; cursor: pointer; }
+.artgrid button:hover { background: var(--accent-soft); }
+.artgrid figure.current { border-color: var(--accent); }
+.artgrid figure.current button { color: var(--muted); cursor: default; }
+.slow { border-left: 3px solid var(--accent); background: var(--accent-soft);
+  padding: .6rem 1rem; margin: 1rem 0; font-size: .9rem; border-radius: 0 4px 4px 0; }
 .sheet { border: 1px solid var(--line); border-radius: 6px; padding: .9rem 1.1rem;
   margin: 2rem 0 0; background: var(--panel); }
 .sheet .statline { font-size: .85rem; color: var(--muted); text-transform: uppercase;
@@ -259,6 +284,7 @@ def render_body(entity: Entity, library: Library, images: dict[str, str],
                 editable: bool = False) -> str:
     edit_link = (
         f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/edit">Edit</a>'
+        f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/art">Art</a>'
         if editable else ""
     )
     parts = [

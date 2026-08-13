@@ -1,13 +1,13 @@
-"""The live wiki: accounts, sign-in, and per-person rendering.
+"""The live wiki: sign-in, per-person rendering, editing and art.
 
-Unlike the static export, this knows who is reading. Each person signs in with
-their own username and password, and every page is rendered for their identity:
-their secrets appear, other people's don't, and pages restricted away from them
-don't exist as far as they can tell.
+Unlike the static export, this knows who is reading. Each page is rendered for
+whoever is signed in: their secrets appear, other people's don't, and pages
+restricted away from them don't exist as far as they can tell.
 
-Registration is open but gated by a one-time invite code bound to a person in
-`people.yaml`. Without that gate anyone who found the URL could register as the
-DM. Nothing the registrant types decides who they are; the code does.
+Signing in is picking your name off a list. There is no password, which is a
+deliberate choice for a table of friends: it means the secrets feature is a DM
+screen, not a lock. Worth remembering before putting anything genuinely
+sensitive behind it.
 """
 
 from __future__ import annotations
@@ -15,11 +15,11 @@ from __future__ import annotations
 import html
 from pathlib import Path
 
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import (FileResponse, HTMLResponse,
                                  RedirectResponse, Response)
 from starlette.routing import Route
 
-from . import accounts as accounts_mod
 from . import people as people_mod
 from . import secrets as secrets_mod
 from . import site as site_mod
@@ -35,27 +35,33 @@ def _auth_page(title: str, base: str, inner: str) -> HTMLResponse:
     )
 
 
-def build(cfg, library: Library, registry: people_mod.People,
-          accounts: accounts_mod.Accounts,
-          require_invite: bool = False) -> list[Route]:
-    """Routes for /wiki. Everything requires a signed-in account.
+def build(cfg, library: Library, registry: people_mod.People) -> list[Route]:
+    """Routes for /wiki. Everything but the guide needs someone signed in.
 
-    With `require_invite`, registration needs a one-time code that decides who
-    the new account is. Without it, registration is open and people pick
-    themselves from the roster, which trusts anyone holding the link to be
-    honest about which of your friends they are.
+    Signing in only establishes which secrets to render; it keeps nobody out.
+    Anyone with the link can claim any name on the roster, or add themselves.
     """
 
+    # Built on first use, so importing torch and diffusers is deferred until
+    # someone actually asks for a picture.
+    _art = None
+
+    def reload_people() -> None:
+        """Pick up anyone added since the server started."""
+        fresh = people_mod.load(Path(cfg.root))
+        if fresh.members:
+            registry.members = fresh.members
+
     def viewer_for(request) -> tuple[frozenset[str], str | None]:
-        email = request.session.get("user")
-        if not email:
+        key = request.session.get("who")
+        if not key:
             return PUBLIC, None
-        key = accounts.key_for(email)
-        person = registry.members.get(key) if key else None
+        person = registry.members.get(key)
         if person is None:
-            # Account references a person who has since been removed.
-            return PUBLIC, email
-        # Show the person's name in the header rather than their address.
+            reload_people()
+            person = registry.members.get(key)
+        if person is None:
+            return PUBLIC, None
         return person.identities, person.name
 
     def entities_for(viewer: frozenset[str]):
@@ -73,71 +79,60 @@ def build(cfg, library: Library, registry: people_mod.People,
         return out
 
     def require_login(request):
-        if not request.session.get("user"):
+        if not request.session.get("who"):
             return RedirectResponse("/wiki/login", status_code=303)
         return None
 
     # -- auth ----------------------------------------------------------
 
+    def roster() -> list[people_mod.Person]:
+        reload_people()
+        return sorted(registry.members.values(),
+                      key=lambda p: (not p.is_dm, p.name.lower()))
+
     async def login(request):
+        """Pick who you are. No password.
+
+        This is an honour system by design: nothing stops someone choosing a
+        name that isn't theirs, so the secrets feature is a DM screen rather
+        than a lock. Fine for a table of friends, and worth remembering before
+        putting anything genuinely sensitive behind it.
+        """
         if request.method == "GET":
-            if request.session.get("user"):
+            if request.session.get("who"):
                 return RedirectResponse("/wiki/", status_code=303)
-            return _auth_page("Sign in", "/wiki/", _login_form())
+            return _auth_page("Who are you?", "/wiki/", _signin_form(roster()))
 
         form = await request.form()
-        account = accounts.authenticate(
-            str(form.get("email", "")), str(form.get("password", ""))
-        )
-        if account is None:
-            # One message for both causes, so this can't be used to find out
-            # which addresses have accounts.
+        key = str(form.get("who", "")).strip().lower()
+        reload_people()
+        if key not in registry.members:
             return _auth_page(
-                "Sign in", "/wiki/",
-                _login_form(error="That email and password don't match.",
-                            email=str(form.get("email", ""))),
+                "Who are you?", "/wiki/",
+                _signin_form(roster(), error="Pick a name from the list."),
             )
-        request.session["user"] = account.email
+        request.session["who"] = key
         return RedirectResponse("/wiki/", status_code=303)
 
-    def roster() -> list[tuple[str, str]]:
-        """People still available to claim, for the picker."""
-        taken = accounts.claimed_keys
-        return [
-            (p.key, f"{p.name}" + (f" ({p.character})" if p.character
-                                   else " (DM)" if p.is_dm else ""))
-            for p in registry.members.values()
-            if p.key not in taken
-        ]
-
-    async def register(request):
+    async def add_person(request):
         if request.method == "GET":
-            return _auth_page(
-                "Create an account", "/wiki/",
-                _register_form(require_invite=require_invite, roster=roster()),
-            )
+            return RedirectResponse("/wiki/login", status_code=303)
 
         form = await request.form()
-        account, error = accounts.register(
-            str(form.get("email", "")),
-            str(form.get("password", "")),
-            code=str(form.get("code", "")) if require_invite else "",
-            key=str(form.get("who", "")),
-            known_keys=set(registry.members),
-        )
-        if account is None:
+        name = str(form.get("name", "")).strip()
+        character = str(form.get("character", "")).strip()
+        person = people_mod.add_person(Path(cfg.root), name, character)
+        if person is None:
             return _auth_page(
-                "Create an account", "/wiki/",
-                _register_form(
-                    error=error,
-                    email=str(form.get("email", "")),
-                    code=str(form.get("code", "")),
-                    who=str(form.get("who", "")),
-                    require_invite=require_invite,
-                    roster=roster(),
+                "Who are you?", "/wiki/",
+                _signin_form(
+                    roster(),
+                    error="Give a name that isn't already on the list."
+                    if name else "Enter a name.",
                 ),
             )
-        request.session["user"] = account.email
+        reload_people()
+        request.session["who"] = person.key
         return RedirectResponse("/wiki/", status_code=303)
 
     async def logout(request):
@@ -227,6 +222,68 @@ def build(cfg, library: Library, registry: people_mod.People,
             tips=True,
         ))
 
+    # -- art -----------------------------------------------------------
+
+    def art_service():
+        """Built on first use so the GPU stack isn't imported at startup."""
+        nonlocal _art
+        if _art is None:
+            from .art import ArtService
+            from .assets import AssetStore
+
+            _art = ArtService(cfg, library, AssetStore(cfg.assets_dir))
+        return _art
+
+    async def art_panel(request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        kind, slug = request.path_params["kind"], request.path_params["slug"]
+        _, allowed = entities_for(viewer)
+        if f"{kind}/{slug}" not in allowed:
+            return HTMLResponse("Not found", status_code=404)
+        entity = library.load(kind, slug)
+
+        prompt = ""
+        candidates: list[str] = []
+        error = ""
+
+        if request.method == "POST":
+            form = await request.form()
+            action = str(form.get("action", "generate"))
+
+            if action == "pick":
+                asset_id = str(form.get("asset", ""))
+                # Only accept ids belonging to this page, so a crafted form
+                # can't attach someone else's picture.
+                if asset_id.startswith(f"{kind}/{slug}/") and \
+                        art_service().attach(entity, asset_id):
+                    return RedirectResponse(f"/wiki/{kind}/{slug}.html",
+                                            status_code=303)
+                error = "That image is no longer available."
+            else:
+                prompt = str(form.get("prompt", "")).strip()
+                if not prompt:
+                    error = "Describe the picture you want."
+                else:
+                    try:
+                        # Off the event loop: generation takes tens of seconds
+                        # and would otherwise freeze the site for everyone.
+                        results = await run_in_threadpool(
+                            art_service().generate_custom, entity, prompt, count=3
+                        )
+                        candidates = [r.asset_id for r in results]
+                    except Exception as exc:  # GPU out of memory, model missing
+                        error = f"Couldn't generate that: {exc}"
+
+        existing = [a for a in entity.art]
+        return HTMLResponse(site_mod.shell(
+            f"Art for {entity.name}", "/wiki/",
+            _art_form(entity, existing, candidates, prompt, error),
+            "[]", user=user, live=True,
+        ))
+
     async def tooltips_js(request):
         """The tooltip index, as a script so browsers cache it across pages.
 
@@ -244,6 +301,29 @@ def build(cfg, library: Library, registry: people_mod.People,
             media_type="application/javascript",
             headers={"Cache-Control": "no-store"},
         )
+
+    async def art_by_id(request):
+        """Serve one image by asset id, for the art picker.
+
+        Permission-checked against the page it belongs to, exactly like the
+        named art route, or a restricted character's portrait would be
+        reachable by guessing an id.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, _ = viewer_for(request)
+        asset_id = request.path_params["asset"]
+        if ".." in asset_id or asset_id.count("/") != 2:
+            return HTMLResponse("Not found", status_code=404)
+        kind, slug, name = asset_id.split("/")
+        _, allowed = entities_for(viewer)
+        if f"{kind}/{slug}" not in allowed:
+            return HTMLResponse("Not found", status_code=404)
+        path = Path(cfg.assets_dir) / kind / slug / f"{name}.png"
+        if not path.exists():
+            return HTMLResponse("Not found", status_code=404)
+        return FileResponse(path)
 
     async def art(request):
         redirect = require_login(request)
@@ -279,15 +359,14 @@ def build(cfg, library: Library, registry: people_mod.People,
         redirect = require_login(request)
         if redirect:
             return redirect
-        email = request.session.get("user")
-        key = accounts.key_for(email)
+        key = request.session.get("who")
         person = registry.members.get(key) if key else None
         if person is None:
             return HTMLResponse(
                 site_mod.shell("Connect", "/wiki/",
                                "<h1>Connect</h1><p class='hint'>Your account "
                                "isn't linked to anyone. Ask your DM.</p>",
-                               "[]", user=email, live=True),
+                               "[]", user=None, live=True),
                 status_code=404,
             )
 
@@ -415,13 +494,15 @@ def build(cfg, library: Library, registry: people_mod.People,
         Route("/wiki/new", new_page, methods=["GET", "POST"]),
         Route("/wiki/{kind}/{slug}/edit", edit, methods=["GET", "POST"]),
         Route("/wiki/login", login, methods=["GET", "POST"]),
-        Route("/wiki/register", register, methods=["GET", "POST"]),
+        Route("/wiki/people/new", add_person, methods=["GET", "POST"]),
         Route("/wiki/logout", logout),
         Route("/wiki/guide", guide),
         Route("/wiki/connect", connect),
         Route("/wiki/", index),
         Route("/wiki/index.html", index),
         Route("/wiki/tooltips.js", tooltips_js),
+        Route("/wiki/{kind}/{slug}/art", art_panel, methods=["GET", "POST"]),
+        Route("/wiki/art/id/{asset:path}.png", art_by_id),
         Route("/wiki/art/{filename}", art),
         Route("/wiki/{kind}/index.html", kind_index),
         Route("/wiki/{kind}/{slug}.html", page),
@@ -574,75 +655,96 @@ function cp(id, btn) {{
 """
 
 
-def _login_form(error: str = "", email: str = "") -> str:
+def _art_form(entity, existing: list[str], candidates: list[str],
+              prompt: str, error: str) -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""
-    return f"""
-<h1>Sign in</h1>
-<p class="summary">Copper Vale is private to the table.</p>
-{err}
-<form class="auth" method="post" action="/wiki/login">
-  <label for="e">Email</label>
-  <input id="e" name="email" type="email" value="{html.escape(email)}"
-         autocomplete="email" autofocus required>
-  <label for="p">Password</label>
-  <input id="p" name="password" type="password" autocomplete="current-password" required>
-  <button type="submit">Sign in</button>
-</form>
-<p class="hint">No account yet? <a href="/wiki/register">Create one</a>.
-First time here? Read the <a href="/wiki/guide">guide</a>.</p>
-"""
+    current = existing[-1] if existing else None
 
+    def gallery(ids: list[str], heading: str, note: str = "") -> str:
+        if not ids:
+            return ""
+        cards = []
+        for asset_id in ids:
+            is_current = asset_id == current
+            cards.append(
+                f'<figure class="{"current" if is_current else ""}">'
+                f'<img src="/wiki/art/id/{html.escape(asset_id)}.png" '
+                f'alt="" loading="lazy">'
+                + (
+                    "<button disabled>In use</button>" if is_current else
+                    f'<button type="submit" name="asset" '
+                    f'value="{html.escape(asset_id)}">Use this one</button>'
+                )
+                + "</figure>"
+            )
+        return (f"<h2>{heading}</h2>"
+                + (f'<p class="hint">{note}</p>' if note else "")
+                + f'<div class="artgrid">{"".join(cards)}</div>')
 
-def _register_form(error: str = "", email: str = "", code: str = "",
-                   who: str = "", require_invite: bool = False,
-                   roster: list[tuple[str, str]] | None = None) -> str:
-    err = f'<div class="error">{html.escape(error)}</div>' if error else ""
-    roster = roster or []
-
-    if require_invite:
-        intro = ("You'll need the invite code your DM gave you. It decides "
-                 "whose secrets you can read, so use your own.")
-        identity = (
-            '  <label for="c">Invite code</label>\n'
-            f'  <input id="c" name="code" value="{html.escape(code)}" autofocus required>'
-        )
-    elif not roster:
-        return f"""
-<h1>Create an account</h1>
-{err}
-<p class="summary">Everyone on the roster already has an account.</p>
-<p class="hint"><a href="/wiki/login">Sign in</a>, or ask your DM if you think
-this is wrong.</p>
-"""
-    else:
-        intro = ("Pick your name so the wiki knows whose secrets to show you. "
-                 "Choose your own; the world looks different for everyone.")
-        options = "".join(
-            f'<option value="{html.escape(key)}"'
-            f'{" selected" if key == who else ""}>{html.escape(label)}</option>'
-            for key, label in roster
-        )
-        identity = (
-            '  <label for="w">Who are you?</label>\n'
-            f'  <select id="w" name="who" autofocus required>\n'
-            f'    <option value="">Choose your name...</option>\n{options}\n  </select>'
+    picker = ""
+    if candidates or existing:
+        picker = (
+            f'<form method="post" action="/wiki/{entity.kind}/{entity.slug}/art">'
+            '<input type="hidden" name="action" value="pick">'
+            + gallery(candidates, "Just generated",
+                      "Pick one to put it on the page, or write a different "
+                      "prompt and try again.")
+            + gallery([a for a in existing if a not in candidates],
+                      "Already on this page" if not candidates else "Earlier images",
+                      "Everything ever drawn for this page. Nothing is thrown away.")
+            + "</form>"
         )
 
     return f"""
-<h1>Create an account</h1>
-<p class="summary">{intro}</p>
+<div class="kind">Art<a class="edit" href="/wiki/{entity.kind}/{entity.slug}.html">Back</a></div>
+<h1>{html.escape(entity.name)}</h1>
 {err}
-<form class="auth" method="post" action="/wiki/register">
-{identity}
-  <label for="e">Email</label>
-  <input id="e" name="email" type="email" value="{html.escape(email)}"
-         autocomplete="email" required>
-  <label for="p">Password</label>
-  <input id="p" name="password" type="password" autocomplete="new-password"
-         minlength="8" required>
-  <button type="submit">Create account</button>
+<form class="auth wide" method="post" action="/wiki/{entity.kind}/{entity.slug}/art">
+  <label for="p">Describe the picture
+    <span class="hint">Physical and concrete works best: what you'd see,
+    not what it means. The house style is added for you.</span></label>
+  <textarea id="p" name="prompt" rows="3"
+            placeholder="{html.escape(entity.appearance or 'a low timber tavern at dusk, lantern light, wet cobbles')}">{html.escape(prompt)}</textarea>
+  <button type="submit">Generate three</button>
 </form>
-<p class="hint">At least 8 characters. Your email is just your sign-in name;
-nothing is sent to it. Already registered? <a href="/wiki/login">Sign in</a>.
-Not sure what any of this is? Read the <a href="/wiki/guide">guide</a>.</p>
+<div class="slow">This runs on the GPU at home and takes roughly a minute for
+three pictures. Leave the tab open.</div>
+{picker}
+"""
+
+
+def _signin_form(roster: list, error: str = "") -> str:
+    err = f'<div class="error">{html.escape(error)}</div>' if error else ""
+
+    buttons = "".join(
+        f'<button class="who" type="submit" name="who" '
+        f'value="{html.escape(p.key)}">'
+        f'<span class="n">{html.escape(p.name)}</span>'
+        f'<span class="c">{html.escape(p.character) if p.character else ("Dungeon Master" if p.is_dm else "Player")}</span>'
+        f"</button>"
+        for p in roster
+    )
+
+    return f"""
+<h1>Who are you?</h1>
+<p class="summary">Pick your name. The world looks different depending on who
+is reading it.</p>
+{err}
+<form method="post" action="/wiki/login">
+  <div class="whogrid">{buttons}</div>
+</form>
+
+<details class="newperson">
+  <summary>Someone new?</summary>
+  <form class="auth" method="post" action="/wiki/people/new">
+    <label for="nn">Your name</label>
+    <input id="nn" name="name" maxlength="60" required>
+    <label for="nc">Character <span class="hint">optional, if you have
+      one</span></label>
+    <input id="nc" name="character" maxlength="60">
+    <button type="submit">Add me</button>
+  </form>
+</details>
+
+<p class="hint">First time here? Read the <a href="/wiki/guide">guide</a>.</p>
 """

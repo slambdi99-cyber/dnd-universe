@@ -10,6 +10,8 @@ never touches CUDA.
 
 from __future__ import annotations
 
+import threading
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -48,6 +50,9 @@ class ArtService:
         # everything to compare.
         self.house_style = house_style if house_style is not None else cfg.house_style
         self._pipe = None
+        # One GPU, so generation is serialised. Two concurrent requests on a
+        # 12GB card produce an out-of-memory error, not two pictures.
+        self._lock = threading.Lock()
 
     # -- model ---------------------------------------------------------
 
@@ -147,6 +152,79 @@ class ArtService:
         self.store.write_sidecar(spec, {"entity_name": entity.name})
         self._record(entity, spec)
         return ArtResult(entity, spec, path, generated=True)
+
+    def generate_custom(self, entity: Entity, prompt: str, *,
+                        count: int = 3, record: bool = False) -> list[ArtResult]:
+        """Draw from a prompt someone typed, rather than the entity's own.
+
+        Used by the wiki's art panel. The results are candidates: nothing is
+        attached to the page until a person picks one, so a bad prompt costs
+        GPU time and nothing else.
+
+        Serialised behind a lock. Two people hitting generate at once on a
+        12GB card means an out-of-memory error rather than two pictures.
+        """
+        import torch
+
+        prompt = " ".join(prompt.split())[:600]
+        if not prompt:
+            return []
+
+        art = self.cfg.art
+        results: list[ArtResult] = []
+        with self._lock:
+            for i in range(max(1, min(count, 4))):
+                spec = AssetSpec(
+                    kind=entity.kind,
+                    slug=entity.slug,
+                    # Variant encodes the prompt and the draw, so asking twice
+                    # for the same thing returns cached images instead of
+                    # spending the GPU again.
+                    variant=f"custom{i + 1}-{zlib.crc32(prompt.encode()) & 0xFFFFFF:06x}",
+                    prompt=prompt,
+                    negative=self.cfg.negative_prompt,
+                    seed=(zlib.crc32(f"{prompt}:{i}".encode()) & 0x7FFFFFFF),
+                    model=art.get("model", "stabilityai/stable-diffusion-xl-base-1.0"),
+                    width=int(art.get("width", 1024)),
+                    height=int(art.get("height", 1024)),
+                    steps=int(art.get("steps", 30)),
+                )
+                path = self.store.path_for(spec)
+                if path.exists():
+                    results.append(ArtResult(entity, spec, path, generated=False))
+                    continue
+
+                generator = torch.Generator(device="cuda").manual_seed(spec.seed)
+                image = self.pipe(
+                    prompt=spec.prompt,
+                    negative_prompt=spec.negative or None,
+                    num_inference_steps=spec.steps,
+                    guidance_scale=float(art.get("guidance_scale", 6.0)),
+                    width=spec.width,
+                    height=spec.height,
+                    generator=generator,
+                ).images[0]
+                path.parent.mkdir(parents=True, exist_ok=True)
+                image.save(path)
+                self.store.write_sidecar(spec, {"entity_name": entity.name,
+                                                "custom_prompt": True})
+                results.append(ArtResult(entity, spec, path, generated=True))
+
+        if record:
+            for r in results:
+                self._record(entity, r.spec)
+        return results
+
+    def attach(self, entity: Entity, asset_id: str) -> bool:
+        """Make an already-generated image this page's current one."""
+        path = self.store.resolve(asset_id)
+        if not path.exists():
+            return False
+        current = self.library.load(entity.kind, entity.slug) or entity
+        # Last in the list is what the site shows, so re-adding promotes it.
+        current.art = [a for a in current.art if a != asset_id] + [asset_id]
+        self.library.save(current)
+        return True
 
     def _record(self, entity: Entity, spec: AssetSpec) -> None:
         """Point the entity at its art, without disturbing anything else.
