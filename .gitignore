@@ -15,3 +15,6 @@ assets/
 
 # Generated Obsidian vault. Rebuild with tools/export_obsidian.py.
 vault/
+
+# Generated static site. Rebuild with tools/export_site.py.
+site/

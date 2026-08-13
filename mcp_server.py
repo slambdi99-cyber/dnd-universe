@@ -319,7 +319,12 @@ def build_server(library: Library, read_only: bool) -> MCPServer:
     return server
 
 
-def http_app(server: MCPServer, token: str, allowed_hosts: list[str]):
+def http_app(
+    server: MCPServer,
+    token: str,
+    allowed_hosts: list[str],
+    wiki_dir: Path | None = None,
+):
     """Wrap the MCP app with bearer-token auth for anything exposed publicly.
 
     `allowed_hosts` feeds the transport's DNS-rebinding protection, which
@@ -332,9 +337,16 @@ def http_app(server: MCPServer, token: str, allowed_hosts: list[str]):
     from starlette.middleware import Middleware
     from starlette.middleware.base import BaseHTTPMiddleware
     from starlette.responses import JSONResponse
+    from starlette.routing import Mount
 
     class BearerAuth(BaseHTTPMiddleware):
         async def dispatch(self, request, call_next):
+            # The wiki is a read-only rendering meant to be opened from a plain
+            # link, so it sits outside the token. The MCP tools, which can
+            # rewrite the campaign, do not.
+            if wiki_dir is not None and request.url.path.startswith("/wiki"):
+                return await call_next(request)
+
             supplied = request.headers.get("authorization", "")
             expected = f"Bearer {token}"
             # Compare in constant time; these are shared secrets over the wire.
@@ -349,8 +361,16 @@ def http_app(server: MCPServer, token: str, allowed_hosts: list[str]):
         allowed_origins=["*"],
     )
     inner = server.streamable_http_app(transport_security=security)
+    routes = list(inner.routes)
+    if wiki_dir is not None:
+        from starlette.staticfiles import StaticFiles
+
+        routes.append(
+            Mount("/wiki", app=StaticFiles(directory=str(wiki_dir), html=True),
+                  name="wiki")
+        )
     return Starlette(
-        routes=inner.routes,
+        routes=routes,
         middleware=[Middleware(BearerAuth)],
         lifespan=inner.router.lifespan_context,
     )
@@ -370,6 +390,11 @@ def main(argv: list[str]) -> int:
         "--read-only",
         action="store_true",
         help="Serve without the create/update/link tools",
+    )
+    ap.add_argument(
+        "--wiki",
+        help="Serve a static site folder at /wiki, readable without a token. "
+        "Build it with tools/export_site.py.",
     )
     ap.add_argument(
         "--allowed-host",
@@ -420,14 +445,31 @@ def main(argv: list[str]) -> int:
         f"127.0.0.1:{args.port}",
         *args.allowed_host,
     ]
+    wiki_dir = None
+    if args.wiki:
+        wiki_dir = Path(args.wiki)
+        if not wiki_dir.is_absolute():
+            wiki_dir = cfg.root / wiki_dir
+        if not (wiki_dir / "index.html").exists():
+            print(
+                f"No site at {wiki_dir}. Build it first:\n"
+                f"  python tools/export_site.py",
+                file=sys.stderr,
+            )
+            return 1
+
     print(
         f"[mcp] copper-vale, {count} pages, {mode}\n"
         f"[mcp] http://{args.host}:{args.port}/mcp (bearer token required)\n"
-        f"[mcp] accepting Host: {', '.join(dict.fromkeys(hosts))}",
+        + (
+            f"[mcp] http://{args.host}:{args.port}/wiki (open, no token)\n"
+            if wiki_dir else ""
+        )
+        + f"[mcp] accepting Host: {', '.join(dict.fromkeys(hosts))}",
         file=sys.stderr,
     )
     uvicorn.run(
-        http_app(server, args.token, list(dict.fromkeys(hosts))),
+        http_app(server, args.token, list(dict.fromkeys(hosts)), wiki_dir),
         host=args.host,
         port=args.port,
         log_level="warning",

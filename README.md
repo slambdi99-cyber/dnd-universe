@@ -265,7 +265,40 @@ happened last session can't wipe what was already written.
 Page references are forgiving: `get_page` accepts `"Korran Mossborn"`,
 `"korran"`, or `"character/korran-mossborn"`.
 
-## Reading the wiki
+## Sharing the wiki as a website
+
+The simplest thing to hand your table: a link. No Obsidian, no git, no Python.
+
+```powershell
+.\.venv\Scripts\python.exe tools\export_site.py
+```
+
+That writes `site/`: one HTML page per entity, an index, the art, and a
+client-side search index. No build step and no JavaScript framework. Then serve
+it alongside the MCP server, on the same address and tunnel:
+
+```powershell
+.\.venv\Scripts\python.exe mcp_server.py --http --wiki site --allowed-host <your-host>
+```
+
+- `https://<your-host>/wiki` — the wiki, **open, no token**
+- `https://<your-host>/mcp` — the MCP tools, **token required**
+
+The split is deliberate. The wiki is a read-only rendering meant to be opened
+from a shared link. The MCP tools can rewrite the campaign, so they stay behind
+the bearer token.
+
+**Understand what that means: anyone with the wiki URL can read the whole
+campaign.** The hostname is not guessable, but it isn't a secret either, and
+there's no login. That's the right trade for a group of friends and the wrong
+one if your world contains anything you'd mind a stranger reading. If you want
+it locked down, serve it on the tailnet without Funnel, or ask and I'll put a
+password on it.
+
+Re-run `export_site.py` after changing content; the folder is rewritten each
+time.
+
+## Reading the wiki in Obsidian
 
 The `content/` folder is the source of truth, but it isn't pleasant to browse:
 links live in frontmatter as `place/copper-vale` and the art isn't referenced
