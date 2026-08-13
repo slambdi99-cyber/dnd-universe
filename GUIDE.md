@@ -14,20 +14,24 @@ There are two ways in. You probably want both.
 
 ## 1. The website
 
-**Timothy Tuttle will send you the link.** It isn't written down here: this guide is
-in a public repo, and the wiki has no password, so anyone who found the address
-could sign in as any of us.
+**Timothy Tuttle will send you the link**, and the passphrase with it. Neither is
+written down here: this guide is in a public repo.
 
 ### Signing in
 
-There's no password. Open the link and click your own name.
+Two steps, once. The site asks for **one passphrase, shared by the whole
+table** - it's in the group chat. Then you click your own name.
 
 That's the whole thing. Your name decides whose secrets you're shown, and the
 world genuinely looks different for different people, so pick yours honestly.
 Nothing stops you clicking someone else's; we're trusting each other here.
 
-You stay signed in for about a month. **Not you?** at the bottom of any page
-switches.
+You stay signed in for about a month, passphrase included, so you'll type it
+roughly never. **Not you?** at the bottom of any page switches name; signing
+out asks for the passphrase again, which is what you want on a shared laptop.
+
+The passphrase only answers "is this someone from our table". It doesn't say
+who you are - that's still the name you pick, still on trust.
 
 If your name isn't there, click **Someone new**, type your name and your
 character's, and you're in.

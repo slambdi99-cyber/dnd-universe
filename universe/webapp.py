@@ -20,6 +20,7 @@ from starlette.responses import (FileResponse, HTMLResponse,
                                  RedirectResponse, Response)
 from starlette.routing import Route
 
+from . import gate as gate_mod
 from . import inbox as inbox_mod
 from . import schema as schema_mod
 from . import uploads as uploads_mod
@@ -139,6 +140,13 @@ def build(cfg, library: Library, registry: people_mod.People,
         return out
 
     def require_login(request):
+        """Two doors, in order: the shared passphrase, then who you are.
+
+        The passphrase answers "is this someone from our table". The name
+        answers "which secrets do I render". Only the first is a boundary.
+        """
+        if gate_mod.is_enabled(Path(cfg.root)) and not request.session.get("gate"):
+            return RedirectResponse("/wiki/enter", status_code=303)
         if not request.session.get("who"):
             return RedirectResponse("/wiki/login", status_code=303)
         return None
@@ -150,6 +158,32 @@ def build(cfg, library: Library, registry: people_mod.People,
         return sorted(registry.members.values(),
                       key=lambda p: (not p.is_dm, p.name.lower()))
 
+    async def enter(request):
+        """The shared passphrase, in front of everything but the guide.
+
+        Rate-limited only by scrypt, which takes ~60ms per attempt. That is
+        slow enough to make guessing a five-word passphrase pointless and fast
+        enough that nobody notices typing theirs.
+        """
+        if not gate_mod.is_enabled(Path(cfg.root)):
+            return RedirectResponse("/wiki/login", status_code=303)
+
+        if request.method == "GET":
+            if request.session.get("gate"):
+                return RedirectResponse("/wiki/login", status_code=303)
+            return _auth_page("The Buried Star", "/wiki/", _gate_form())
+
+        form = await request.form()
+        attempt = str(form.get("passphrase", ""))
+        ok = await run_in_threadpool(gate_mod.check, Path(cfg.root), attempt)
+        if not ok:
+            return _auth_page(
+                "The Buried Star", "/wiki/",
+                _gate_form(error="That isn't it. Ask in the group chat."),
+            )
+        request.session["gate"] = True
+        return RedirectResponse("/wiki/login", status_code=303)
+
     async def login(request):
         """Pick who you are. No password.
 
@@ -158,6 +192,9 @@ def build(cfg, library: Library, registry: people_mod.People,
         than a lock. Fine for a table of friends, and worth remembering before
         putting anything genuinely sensitive behind it.
         """
+        if gate_mod.is_enabled(Path(cfg.root)) and not request.session.get("gate"):
+            return RedirectResponse("/wiki/enter", status_code=303)
+
         if request.method == "GET":
             if request.session.get("who"):
                 return RedirectResponse("/wiki/", status_code=303)
@@ -175,6 +212,8 @@ def build(cfg, library: Library, registry: people_mod.People,
         return RedirectResponse("/wiki/", status_code=303)
 
     async def add_person(request):
+        if gate_mod.is_enabled(Path(cfg.root)) and not request.session.get("gate"):
+            return RedirectResponse("/wiki/enter", status_code=303)
         if request.method == "GET":
             return RedirectResponse("/wiki/login", status_code=303)
 
@@ -763,6 +802,7 @@ def build(cfg, library: Library, registry: people_mod.People,
     return [
         Route("/wiki/new", new_page, methods=["GET", "POST"]),
         Route("/wiki/{kind}/{slug}/edit", edit, methods=["GET", "POST"]),
+        Route("/wiki/enter", enter, methods=["GET", "POST"]),
         Route("/wiki/login", login, methods=["GET", "POST"]),
         Route("/wiki/people/new", add_person, methods=["GET", "POST"]),
         Route("/wiki/logout", logout),
@@ -1262,6 +1302,24 @@ kept with this page.</p>
 <p class="hint">Images, PDF, ZIP, MP3, OGG and MP4, up to 25MB. Not SVG: it can
 carry scripts, and it would run as part of this site. Removing a file takes it
 off the page but doesn't delete it, in case another page uses the same one.</p>
+"""
+
+
+def _gate_form(error: str = "") -> str:
+    err = f'<div class="error">{html.escape(error)}</div>' if error else ""
+    return f"""
+<h1>The Buried Star</h1>
+<p class="summary">Our campaign wiki. There's one passphrase for the whole
+table; it's in the group chat.</p>
+{err}
+<form class="auth" method="post" action="/wiki/enter">
+  <label for="pp">Passphrase</label>
+  <input id="pp" name="passphrase" type="password" autocomplete="current-password"
+         autofocus required>
+  <button type="submit">Come in</button>
+</form>
+<p class="hint">You'll be asked once, then not again for about a month. New
+here? Read the <a href="/wiki/guide">guide</a>.</p>
 """
 
 

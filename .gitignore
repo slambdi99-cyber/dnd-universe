@@ -40,3 +40,6 @@ data/srd.json
 # Uploaded attachments. NOT ignored: a scanned map or a handout cannot be
 # regenerated from anything, unlike assets/.
 # files/
+
+# The shared passphrase, stored as a scrypt hash. Never commit it.
+.wiki-passphrase

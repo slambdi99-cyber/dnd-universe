@@ -394,6 +394,65 @@ check("bad YAML is reported, not raised",
       "valid YAML" in r.text or "parse" in r.text,
       "a broken paste must not 500 the page")
 
+print("\n== the shared passphrase ==")
+from universe import gate as gate_mod  # noqa: E402
+
+gate_mod.set_passphrase(sandbox, "peapod-dungeon-test")
+stranger = client()
+check("the front page now asks for it",
+      stranger.get("/wiki/").headers.get("location") == "/wiki/enter")
+check("so does the name picker",
+      stranger.get("/wiki/login").headers.get("location") == "/wiki/enter",
+      "otherwise the picker is the front door")
+check("so does adding yourself",
+      stranger.post("/wiki/people/new", data={"name": "Mallory"}
+                    ).headers.get("location") == "/wiki/enter")
+check("and a page",
+      stranger.get("/wiki/character/wren.html").headers.get("location") == "/wiki/enter")
+check("and its art",
+      stranger.get("/wiki/art/character-wren.png").headers.get("location") == "/wiki/enter")
+check("and the structure editor",
+      stranger.get("/wiki/structure").headers.get("location") == "/wiki/enter")
+
+form = stranger.get("/wiki/enter")
+check("the gate renders", form.status_code == 200)
+check("as a password field", 'type="password"' in form.text)
+check("it does not name the passphrase", "peapod" not in form.text.lower())
+check("the guide is still reachable", "/wiki/guide" in form.text,
+      "the page explaining how to get in cannot be behind the door")
+
+bad = stranger.post("/wiki/enter", data={"passphrase": "wrong"})
+check("a wrong passphrase is refused", "isn't it" in bad.text or "n&#x27;t it" in bad.text)
+check("and does not let you in",
+      stranger.get("/wiki/").headers.get("location") == "/wiki/enter")
+check("empty is refused",
+      stranger.post("/wiki/enter", data={"passphrase": ""}).status_code == 200)
+
+good = stranger.post("/wiki/enter", data={"passphrase": "peapod-dungeon-test"})
+check("the right one gets in", good.status_code == 303, str(good.status_code))
+check("and lands on the picker", good.headers.get("location") == "/wiki/login")
+check("which now renders", stranger.get("/wiki/login").status_code == 200)
+stranger.post("/wiki/login", data={"who": "wren"})
+check("and then the wiki works normally",
+      stranger.get("/wiki/").status_code == 200)
+
+# Signing out should not hand the next person a free pass on a shared machine.
+stranger.get("/wiki/logout")
+check("signing out drops the passphrase too",
+      stranger.get("/wiki/").headers.get("location") == "/wiki/enter",
+      "a shared laptop should not stay unlocked")
+
+# Sessions that predate the gate are NOT grandfathered. The reason to add a
+# passphrase is that the site was reachable by anyone for a while, so the one
+# person it must challenge is whoever was already inside.
+check("a session from before the gate is challenged too",
+      wren.get("/wiki/").headers.get("location") == "/wiki/enter",
+      "otherwise a stranger who wandered in keeps a month of access")
+
+gate_mod.clear(sandbox)
+check("removing it opens the door again",
+      client().get("/wiki/").headers.get("location") == "/wiki/login")
+
 print("\n== the guide ==")
 g = client().get("/wiki/guide")
 check("readable signed out", g.status_code == 200)
