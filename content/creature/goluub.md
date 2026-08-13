@@ -1,6 +1,6 @@
 ---
 name: Goluub
-kind: character
+kind: creature
 summary: An aboleth who inhabits the Everpool. Known to the Dire Foothills kobolds
   as Broodmaster.
 appearance: ancient aboleth, vast eel-like body, three eyes, trailing tentacles, pale

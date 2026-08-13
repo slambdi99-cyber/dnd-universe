@@ -9,7 +9,7 @@ tags:
 - site
 - from-session-log
 links:
-- character/goluub
+- creature/goluub
 - place/rumbleshot-quarry
 sources:
 - session-log:the-buried-star-tobias-log.txt

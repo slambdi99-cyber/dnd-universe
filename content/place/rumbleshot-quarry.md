@@ -11,7 +11,7 @@ tags:
 links:
 - place/copper-vale
 - character/foreman-rumbleshot
-- character/goluub
+- creature/goluub
 - place/the-drowned-amphitheater
 sources:
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg

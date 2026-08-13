@@ -8,7 +8,7 @@ tags:
 - ally
 - from-session-log
 links:
-- character/goluub
+- creature/goluub
 sources:
 - session-log:the-buried-star-tobias-log.txt
 art:

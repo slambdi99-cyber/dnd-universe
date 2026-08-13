@@ -8,7 +8,7 @@ tags:
 - site
 - from-wiki
 links:
-- character/goluub
+- creature/goluub
 - place/buried-star
 - place/rumbleshot-quarry
 sources:
