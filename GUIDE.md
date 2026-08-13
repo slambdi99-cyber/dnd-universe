@@ -64,61 +64,29 @@ ourselves.
 This is the good part. Your Claude can read the whole world, answer questions
 about it, and write new pages properly linked into everything else.
 
-**Ask The DM or Timothy Tuttle for your personal token.** It's yours, it's write access,
-so treat it like a password. Everyone has a different one, and yours is what
-tells the server which secrets you're allowed to see.
+You don't need to ask anyone for anything. Once you're signed in to the
+website, click **connect Claude** in the top right.
 
-### Setting it up
+That page has your own connection details already filled in, three ways:
 
-Paste this into Claude, with your token in place of `PASTE_TOKEN`:
+- **A prompt to paste into Claude**, which works out your particular client and
+  sets it up for you. Easiest, and what most people should use.
+- **A one-line command** if you use Claude Code.
+- **The raw config**, if you'd rather edit the file yourself.
 
-```
-Please configure an MCP server for me. Details:
-
-  Name:      copper-vale
-  Transport: HTTP (streamable HTTP, not SSE, not stdio)
-  URL:       https://the-wiki.example/mcp
-  Auth:      an Authorization header with the value
-             Bearer PASTE_TOKEN
-
-Work out the right way to add it for whichever Claude client you're running
-in, and tell me exactly what to do. Depending on the client that's usually:
-
-  - Claude Code: the `claude mcp add` command with an http transport and a
-    --header flag
-  - Claude Desktop or another config-file client: an entry under "mcpServers"
-    with "type": "http", the url, and a "headers" object containing the
-    Authorization header
-  - A stdio-only client: bridging with `npx mcp-remote <url> --header ...`
-
-If you can edit the config file yourself, do it and tell me what changed. If
-it needs a restart or a step I have to do, say so plainly.
-
-Then verify by calling world_overview. It should report about 84 pages and
-list five player characters. If it fails, tell me the exact error: 401 means
-the token is wrong, and a connection failure probably means the machine
-hosting it is switched off.
-```
-
-If your client uses a config file, this is the entry:
-
-```json
-{
-  "mcpServers": {
-    "copper-vale": {
-      "type": "http",
-      "url": "https://the-wiki.example/mcp",
-      "headers": { "Authorization": "Bearer PASTE_TOKEN" }
-    }
-  }
-}
-```
+Each has a Copy button. Pick whichever suits and paste it.
 
 ### Check it worked
 
 Ask your Claude: **"call whoami on copper-vale"**. It should come back with
-your name, and how many pages you can see. If it says *guest*, your token
-didn't take.
+your name, and how many pages you can see. If it says *guest*, the header
+didn't take: go back to the connect page and try one of the other options.
+
+### One thing to be careful with
+
+What's on that page is effectively your password. It can write to the campaign,
+and it decides whose secrets you're shown. Don't paste it into the group chat.
+If it does get out, tell The DM and it can be replaced.
 
 ---
 
@@ -265,8 +233,8 @@ sure, ask The DM to reset it.
 **"My name isn't in the dropdown."** Someone registered as you already. Try
 signing in instead.
 
-**Claude says 401.** Your token is wrong or has a stray space. Ask for it
-again.
+**Claude says 401.** The header didn't copy cleanly. Go back to **connect
+Claude** on the website and use the Copy button rather than selecting by hand.
 
 **Claude can't connect at all.** The whole thing runs on Timothy Tuttle's PC. If it's
 off, the wiki and Claude both stop working. It isn't broken, it's asleep.

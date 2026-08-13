@@ -198,6 +198,32 @@ r = wren.get("/wiki/logout")
 check("logout redirects", r.status_code == 303)
 check("session cleared", wren.get("/wiki/").status_code == 303)
 
+print("\n== connect page is self-service ==")
+anon = client()
+check("connect needs a login", anon.get("/wiki/connect").status_code == 303)
+
+conn = dm.get("/wiki/connect")
+check("renders for a signed-in person", conn.status_code == 200, str(conn.status_code))
+check("shows their name", "The DM" in conn.text)
+check("includes the mcp url", "/mcp" in conn.text)
+check("offers a paste-in prompt", "whoami" in conn.text)
+check("offers the json config", "mcpServers" in conn.text)
+check("offers the CLI command", "claude mcp add" in conn.text)
+
+tokens_path = sandbox / ".people-tokens.json"
+check("minted a token file", tokens_path.exists())
+if tokens_path.exists():
+    import json as _json
+    minted = _json.loads(tokens_path.read_text(encoding="utf-8"))
+    sam_tokens = [t for t, k in minted.items() if k == "dm"]
+    check("minted exactly one token for dm", len(sam_tokens) == 1, str(len(sam_tokens)))
+    check("the page shows that token", sam_tokens and sam_tokens[0] in conn.text)
+    # Asking twice must not mint a second one, or the first stops working.
+    dm.get("/wiki/connect")
+    again = _json.loads(tokens_path.read_text(encoding="utf-8"))
+    check("revisiting is idempotent",
+          len([t for t, k in again.items() if k == "dm"]) == 1)
+
 print("\n== open registration ==")
 open_app = make_app(require_invite=False)
 o = client(open_app)
@@ -237,4 +263,5 @@ if FAIL:
     print(f"{len(FAIL)} FAILURE(S): {FAIL}")
     sys.exit(1)
 print("all checks passed")
+
 

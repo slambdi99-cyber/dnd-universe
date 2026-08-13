@@ -1,15 +1,17 @@
 """Wiki accounts: email, password, and who you are in the world.
 
-Your friends make their own logins, but registration is gated by a one-time
-invite code. That gate is the whole point: without it, anyone who found the URL
-could register claiming to be the DM and read every secret in the campaign. A
-code is bound to one person key from `people.yaml`, so registering with Wren's
-code makes you Wren, and nothing the registrant types decides that.
+Two ways to register, chosen at the server:
+
+  * **Open** (the default). The roster from `people.yaml` is shown and each
+    person picks themselves. Right for a table of friends who all know each
+    other; it trusts anyone holding the link to be honest.
+  * **Invite-gated** (`--require-invite`). A one-time code bound to one person
+    decides who the account is, and nothing the registrant types can change it.
+    Right if the link might reach someone you wouldn't vouch for.
 
 The email address is an identifier and nothing more. Nothing is sent to it and
-it is never verified, because there's no mail server here and the invite code
-is what actually establishes who someone is. Say so if anyone asks why they got
-no confirmation message.
+it is never verified, because there's no mail server here. Say so if anyone
+asks why they got no confirmation message.
 
 Stored in `.accounts.json` (gitignored):
 
@@ -65,16 +67,41 @@ class Accounts:
     def __init__(self, path: Path):
         self.path = path
         self._data: dict = {"users": {}, "invites": {}}
-        if path.exists():
-            try:
-                loaded = json.loads(path.read_text(encoding="utf-8"))
-                self._data["users"] = loaded.get("users", {})
-                self._data["invites"] = loaded.get("invites", {})
-            except json.JSONDecodeError:
-                pass
+        self._mtime: float | None = None
+        self._read()
+
+    def _read(self) -> None:
+        if not self.path.exists():
+            self._mtime = None
+            return
+        try:
+            loaded = json.loads(self.path.read_text(encoding="utf-8"))
+            self._data["users"] = loaded.get("users", {})
+            self._data["invites"] = loaded.get("invites", {})
+            self._mtime = self.path.stat().st_mtime
+        except (json.JSONDecodeError, OSError):
+            pass
+
+    def _refresh(self) -> None:
+        """Re-read if the file changed underneath us.
+
+        The server holds this object for its whole lifetime, so without this a
+        DM removing an account by hand would have no effect until a restart,
+        and the roster would keep claiming a name nobody holds.
+        """
+        try:
+            current = self.path.stat().st_mtime if self.path.exists() else None
+        except OSError:
+            return
+        if current != self._mtime:
+            self._read()
 
     def save(self) -> None:
         self.path.write_text(json.dumps(self._data, indent=2), encoding="utf-8")
+        try:
+            self._mtime = self.path.stat().st_mtime
+        except OSError:
+            self._mtime = None
 
     # -- passwords -----------------------------------------------------
 
@@ -93,6 +120,7 @@ class Accounts:
         return code
 
     def open_invites(self) -> dict[str, str]:
+        self._refresh()
         return {
             code: info["key"]
             for code, info in self._data["invites"].items()
@@ -101,6 +129,7 @@ class Accounts:
 
     def invite_key(self, code: str) -> str | None:
         """The person key an unused code grants, compared in constant time."""
+        self._refresh()
         found = None
         for candidate, info in self._data["invites"].items():
             if hmac.compare_digest(code, candidate) and not info.get("used_by"):
@@ -111,6 +140,7 @@ class Accounts:
 
     @property
     def claimed_keys(self) -> set[str]:
+        self._refresh()
         return {record["key"] for record in self._data["users"].values()}
 
     def register(
@@ -165,6 +195,7 @@ class Accounts:
         return Account(email=email, key=resolved), ""
 
     def authenticate(self, email: str, password: str) -> Account | None:
+        self._refresh()
         record = self._data["users"].get(normalise(email))
         if record is None:
             # Hash anyway, so an unknown address takes as long as a wrong
@@ -188,9 +219,11 @@ class Accounts:
 
     @property
     def emails(self) -> list[str]:
+        self._refresh()
         return sorted(self._data["users"])
 
     def key_for(self, email: str) -> str | None:
+        self._refresh()
         record = self._data["users"].get(normalise(email))
         return record["key"] if record else None
 

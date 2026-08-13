@@ -109,6 +109,14 @@ form.auth button { margin-top: 1.2rem; padding: .55rem 1.2rem; border: 0;
   .error { color: #ffb4ab; background: #3b1512; border-color: #5c221d; }
 }
 .hint { color: var(--muted); font-size: .85rem; }
+.copyblock { position: relative; margin: 1rem 0; }
+.copyblock pre { background: var(--panel); border: 1px solid var(--line);
+  border-radius: 4px; padding: .8rem 1rem; overflow-x: auto; font-size: .8rem;
+  line-height: 1.5; white-space: pre-wrap; word-break: break-word;
+  font-family: ui-monospace, Consolas, monospace; }
+.copyblock button { position: absolute; top: .5rem; right: .5rem;
+  padding: .25rem .6rem; font-size: .75rem; border: 1px solid var(--line);
+  border-radius: 4px; background: var(--bg); color: var(--ink); cursor: pointer; }
 """
 
 SEARCH_JS = """
@@ -153,6 +161,7 @@ def shell(title: str, base: str, body: str, index_json: str,
     if live:
         account = (
             f'<span class="who">{html.escape(user)} &middot; '
+            f'<a href="{base}connect">connect Claude</a> &middot; '
             f'<a href="{base}logout">sign out</a></span>'
             if user else f'<span class="who"><a href="{base}login">sign in</a></span>'
         )

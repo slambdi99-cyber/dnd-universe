@@ -221,10 +221,41 @@ def build(cfg, library: Library, registry: people_mod.People,
             return HTMLResponse("Not found", status_code=404)
         return FileResponse(path)
 
+    async def connect(request):
+        """Everything someone needs to point their own Claude at the world.
+
+        Self-service on purpose: they signed in already, so the server knows
+        who they are and can mint their token itself. Nobody has to ask the DM
+        for a credential, which was the last manual step in onboarding.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        email = request.session.get("user")
+        key = accounts.key_for(email)
+        person = registry.members.get(key) if key else None
+        if person is None:
+            return HTMLResponse(
+                site_mod.shell("Connect", "/wiki/",
+                               "<h1>Connect</h1><p class='hint'>Your account "
+                               "isn't linked to anyone. Ask your DM.</p>",
+                               "[]", user=email, live=True),
+                status_code=404,
+            )
+
+        token = people_mod.ensure_token(Path(cfg.root), person.key)
+        base = str(request.base_url).rstrip("/")
+        return HTMLResponse(site_mod.shell(
+            "Connect Claude", "/wiki/",
+            _connect_page(person.name, f"{base}/mcp", token),
+            "[]", user=person.name, live=True,
+        ))
+
     return [
         Route("/wiki/login", login, methods=["GET", "POST"]),
         Route("/wiki/register", register, methods=["GET", "POST"]),
         Route("/wiki/logout", logout),
+        Route("/wiki/connect", connect),
         Route("/wiki/", index),
         Route("/wiki/index.html", index),
         Route("/wiki/art/{filename}", art),
@@ -234,6 +265,79 @@ def build(cfg, library: Library, registry: people_mod.People,
 
 
 # -- forms -------------------------------------------------------------
+
+def _connect_page(name: str, url: str, token: str) -> str:
+    config = (
+        '{\n'
+        '  "mcpServers": {\n'
+        '    "copper-vale": {\n'
+        '      "type": "http",\n'
+        f'      "url": "{url}",\n'
+        '      "headers": {\n'
+        f'        "Authorization": "Bearer {token}"\n'
+        '      }\n'
+        '    }\n'
+        '  }\n'
+        '}'
+    )
+    prompt = (
+        "Please set up an MCP server for me.\n\n"
+        f"  Name:      copper-vale\n"
+        f"  Transport: HTTP (streamable HTTP, not SSE, not stdio)\n"
+        f"  URL:       {url}\n"
+        f"  Auth:      an Authorization header with the value\n"
+        f"             Bearer {token}\n\n"
+        "Work out how to add it for whichever Claude client you're running in, "
+        "do it if you can, and tell me if there's a step I have to take myself. "
+        "Then verify by calling whoami: it should come back with my name."
+    )
+    cli = (
+        f"claude mcp add --transport http copper-vale {url} "
+        f'--header "Authorization: Bearer {token}"'
+    )
+
+    def block(idx: int, text: str) -> str:
+        return (
+            f'<div class="copyblock"><pre id="b{idx}">{html.escape(text)}</pre>'
+            f'<button type="button" onclick="cp(\'b{idx}\',this)">Copy</button></div>'
+        )
+
+    return f"""
+<h1>Connect Claude</h1>
+<p class="summary">Signed in as {html.escape(name)}. Everything below already
+has your own details in it.</p>
+
+<p>This lets your Claude read the world and write to it. What you can see is
+tied to you, so use your own details and don't pass them around.</p>
+
+<h2>Easiest: paste this into Claude</h2>
+{block(1, prompt)}
+
+<h2>Claude Code</h2>
+{block(2, cli)}
+
+<h2>Or edit the config file yourself</h2>
+{block(3, config)}
+
+<h2>Check it worked</h2>
+<p>Ask your Claude: <em>call whoami on copper-vale</em>. It should come back
+with your name. If it says <em>guest</em>, the header didn't take.</p>
+
+<p class="hint">Treat this like a password: it can write to the campaign, and
+it decides whose secrets you're shown. If it leaks, tell your DM and it can be
+replaced.</p>
+
+<script>
+function cp(id, btn) {{
+  navigator.clipboard.writeText(document.getElementById(id).innerText).then(
+    () => {{ const t = btn.textContent; btn.textContent = 'Copied';
+             setTimeout(() => btn.textContent = t, 1500); }},
+    () => {{ btn.textContent = 'Press Ctrl+C'; }}
+  );
+}}
+</script>
+"""
+
 
 def _login_form(error: str = "", email: str = "") -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""

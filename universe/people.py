@@ -64,6 +64,33 @@ class People:
         return bool(self.members)
 
 
+def ensure_token(root: Path, key: str) -> str:
+    """Return this person's MCP token, minting and saving one if needed.
+
+    Lets someone who has signed in to the wiki fetch their own connection
+    details, instead of the DM handing tokens out by hand.
+    """
+    import secrets as pysecrets
+
+    key = key.strip().lower()
+    path = root / TOKENS_FILE
+    data: dict[str, str] = {}
+    if path.exists():
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            data = {}
+
+    for token, owner in data.items():
+        if str(owner).strip().lower() == key:
+            return token
+
+    token = pysecrets.token_urlsafe(32)
+    data[token] = key
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return token
+
+
 def load(root: Path) -> People:
     """Load identities and tokens. Missing files mean the feature is off."""
     people = People()
