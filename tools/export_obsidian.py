@@ -35,7 +35,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import yaml  # noqa: E402
 
 from universe import config as config_mod  # noqa: E402
+from universe import people as people_mod  # noqa: E402
+from universe import secrets as secrets_mod  # noqa: E402
 from universe.entities import Entity, Library  # noqa: E402
+
+# Set from --as. Empty means "public only": no secrets for anyone.
+VIEWER: frozenset[str] = frozenset()
 
 MANIFEST = ".export-manifest.json"
 
@@ -118,8 +123,10 @@ def render_page(
     if entity.summary:
         parts += [f"*{entity.summary}*", ""]
 
-    if entity.body.strip():
-        parts += [entity.body.strip(), ""]
+    body = secrets_mod.redact(entity.body, VIEWER) if VIEWER \
+        else secrets_mod.strip_all(entity.body)
+    if body:
+        parts += [body, ""]
 
     # Outgoing links as real wikilinks.
     resolved = [titles[ref] for ref in entity.links if ref in titles]
@@ -204,14 +211,43 @@ def main() -> int:
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", help="Vault folder (default: <project>/vault)")
     ap.add_argument("--no-images", action="store_true", help="Skip copying art")
+    ap.add_argument(
+        "--as", dest="as_person", metavar="KEY",
+        help="Include the secrets this person may read, e.g. --as dm. "
+             "Without it the vault contains no secrets at all.",
+    )
     args = ap.parse_args()
 
     cfg = config_mod.load()
     library = Library(cfg.content_dir)
-    entities = sorted(library.all(), key=lambda e: (e.kind, e.name))
+
+    global VIEWER
+    viewer_name = "public only"
+    if args.as_person:
+        registry = people_mod.load(cfg.root)
+        person = registry.members.get(args.as_person.strip().lower())
+        if person is None:
+            print(f"No person with key {args.as_person!r} in people.yaml.",
+                  file=sys.stderr)
+            return 1
+        VIEWER = person.identities
+        viewer_name = person.name
+
+    everything = sorted(library.all(), key=lambda e: (e.kind, e.name))
+    entities = [
+        e for e in everything
+        if not e.data.get("visible_to")
+        or (VIEWER & {str(v).lower() for v in e.data["visible_to"]})
+    ]
+    hidden = {e.ref for e in everything} - {e.ref for e in entities}
+    for entity in entities:
+        entity.links = [r for r in entity.links if r not in hidden]
+
     if not entities:
         print("No content to export.", file=sys.stderr)
         return 1
+    print(f"Exporting as: {viewer_name}"
+          + (f"  ({len(hidden)} restricted page(s) excluded)" if hidden else ""))
 
     vault = Path(args.out) if args.out else cfg.root / "vault"
     vault.mkdir(parents=True, exist_ok=True)

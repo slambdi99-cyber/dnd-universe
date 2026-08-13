@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import markdown as md  # noqa: E402
 
 from universe import config as config_mod  # noqa: E402
+from universe import secrets as secrets_mod  # noqa: E402
 from universe.entities import Entity, Library  # noqa: E402
 
 KIND_LABEL = {
@@ -187,8 +188,11 @@ def render_body(entity: Entity, library: Library, images: dict[str, str],
             f'<img class="hero" src="{base}art/{images[entity.ref]}" '
             f'alt="{html.escape(entity.name)}" loading="lazy">'
         )
-    if entity.body.strip():
-        parts.append(md.markdown(entity.body, extensions=["tables", "nl2br"]))
+    # The public site never carries a secret, for anyone. Not redacted per
+    # viewer, stripped entirely: a static file has no idea who is reading it.
+    public_body = secrets_mod.strip_all(entity.body)
+    if public_body:
+        parts.append(md.markdown(public_body, extensions=["tables", "nl2br"]))
 
     def link_list(refs, heading):
         items = []
@@ -304,10 +308,18 @@ def main() -> int:
 
     cfg = config_mod.load()
     library = Library(cfg.content_dir)
-    entities = sorted(library.all(), key=lambda e: (e.kind, e.name))
+    everything = sorted(library.all(), key=lambda e: (e.kind, e.name))
+    # Pages restricted to particular people are left out of the public site
+    # entirely, along with any link pointing at them.
+    entities = [e for e in everything if not e.data.get("visible_to")]
+    restricted = {e.ref for e in everything} - {e.ref for e in entities}
+    for entity in entities:
+        entity.links = [r for r in entity.links if r not in restricted]
     if not entities:
         print("No content to export.", file=sys.stderr)
         return 1
+    if restricted:
+        print(f"Excluding {len(restricted)} restricted page(s) from the site.")
 
     site = Path(args.out) if args.out else cfg.root / "site"
     if site.exists():
@@ -337,8 +349,10 @@ def main() -> int:
             "u": slug_to_url(e.ref),
             # One lowercase haystack; the client does a simple substring match,
             # which is plenty for 84 pages and needs no dependencies.
+            # Public text only. Indexing a secret would let anyone find it by
+            # searching for a word that appears solely inside one.
             "h": " ".join(
-                [e.name, e.summary, e.body, " ".join(e.tags)]
+                [e.name, e.summary, secrets_mod.strip_all(e.body), " ".join(e.tags)]
             ).lower(),
         }
         for e in entities

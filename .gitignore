@@ -21,3 +21,6 @@ site/
 
 # Shared password for the wiki. Never commit this.
 .wiki-password
+
+# Per-person MCP tokens. Never commit these.
+.people-tokens.json
