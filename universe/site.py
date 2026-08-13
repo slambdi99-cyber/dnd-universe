@@ -143,6 +143,14 @@ label.cb input { width: auto; }
 .notice { border-left: 3px solid var(--accent); background: var(--accent-soft);
   padding: .6rem 1rem; margin: 1rem 0; font-size: .9rem; border-radius: 0 4px 4px 0; }
 .newpage { float: right; font-size: .85rem; }
+.sheet { border: 1px solid var(--line); border-radius: 6px; padding: .9rem 1.1rem;
+  margin: 2rem 0 0; background: var(--panel); }
+.sheet .statline { font-size: .85rem; color: var(--muted); text-transform: uppercase;
+  letter-spacing: .06em; margin-bottom: .5rem; }
+a.sheetlink { display: inline-block; padding: .45rem .9rem; border-radius: 4px;
+  background: var(--accent); color: #fff; font-size: .9rem; }
+a.sheetlink:hover { text-decoration: none; opacity: .9; }
+.sheet .hint { margin: .6rem 0 0; }
 .copyblock { position: relative; margin: 1rem 0; }
 .copyblock pre { background: var(--panel); border: 1px solid var(--line);
   border-radius: 4px; padding: .8rem 1rem; overflow-x: auto; font-size: .8rem;
@@ -296,6 +304,26 @@ def render_body(entity: Entity, library: Library, images: dict[str, str],
         "Mentioned by",
     )
 
+    sheet = entity.data.get("dndbeyond_sheet")
+    if sheet:
+        bits = " &middot; ".join(
+            filter(None, [
+                html.escape(str(entity.data.get("race", ""))),
+                html.escape(str(entity.data.get("class", ""))),
+                html.escape(str(entity.data.get("subclass", ""))),
+                f"level {entity.data['level']}" if entity.data.get("level") else "",
+            ])
+        )
+        parts.append(
+            '<div class="sheet">'
+            f'<div class="statline">{bits}</div>'
+            f'<a class="sheetlink" href="{html.escape(sheet)}" target="_blank" '
+            f'rel="noopener">Open character sheet on D&amp;D Beyond</a>'
+            '<p class="hint">Hit points, spells and inventory live on the sheet, '
+            'not here. It needs a D&amp;D Beyond account with access to the '
+            'campaign.</p></div>'
+        )
+
     if entity.tags:
         parts.append(
             '<div class="tags">'
@@ -304,8 +332,11 @@ def render_body(entity: Entity, library: Library, images: dict[str, str],
         )
 
     meta = []
+    # Fields already shown as the sheet button don't need a second airing in
+    # the raw metadata table.
+    shown_above = {"visible_to", "dndbeyond_sheet", "dndbeyond_campaign"}
     data = {k: v for k, v in entity.data.items()
-            if k != "visible_to" and v not in (None, "", [], {})}
+            if k not in shown_above and v not in (None, "", [], {})}
     if data:
         rows = "".join(
             f"<tr><th>{html.escape(str(k).replace('_',' '))}</th>"

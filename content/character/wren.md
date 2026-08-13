@@ -37,6 +37,8 @@ data:
   level: 4
   dndbeyond_player: Nrwshoe
   status: active
+  dndbeyond_sheet: https://www.dndbeyond.com/characters/150673315
+  dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676
 ---
 
 Casts Speak With Dead. The art of her doing it shows her with a tall wooden staff in a candlelit bedroom, ringed by green skull-spirits, eyes lit cyan by the spell. The staff is very likely Timothy's.

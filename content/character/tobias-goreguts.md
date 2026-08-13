@@ -34,6 +34,8 @@ data:
   level: 4
   dndbeyond_player: Maximpod
   status: active
+  dndbeyond_sheet: https://www.dndbeyond.com/characters/151161161
+  dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676
 ---
 
 A mercenary in the army before all this, scarred, with tough rough skin. His unit was the 11th Battalion, nicknamed the Bonewall. His mentor was Dante IronBlood.

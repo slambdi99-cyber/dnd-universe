@@ -30,6 +30,8 @@ data:
   level: 4
   dndbeyond_player: Aelan Viremont
   status: active
+  dndbeyond_sheet: https://www.dndbeyond.com/characters/169093190
+  dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676
 ---
 
 Joined the fray on 2026-08-05 when the party's carriage to Laurelthel was attacked by rebels shouting for the fallen heir. The log records the party as suspicious of them.
