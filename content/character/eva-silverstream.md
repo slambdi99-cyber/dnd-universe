@@ -18,6 +18,7 @@ sources:
 - discord:dnd-campaign:character-art-posts
 art:
 - character/eva-silverstream/default-63260ee4
+- character/eva-silverstream/upload-494ac4a121e7f3b0
 data:
   class: Cleric
   subclass: Tempest Domain

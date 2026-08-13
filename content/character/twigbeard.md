@@ -23,6 +23,7 @@ art:
 - character/twigbeard/default-4ffb46ac
 - character/twigbeard/default-5c27e372
 - character/twigbeard/default-27d82167
+- character/twigbeard/upload-a690a80ed16c952c
 ---
 
 A dwarf druid who relies on Wild Shape. The 6 Wolves removed him from the pack when they worked out their supposed seventh lycanthrope was nothing of the kind.

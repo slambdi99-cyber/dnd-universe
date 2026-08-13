@@ -16,6 +16,7 @@ sources:
 - discord:lore-drop:2026-08-13
 art:
 - character/foreman-rumbleshot/default-dafe6460
+- character/foreman-rumbleshot/upload-64206c5af2f593ce
 data:
   aka:
   - Foreman Rumbleshot

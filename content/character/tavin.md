@@ -17,6 +17,7 @@ sources:
 art:
 - character/tavin/default-586aa497
 - character/tavin/default-c06ca894
+- character/tavin/upload-6d1b0bc5d8a9e222
 data:
   race: Halfling
   affiliation: Underbelly Mercantile (Underling)

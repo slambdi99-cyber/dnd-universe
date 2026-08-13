@@ -24,6 +24,7 @@ art:
 - character/buster/default-30132a7e
 - character/buster/default-6e5452d3
 - character/buster/default-8503b387
+- character/buster/upload-06bb1f160c2370e6
 data:
   race: 3/4-Orc
   affiliation: Underbelly Mercantile (Underling)

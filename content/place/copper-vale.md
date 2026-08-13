@@ -23,6 +23,7 @@ sources:
 - dm-wiki
 art:
 - place/copper-vale/default-ba62944e
+- place/copper-vale/upload-c2ec92cd3b3b23b2
 data:
   map_type: region
 ---

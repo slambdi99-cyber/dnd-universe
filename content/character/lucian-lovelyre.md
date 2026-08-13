@@ -28,6 +28,7 @@ sources:
 art:
 - character/lucian-lovelyre/default-d422e12f
 - character/lucian-lovelyre/default-ce589ffe
+- character/lucian-lovelyre/upload-918c32c8beb9d2fd
 data:
   class: Bard
   subclass: College of Lore

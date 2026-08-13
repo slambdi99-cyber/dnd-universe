@@ -22,6 +22,7 @@ sources:
 - dm-wiki
 art:
 - item/misenchanted-lavender-mead/default-d57fd554
+- item/misenchanted-lavender-mead/upload-6aaac6e62a282955
 data:
   ingredients:
   - Hearthsalt

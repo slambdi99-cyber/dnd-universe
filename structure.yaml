@@ -28,6 +28,8 @@ kinds:
   label: Sessions
 - key: lore
   label: Lore
+- key: audit
+  label: Audit
 home:
 - title: Where
   kind: place

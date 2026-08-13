@@ -20,6 +20,7 @@ sources:
 - dm-wiki
 art:
 - place/peapod-pub/default-01607bb8
+- place/peapod-pub/upload-92f6f70682116aae
 data:
   map_type: site
   aka:

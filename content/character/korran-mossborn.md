@@ -27,6 +27,7 @@ sources:
 - dndbeyond:campaign/6916676
 art:
 - character/korran-mossborn/default-76dc3062
+- character/korran-mossborn/upload-2ab5d067d0e1a974
 data:
   class: Monk
   race: Goliath
