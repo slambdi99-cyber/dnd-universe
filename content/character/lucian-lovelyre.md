@@ -6,7 +6,6 @@ summary: Aasimar bard of the College of Lore. A prolific musician, assassinated 
 appearance: handsome aasimar man, tousled dark hair, faintly luminous violet eyes,
   scarred cheek, warm ochre patterned tunic, lute
 tags:
-- player-character
 - bard
 - aasimar
 - deceased
