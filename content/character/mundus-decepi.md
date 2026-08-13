@@ -27,7 +27,6 @@ art:
 data:
   class: Rogue
   player: Mundus-player
-  discord_id: 'REDACTED'
   mentor: Elaric the Blightwarden
   former_affiliation: Hollow Root Covenant
   race: Halfling

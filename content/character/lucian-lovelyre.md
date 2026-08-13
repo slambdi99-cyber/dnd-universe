@@ -33,7 +33,6 @@ data:
   class: Bard
   subclass: College of Lore
   race: Aasimar
-  discord_id: '766420870016663572'
   level: 3
   dndbeyond_player: Lucians-player
   status: deactivated

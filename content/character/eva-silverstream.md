@@ -25,7 +25,6 @@ data:
   race: Half-drow
   player: Eva's player
   deity: Selune
-  discord_id: null
 ---
 
 The first character created for the campaign, on 2025-05-05. She has since left the party.

@@ -14,7 +14,9 @@ There are two ways in. You probably want both.
 
 ## 1. The website
 
-**https://the-wiki.example/wiki**
+**Timothy Tuttle will send you the link.** It isn't written down here: this guide is
+in a public repo, and the wiki has no password, so anyone who found the address
+could sign in as any of us.
 
 ### Signing in
 

@@ -30,7 +30,6 @@ data:
   class: Barbarian
   race: Half-Orc
   player: Tobias Goreguts
-  discord_id: 'REDACTED'
   subclass: Path of the Ancestral Guardian (XGtE)
   level: 4
   dndbeyond_player: Maximpod

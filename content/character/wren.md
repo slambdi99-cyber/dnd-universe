@@ -33,7 +33,6 @@ art:
 - character/wren/default-9a210fa7
 data:
   player: nickshoee
-  discord_id: 'REDACTED'
   race: Elf
   class: Fighter
   subclass: Battle Master
@@ -44,20 +43,36 @@ data:
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676
 ---
 
-Casts Speak With Dead. The art of her doing it shows her with a tall wooden staff in a candlelit bedroom, ringed by green skull-spirits, eyes lit cyan by the spell. The staff is very likely Timothy's.
-
-She is from Lorithal and has been secretive about it. She noticed an aunt at Warwick's party and behaved oddly enough that Tobias got suspicious and tried to find out why.
-
-The log records that Wren has a lot of information on the Hollow Root Covenant. When a gemstone touched a root in the Covenant's chamber, a voice spoke in the back of her head.
-
-## A discrepancy worth resolving
-
-Her sheet says Fighter (Battle Master), which has no spellcasting. But the DM posted art captioned 'Wren casting Speak With Dead', and the session log has her hearing a voice when a gemstone touched a root in the Covenant's chamber.
-
-The most likely explanation is an item rather than a class feature: she holds the Gnarled Staff of the Rooted One and a Splinter of the Buried Star, either of which could carry the spell. Worth asking her player rather than assuming the sheet or the fiction is wrong.
-
-## Age
-
-Wren is 69 years old.
-
+Casts Speak With Dead. The art of her doing it shows her with a tall wooden staff in a candlelit bedroom, ringed by green skull-spirits, eyes lit cyan by the spell. The staff is very likely Timothy's.
+
+
+
+She is from Lorithal and has been secretive about it. She noticed an aunt at Warwick's party and behaved oddly enough that Tobias got suspicious and tried to find out why.
+
+
+
+The log records that Wren has a lot of information on the Hollow Root Covenant. When a gemstone touched a root in the Covenant's chamber, a voice spoke in the back of her head.
+
+
+
+## A discrepancy worth resolving
+
+
+
+Her sheet says Fighter (Battle Master), which has no spellcasting. But the DM posted art captioned 'Wren casting Speak With Dead', and the session log has her hearing a voice when a gemstone touched a root in the Covenant's chamber.
+
+
+
+The most likely explanation is an item rather than a class feature: she holds the Gnarled Staff of the Rooted One and a Splinter of the Buried Star, either of which could carry the spell. Worth asking her player rather than assuming the sheet or the fiction is wrong.
+
+
+
+## Age
+
+
+
+Wren is 69 years old.
+
+
+
 Stated by her player, 2026-08-13.

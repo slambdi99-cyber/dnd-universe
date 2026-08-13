@@ -22,7 +22,6 @@ data:
   class: Druid
   race: Tortle
   player: Timothy Tuttle
-  discord_id: 'REDACTED'
   subclass: Circle of the Shepherd (2024)
   level: 4
   dndbeyond_player: TimTuttle

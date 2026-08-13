@@ -26,7 +26,6 @@ art:
 - character/aelan-viremont/default-9d3422dd
 data:
   player: Aelan Viremont
-  discord_id: 'REDACTED'
   pronunciation: Ay-lan VEER-mont
   race: Human
   class: Wizard

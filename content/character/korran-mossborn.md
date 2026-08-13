@@ -32,7 +32,6 @@ data:
   class: Monk
   race: Goliath
   player: Korrans-player
-  discord_id: 'REDACTED'
   epithet: the Still Hand
   occupation: Bartender at the Peapod Public House
   subclass: Warrior of the Elements
