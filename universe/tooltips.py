@@ -28,6 +28,7 @@ from __future__ import annotations
 import json
 import re
 from pathlib import Path
+from urllib.parse import quote_plus
 
 from . import secrets as secrets_mod
 from .entities import Entity
@@ -115,12 +116,19 @@ def build(entities: list[Entity], viewer: frozenset[str], root: Path,
     payload = []
     for entry in seen.values():
         term = entry["term"]
+        url = entry.get("url", "")
+        if not url and entry["kind"] != "wiki":
+            # Straight to D&D Beyond for the full entry. The tooltip carries a
+            # trimmed SRD summary; anything beyond that belongs on the site
+            # where the table's books actually live, and where The DM's content
+            # sharing already gives everyone access.
+            url = "https://www.dndbeyond.com/search?q=" + quote_plus(term)
         payload.append({
             "t": term,
             "k": entry["kind"],
             "m": entry.get("meta", ""),
             "d": entry.get("text", ""),
-            "u": entry.get("url", ""),
+            "u": url,
             # 1 = needs a capital letter to match.
             "c": 1 if (" " not in term and term.lower() in AMBIGUOUS) else 0,
         })
@@ -203,7 +211,10 @@ TOOLTIP_JS = r"""
       '<h4>' + e.t + '</h4>' +
       (e.m ? '<div class="m">' + e.m + '</div>' : '') +
       '<p>' + (e.d || 'No description.') + '</p>' +
-      (e.u ? '<a href="' + e.u + '">Open page</a>' : '');
+      (e.u ? '<a href="' + e.u + '"' +
+             (e.k === 'wiki' ? '' : ' target="_blank" rel="noopener"') + '>' +
+             (e.k === 'wiki' ? 'Open page' : 'Full entry on D&amp;D Beyond') +
+             '</a>' : '');
     tip.style.display = 'block';
     const r = el.getBoundingClientRect();
     const t = tip.getBoundingClientRect();
