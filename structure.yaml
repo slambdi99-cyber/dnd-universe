@@ -27,6 +27,7 @@ kinds:
   label: Events
 - key: session
   label: Sessions
+  nav: false
 - key: lore
   label: Lore
   nav: false
