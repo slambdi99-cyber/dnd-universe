@@ -23,7 +23,6 @@ kinds:
   nav: false
 - key: creature
   label: Creatures
-  nav: false
 - key: event
   label: Events
   nav: false

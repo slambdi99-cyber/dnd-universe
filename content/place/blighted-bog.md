@@ -9,7 +9,7 @@ tags:
 links:
 - place/brindlewood
 - place/underground-chamber
-- character/rooted-one
+- lore/rooted-one
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 art:

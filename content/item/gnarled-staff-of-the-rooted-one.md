@@ -7,7 +7,7 @@ tags:
 - magic-item
 - from-wiki
 links:
-- character/rooted-one
+- lore/rooted-one
 - place/underground-chamber
 - character/wren
 sources:

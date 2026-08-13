@@ -12,7 +12,7 @@ tags:
 links:
 - place/shallow-bog
 - place/the-hollow-root
-- character/rooted-one
+- lore/rooted-one
 - character/elaric-the-blightwarden
 - character/barnaby-thistlewick
 - item/bloodroot-greatsword

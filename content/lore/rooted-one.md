@@ -1,6 +1,6 @@
 ---
 name: The Rooted One
-kind: character
+kind: lore
 summary: An ancient corpse seated on a throne beneath the Shallow Bog, gnarled roots
   growing outward from his body.
 appearance: ancient withered corpse on a stone throne, thick gnarled roots growing
