@@ -25,6 +25,7 @@ kinds:
   label: Creatures
 - key: event
   label: Events
+  nav: false
 - key: session
   label: Sessions
   nav: false
