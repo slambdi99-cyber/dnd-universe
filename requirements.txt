@@ -19,6 +19,7 @@ safetensors>=0.4
 Pillow>=10.0
 
 # Live wiki with accounts (mcp_server.py --wiki-live)
+starlette>=0.37
 markdown>=3.5
 itsdangerous>=2.2
 python-multipart>=0.0.9
