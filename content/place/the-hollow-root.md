@@ -25,6 +25,7 @@ art:
 - place/the-hollow-root/default-9d172acf
 data:
   map_type: site
+  active_art: ''
 ---
 
 Not a ruin. An insular society lives here, in what the Covenant presents as peace and scientific progress.
