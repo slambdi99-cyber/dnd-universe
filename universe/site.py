@@ -22,21 +22,45 @@ from pathlib import Path
 from . import schema as schema_mod
 from .entities import Entity, Library
 
-# The kinds of thing that exist, the front page layout and the site's name all
-# come from config.yaml now, so the table can change them without editing code.
-# Set once at startup by `use()`; until then a default schema stands in, which
-# is what the seed scripts and tests get.
-SCHEMA = schema_mod.load(Path(__file__).resolve().parent.parent)
+class Renderer:
+    """Rendering bound to one schema.
 
+    The schema used to be a module-level global that the server overwrote at
+    startup through `site.use(...)`, so what a page rendered with depended on
+    assignment order rather than on its arguments. The tell was already in the
+    tests: they had to remember to call `use` first, and one that forgot
+    silently rendered against whatever schema happened to be on disk.
 
-def use(schema: schema_mod.Schema) -> None:
-    """Point rendering at a particular schema (the server's, or a test's)."""
-    global SCHEMA
-    SCHEMA = schema
+    The functions below take the schema explicitly. This binds it once, so
+    callers do not thread it through every call, and two schemas can exist at
+    the same time: exporting one campaign while serving another is now
+    expressible, which it was not before.
+    """
 
+    def __init__(self, schema: schema_mod.Schema):
+        self.schema = schema
 
-def label_for(kind: str) -> str:
-    return SCHEMA.label(kind)
+    @property
+    def name(self) -> str:
+        return self.schema.name
+
+    def label(self, kind: str) -> str:
+        return self.schema.label(kind)
+
+    def shell(self, *args, **kwargs) -> str:
+        return shell(self.schema, *args, **kwargs)
+
+    def body(self, *args, **kwargs) -> str:
+        return render_body(self.schema, *args, **kwargs)
+
+    def index(self, *args, **kwargs) -> str:
+        return render_index(self.schema, *args, **kwargs)
+
+    def kind_index(self, *args, **kwargs) -> str:
+        return render_kind_index(self.schema, *args, **kwargs)
+
+    def search_index(self, *args, **kwargs) -> str:
+        return search_index(self.schema, *args, **kwargs)
 
 CSS = """
 :root {
@@ -282,7 +306,7 @@ def page_url(ref: str) -> str:
     return f"{kind}/{slug}.html"
 
 
-def shell(title: str, base: str, body: str, index_json: str,
+def shell(schema, title: str, base: str, body: str, index_json: str,
           user: str | None = None, live: bool = False,
           tips: bool = False, extra: str = "") -> str:
     """Wrap rendered body text in the site chrome.
@@ -294,14 +318,14 @@ def shell(title: str, base: str, body: str, index_json: str,
     # The live server routes /wiki/guide; a static export has to be a real file
     # with an .html extension, or the browser downloads it instead of showing it.
     guide_href = f"{base}guide" if live else f"{base}guide.html"
-    SCHEMA.reload_if_changed()
+    schema.reload_if_changed()
     nav = "".join(
         f'<a href="{base}{k.key}/index.html">{html.escape(k.label)}</a>'
-        for k in SCHEMA.nav
+        for k in schema.nav
     ) + f'<a href="{guide_href}">Guide</a>'
     # ASCII separators on purpose: these strings get rewritten by tooling now
     # and then, and a stray encoding round-trip turns punctuation into mojibake.
-    full = title if title == SCHEMA.name else f"{title} - {SCHEMA.name}"
+    full = title if title == schema.name else f"{title} - {schema.name}"
     if live:
         account = (
             f'<span class="who">{html.escape(user)} &middot; '
@@ -320,7 +344,7 @@ def shell(title: str, base: str, body: str, index_json: str,
 <style>{CSS}{tooltips_mod.TOOLTIP_CSS if tips else ""}</style>
 </head><body>
 <header class="top">
-  <a class="home" href="{base}index.html">{html.escape(SCHEMA.name)}</a>
+  <a class="home" href="{base}index.html">{html.escape(schema.name)}</a>
   <nav>{nav}{extra}</nav>
   {account}
   <input id="q" type="search" placeholder="Search the world..." autocomplete="off">
@@ -352,7 +376,7 @@ def render_guide(source: str) -> str:
     )
 
 
-def render_body(entity: Entity, library: Library, images: dict[str, str],
+def render_body(schema, entity: Entity, library: Library, images: dict[str, str],
                 base: str, viewer, allowed: set[str],
                 editable: bool = False) -> str:
     edit_link = (
@@ -362,7 +386,7 @@ def render_body(entity: Entity, library: Library, images: dict[str, str],
         if editable else ""
     )
     parts = [
-        f'<div class="kind">{html.escape(SCHEMA.label(entity.kind))}'
+        f'<div class="kind">{html.escape(schema.label(entity.kind))}'
         f"{edit_link}</div>",
         f"<h1>{html.escape(entity.name)}</h1>",
     ]
@@ -487,22 +511,22 @@ def _cards(items: list[Entity], images: dict[str, str], base: str) -> str:
     return f'<div class="grid">{"".join(out)}</div>'
 
 
-def render_index(entities: list[Entity], images: dict[str, str], base: str,
-                 editable: bool = False) -> str:
+def render_index(schema, entities: list[Entity], images: dict[str, str],
+                 base: str, editable: bool = False) -> str:
     """The front page, assembled from the sections in config.yaml.
 
     Each section is a heading and a filter. An empty one is skipped rather than
     rendered as a bare heading, so a section for a kind nobody has written yet
     costs nothing to leave configured.
     """
-    SCHEMA.reload_if_changed()
+    schema.reload_if_changed()
     parts = [
         f'<a class="newpage" href="{base}new">+ New page</a>' if editable else "",
-        f"<h1>{html.escape(SCHEMA.name)}</h1>",
-        f'<p class="summary">{html.escape(SCHEMA.tagline)}</p>'
-        if SCHEMA.tagline else "",
+        f"<h1>{html.escape(schema.name)}</h1>",
+        f'<p class="summary">{html.escape(schema.tagline)}</p>'
+        if schema.tagline else "",
     ]
-    for section in SCHEMA.home:
+    for section in schema.home:
         matched = [e for e in entities if section.matches(e)]
         if not matched:
             continue
@@ -514,20 +538,20 @@ def render_index(entities: list[Entity], images: dict[str, str], base: str,
     return "\n".join(parts)
 
 
-def render_kind_index(kind: str, items: list[Entity], images: dict[str, str],
-                      base: str) -> str:
-    label = SCHEMA.label(kind)
+def render_kind_index(schema, kind: str, items: list[Entity],
+                      images: dict[str, str], base: str) -> str:
+    label = schema.label(kind)
     return (f"<h1>{label}</h1><p class=\"summary\">{len(items)} pages.</p>"
             + _cards(items, images, base))
 
 
-def search_index(entities: list[Entity], viewer) -> str:
+def search_index(schema, entities: list[Entity], viewer) -> str:
     """Client-side index containing only text this viewer may read."""
     return json.dumps(
         [
             {
                 "n": e.name,
-                "k": SCHEMA.label(e.kind).rstrip("s"),
+                "k": schema.label(e.kind).rstrip("s"),
                 "s": e.summary[:120],
                 "u": page_url(e.ref),
                 "h": " ".join(

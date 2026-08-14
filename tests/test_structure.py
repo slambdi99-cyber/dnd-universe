@@ -154,9 +154,9 @@ schema_mod.set_home(schema, [
     {"title": "The Party", "kind": "character", "tag": "player-character"},
     {"title": "Lore", "kind": "lore"},
 ])
-site_mod.use(schema)
+pages = site_mod.Renderer(schema)
 entities = sorted(lib.all(), key=lambda e: e.name)
-html_out = site_mod.render_index(entities, {}, "/wiki/")
+html_out = pages.index(entities, {}, "/wiki/")
 check("renders the configured sections", "The Party" in html_out and "Lore" in html_out)
 check("skips sections with nothing in them", "Factions" not in html_out,
       "an empty heading is worse than no heading")
@@ -166,7 +166,7 @@ print("\n== naming ==")
 ok, msg = schema_mod.set_site(schema, name="The Hollow Root", tagline="A darker one.")
 check("renamed", ok and schema.name == "The Hollow Root", msg)
 check("nav and title follow",
-      "The Hollow Root" in site_mod.shell("x", "/wiki/", "", "[]"))
+      "The Hollow Root" in site_mod.Renderer(schema).shell("x", "/wiki/", "", "[]"))
 check("blank input changes nothing", not schema_mod.set_site(schema, "", "")[0])
 
 print("\n== persistence ==")
@@ -191,7 +191,31 @@ schema_mod.add_kind(other, "quest", "Quests")
 live.reload_if_changed()
 check("a change made elsewhere appears without a restart", live.has("quest"))
 
+print("\n== two schemas at once ==")
+# Impossible before: rendering read a module-level global, so a second schema
+# would have silently overwritten the first for every caller in the process.
+#
+# Two campaigns means two roots. Pointing both at one structure.yaml would
+# prove nothing, because `reload_if_changed` would correctly converge them,
+# which is the behaviour a single campaign wants.
+elsewhere = Path(tempfile.mkdtemp(prefix="structure-other-"))
+other = schema_mod.load(elsewhere)
+schema_mod.set_site(other, name="A Different Campaign")
+one, two = site_mod.Renderer(schema), site_mod.Renderer(other)
+check("each renderer keeps its own name",
+      one.name != two.name, f"{one.name} vs {two.name}")
+check("and renders with it",
+      one.name in one.shell("x", "/wiki/", "", "[]")
+      and two.name in two.shell("x", "/wiki/", "", "[]"))
+check("building one does not disturb the other",
+      site_mod.Renderer(other).name == "A Different Campaign"
+      and one.name == schema.name)
+check("nothing global is left to poke",
+      not hasattr(site_mod, "SCHEMA") and not hasattr(site_mod, "use"),
+      "a test that forgot site.use() used to render against whatever was on disk")
+
 shutil.rmtree(sandbox, ignore_errors=True)
+shutil.rmtree(elsewhere, ignore_errors=True)
 
 print()
 if FAIL:

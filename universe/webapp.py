@@ -34,9 +34,9 @@ from . import tooltips as tooltips_mod
 from .entities import Entity, Library, slugify
 
 
-def _auth_page(title: str, base: str, inner: str) -> HTMLResponse:
+def _auth_page(wiki, title: str, base: str, inner: str) -> HTMLResponse:
     return HTMLResponse(
-        site_mod.shell(title, base, inner, "[]", user=None, live=True)
+        wiki.pages.shell(title, base, inner, "[]", user=None, live=True)
     )
 
 
@@ -49,7 +49,6 @@ def build(cfg, library: Library, registry: people_mod.People,
     """
 
     schema = schema or schema_mod.load(Path(cfg.root))
-    site_mod.use(schema)
 
     lore_dir = cfg.raw.get("lore_dir")
     wiki = wiki_mod.Wiki(
@@ -85,14 +84,14 @@ def build(cfg, library: Library, registry: people_mod.People,
         if request.method == "GET":
             if request.session.get("gate"):
                 return RedirectResponse("/wiki/login", status_code=303)
-            return _auth_page("The Buried Star", "/wiki/", _gate_form())
+            return _auth_page(wiki, "The Buried Star", "/wiki/", _gate_form())
 
         form = await request.form()
         attempt = str(form.get("passphrase", ""))
         ok = await run_in_threadpool(gate_mod.check, Path(cfg.root), attempt)
         if not ok:
             return _auth_page(
-                "The Buried Star", "/wiki/",
+                wiki,                 "The Buried Star", "/wiki/",
                 _gate_form(error="That isn't it. Ask in the group chat."),
             )
         request.session["gate"] = True
@@ -116,7 +115,7 @@ def build(cfg, library: Library, registry: people_mod.People,
             # picker. Switching person is also the only way to check what
             # someone else can see, which is the point of the whole feature.
             return _auth_page(
-                "Who are you?", "/wiki/",
+                wiki,                 "Who are you?", "/wiki/",
                 _signin_form(roster(), current=request.session.get("who")))
 
         form = await request.form()
@@ -124,7 +123,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         reload_people()
         if key not in registry.members:
             return _auth_page(
-                "Who are you?", "/wiki/",
+                wiki,                 "Who are you?", "/wiki/",
                 _signin_form(roster(), error="Pick a name from the list."),
             )
         request.session["who"] = key
@@ -142,7 +141,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         person = people_mod.add_person(Path(cfg.root), name, character)
         if person is None:
             return _auth_page(
-                "Who are you?", "/wiki/",
+                wiki,                 "Who are you?", "/wiki/",
                 _signin_form(
                     roster(),
                     error="Give a name that isn't already on the list."
@@ -186,8 +185,8 @@ def build(cfg, library: Library, registry: people_mod.People,
         images = images_for(entities)
         return render(
             schema.name,
-            site_mod.render_index(entities, images, "/wiki/", editable=True),
-            site_mod.search_index(entities, viewer), user=user, tips=True,
+            wiki.pages.index(entities, images, "/wiki/", editable=True),
+            wiki.pages.search_index(entities, viewer), user=user, tips=True,
         )
 
     async def kind_index(request):
@@ -203,8 +202,8 @@ def build(cfg, library: Library, registry: people_mod.People,
         images = images_for(entities)
         return render(
             schema.label(kind),
-            site_mod.render_kind_index(kind, items, images, "/wiki/"),
-            site_mod.search_index(entities, viewer), user=user, tips=True,
+            wiki.pages.kind_index(kind, items, images, "/wiki/"),
+            wiki.pages.search_index(entities, viewer), user=user, tips=True,
         )
 
     async def page(request):
@@ -224,9 +223,9 @@ def build(cfg, library: Library, registry: people_mod.People,
         images = images_for(entities)
         return render(
             entity.name,
-            site_mod.render_body(entity, library, images, "/wiki/", viewer, allowed,
-                                 editable=True),
-            site_mod.search_index(entities, viewer), user=user, tips=True,
+            wiki.pages.body(entity, library, images, "/wiki/", viewer, allowed,
+                            editable=True),
+            wiki.pages.search_index(entities, viewer), user=user, tips=True,
         )
 
     async def tooltips_js(request):
@@ -303,7 +302,8 @@ def build(cfg, library: Library, registry: people_mod.People,
         if request.method == "GET":
             return render(
                 f"Editing {entity.name}",
-                _edit_form(form_values(entity, viewer), registry, withheld=withheld,
+                _edit_form(form_values(entity, viewer), registry, schema.kinds,
+                           withheld=withheld,
                            action=f"/wiki/{kind}/{slug}/edit"),
                 user=user,
             )
@@ -348,7 +348,7 @@ def build(cfg, library: Library, registry: people_mod.People,
                 if supplied and (field != "kind" or schema.has(supplied)):
                     values[field] = supplied
             return render("New page",
-                          _edit_form(values, registry, withheld=0,
+                          _edit_form(values, registry, schema.kinds, withheld=0,
                                      action="/wiki/new", creating=True),
                           user=user)
 
@@ -362,8 +362,8 @@ def build(cfg, library: Library, registry: people_mod.People,
                             "kind": kind, "body": str(form.get("body", "")),
                             "summary": str(form.get("summary", "")),
                             "source": str(form.get("source", ""))},
-                           registry, withheld=0, action="/wiki/new",
-                           creating=True,
+                           registry, schema.kinds, withheld=0,
+                           action="/wiki/new", creating=True,
                            error="Give it a name and pick a type."),
                 user=user,
             )
@@ -413,7 +413,7 @@ def build(cfg, library: Library, registry: people_mod.People,
 
 # -- forms -------------------------------------------------------------
 
-def _edit_form(v: dict, registry: people_mod.People, withheld: int,
+def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
                action: str, creating: bool = False, error: str = "") -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""
     title = "New page" if creating else f"Editing {v['name']}"
@@ -422,7 +422,7 @@ def _edit_form(v: dict, registry: people_mod.People, withheld: int,
         f'<option value="{html.escape(k.key)}"'
         f'{" selected" if k.key == v["kind"] else ""}>'
         f'{html.escape(k.label)}</option>'
-        for k in site_mod.SCHEMA.kinds
+        for k in kinds
     )
     kind_field = (
         f'  <label for="k">Type</label>\n  <select id="k" name="kind">{kinds}</select>'

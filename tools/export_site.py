@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from universe import access as access_mod  # noqa: E402
 from universe import config as config_mod  # noqa: E402
+from universe import schema as schema_mod  # noqa: E402
 from universe import site as site_mod
 from universe import tooltips as tooltips_mod  # noqa: E402
 from universe.entities import Entity, Library  # noqa: E402
@@ -43,6 +44,9 @@ def main() -> int:
 
     cfg = config_mod.load()
     library = Library(cfg.content_dir)
+    # The export gets its own renderer, so it can never be rendering
+    # against a schema some other part of the process assigned.
+    pages = site_mod.Renderer(schema_mod.load(cfg.root))
     everything = sorted(library.all(), key=lambda e: (e.kind, e.name))
     entities = access_mod.visible(everything, PUBLIC)
     restricted = {e.ref for e in everything} - {e.ref for e in entities}
@@ -70,7 +74,7 @@ def main() -> int:
             shutil.copy2(src, art_dir / dest)
             images[entity.ref] = dest
 
-    index_json = site_mod.search_index(entities, PUBLIC)
+    index_json = pages.search_index(entities, PUBLIC)
 
     # One shared script so browsers cache it across every page.
     (site / "tooltips.js").write_text(
@@ -85,9 +89,9 @@ def main() -> int:
         folder = site / entity.kind
         folder.mkdir(exist_ok=True)
         (folder / f"{entity.slug}.html").write_text(
-            site_mod.shell(
+            pages.shell(
                 entity.name, "../",
-                site_mod.render_body(entity, library, images, "../", PUBLIC, allowed),
+                pages.body(entity, library, images, "../", PUBLIC, allowed),
                 index_json, tips=True,
             ),
             encoding="utf-8",
@@ -95,27 +99,27 @@ def main() -> int:
 
     for kind, items in by_kind.items():
         (site / kind / "index.html").write_text(
-            site_mod.shell(
-                site_mod.SCHEMA.label(kind), "../",
-                site_mod.render_kind_index(kind, items, images, "../"), index_json,
+            pages.shell(
+                pages.label(kind), "../",
+                pages.kind_index(kind, items, images, "../"), index_json,
             ),
             encoding="utf-8",
         )
 
     (site / "index.html").write_text(
-        site_mod.shell(site_mod.SCHEMA.name, "",
-                       site_mod.render_index(entities, images, ""), index_json,
-                       tips=True),
+        pages.shell(pages.name, "",
+                    pages.index(entities, images, ""), index_json,
+                    tips=True),
         encoding="utf-8",
     )
 
     guide_src = cfg.root / "GUIDE.md"
     if guide_src.exists():
         (site / "guide.html").write_text(
-            site_mod.shell("Guide", "",
-                           site_mod.render_guide(
-                               guide_src.read_text(encoding="utf-8")),
-                           index_json),
+            pages.shell("Guide", "",
+                        site_mod.render_guide(
+                            guide_src.read_text(encoding="utf-8")),
+                        index_json),
             encoding="utf-8",
         )
 
@@ -123,7 +127,7 @@ def main() -> int:
     size = sum(f.stat().st_size for f in site.rglob("*") if f.is_file()) / 1024 / 1024
     print(f"Exported {len(entities)} pages to {site}  ({size:.0f} MB)")
     for kind, n in sorted(counts.items()):
-        print(f"  {n:>3}  {site_mod.SCHEMA.label(kind)}")
+        print(f"  {n:>3}  {pages.label(kind)}")
     print(f"  {len(images):>3}  images")
     if restricted:
         print(f"  {len(restricted):>3}  restricted page(s) excluded")

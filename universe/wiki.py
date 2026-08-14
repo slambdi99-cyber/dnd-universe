@@ -42,6 +42,14 @@ class Wiki:
     schema: schema_mod.Schema
     inbox: inbox_mod.Inbox
     _art: Any = None
+    _renderer: Any = None
+
+    @property
+    def pages(self) -> site_mod.Renderer:
+        """Rendering bound to this wiki's schema."""
+        if self._renderer is None:
+            self._renderer = site_mod.Renderer(self.schema)
+        return self._renderer
 
     # -- people --------------------------------------------------------
 
@@ -140,8 +148,8 @@ class Wiki:
                user: str | None = None, tips: bool = False,
                status: int = 200) -> HTMLResponse:
         return HTMLResponse(
-            site_mod.shell(title, "/wiki/", body, index_json, user=user,
-                           live=True, tips=tips, extra=self.nav_extra(user)),
+            self.pages.shell(title, "/wiki/", body, index_json, user=user,
+                             live=True, tips=tips, extra=self.nav_extra(user)),
             status_code=status,
         )
 
