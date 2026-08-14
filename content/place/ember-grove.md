@@ -15,7 +15,7 @@ tags:
 links:
 - place/lorithal
 - place/the-ashbright-stretch
-- place/house-vaelorith
+- faction/house-vaelorith
 sources:
 - map:lorithal-city-map
 - written by The DM

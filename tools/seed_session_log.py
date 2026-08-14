@@ -6,7 +6,7 @@ running log kept from Tobias's point of view, roughly 2025-10 to 2026-08.
 Read the caveat before trusting any of this. These are one player's rough
 in-session notes: abbreviated, occasionally contradictory, with names spelled
 several ways (Shameous/Seamus, Kasbor/Kasboar, Gollub, Goltheas/Gotheus,
-Laurelthel/Laurelfell/Laurefall). Where a name varies I've picked the most
+Lorithal/Laurelthel/Laurelfell/Laurefall). Where a name varies I've picked the most
 frequent spelling and recorded the alternatives in `data.aka`. Anything the
 log leaves genuinely unclear is tagged `needs-detail` rather than guessed at.
 
@@ -152,17 +152,17 @@ NPCS = [
 
 PLACES = [
     dict(
-        slug="laurelthel",
-        name="Laurelthel",
+        slug="lorithal",
+        name="Lorithal",
         summary="A realm with royalty and an active rebellion. Wren is from there.",
         appearance="distant prosperous realm, pale spires, laurel groves, banners",
         tags=["realm", "from-session-log", "needs-detail"],
         links=["character/wren", "faction/the-fallen-heir"],
         data={"map_type": "realm", "aka": ["Laurelfell", "Laurefall"]},
         body=(
-            "Spelled three ways in the log. Wren knows about it and is from "
+            "Spelled several ways in the log. Wren knows about it and is from "
             "there, but has been secretive on the subject, and noticed an aunt "
-            "of hers at Warwick's party.\n\n"
+            "of hers at Worrick's party.\n\n"
             "The party travelled there for festivities in August 2026 and their "
             "carriage was attacked by rebels shouting for the fallen heir."
         ),
@@ -192,18 +192,18 @@ PLACES = [
         body="Descriptive name; the log does not give it one. Rename if the table has its own.",
     ),
     dict(
-        slug="goltheas-tree",
-        name="Goltheas Tree",
+        slug="gulthias-tree",
+        name="Gulthias Tree",
         summary="A tree whose wood, cut into stakes, kills vampires. Roots from the Covenant's chambers lead to one.",
         appearance="immense pale tree, black roots spreading through dark earth, faintly luminous bark",
         tags=["landmark", "from-session-log", "needs-detail"],
         links=[COVENANT],
-        data={"map_type": "landmark", "aka": ["Gotheus tree"]},
+        data={"map_type": "landmark", "aka": ["Goltheas", "Gotheus tree"]},
         body=(
             "Stakes made from it kill vampires and cause them to burst into "
             "black matter roots.\n\n"
             "Under the kobold caves, a captive said the roots there lead to a "
-            "Goltheas Tree, and that he himself was born from a stake to the "
+            "Gulthias Tree, and that he himself was born from a stake to the "
             "heart made from that wood. The log flags this as a major research "
             "lead: find one on the surface and see whether it is as "
             "indestructible."
@@ -246,12 +246,12 @@ FACTIONS = [
     dict(
         slug="the-fallen-heir",
         name="For the Fallen Heir",
-        summary="A rebellion against Laurelthel's current royalty.",
+        summary="A rebellion against Lorithal's current royalty.",
         appearance="rebel banner, torn white cloth, a broken crown device",
         tags=["faction", "from-session-log", "needs-detail"],
-        links=["place/laurelthel"],
+        links=["place/lorithal"],
         body=(
-            "Attacked the party's carriage on the road to Laurelthel, shouting "
+            "Attacked the party's carriage on the road to Lorithal, shouting "
             "for the fallen heir. Two were captured."
         ),
     ),
@@ -341,8 +341,8 @@ UPDATES = [
             "cult.\n\n"
             "A captive beneath the kobold caves explained their logic directly: "
             "safety is preserved when we can curse the land. He was not a "
-            "sacrifice, he was born from a stake to the heart made of Goltheas "
-            "wood, and the roots in that chamber lead back to a Goltheas Tree.\n\n"
+            "sacrifice, he was born from a stake to the heart made of Gulthias "
+            "wood, and the roots in that chamber lead back to a Gulthias Tree.\n\n"
             "They are described as a cult who worship a rock that makes their "
             "wishes come true. Wren has a lot of information about them, which "
             "she has not fully shared.\n\n"
@@ -352,17 +352,17 @@ UPDATES = [
         ),
     )),
     ("character", "wren", dict(
-        summary="Elf spellcaster from Laurelthel. Carries Twigbeard's Lucky Beard Twig and Timothy's staff.",
+        summary="Elf spellcaster from Lorithal. Carries Twigbeard's Lucky Beard Twig and Timothy's staff.",
         tags=["player-character", "elf", "from-lore"],
         links=["place/copper-vale", "item/twigbeards-lucky-beard-twig",
-               "character/timothy-tuttle", "place/laurelthel", COVENANT],
+               "character/timothy-tuttle", "place/lorithal", COVENANT],
         body=(
             "Casts Speak With Dead. The art of her doing it shows her with a "
             "tall wooden staff in a candlelit bedroom, ringed by green "
             "skull-spirits, eyes lit cyan by the spell. The staff is very likely "
             "Timothy's.\n\n"
-            "She is from Laurelthel and has been secretive about it. She noticed "
-            "an aunt at Warwick's party and behaved oddly enough that Tobias got "
+            "She is from Lorithal and has been secretive about it. She noticed "
+            "an aunt at Worrick's party and behaved oddly enough that Tobias got "
             "suspicious and tried to find out why.\n\n"
             "The log records that Wren has a lot of information on the Hollow "
             "Root Covenant. When a gemstone touched a root in the Covenant's "
@@ -388,13 +388,13 @@ UPDATES = [
         ),
     )),
     ("character", "aelan-viremont", dict(
-        summary="Joined the party on the road to Laurelthel in August 2026. The party are suspicious of them.",
+        summary="Joined the party on the road to Lorithal in August 2026. The party are suspicious of them.",
         tags=["player-character", "from-lore", "needs-appearance"],
-        links=["place/copper-vale", "place/laurelthel"],
+        links=["place/copper-vale", "place/lorithal"],
         data={"pronunciation": "Ay-lan VEER-mont"},
         body=(
             "Joined the fray on 2026-08-05 when the party's carriage to "
-            "Laurelthel was attacked by rebels shouting for the fallen heir. "
+            "Lorithal was attacked by rebels shouting for the fallen heir. "
             "The log records the party as suspicious of them.\n\n"
             "This confirms Aelan Viremont as the player, which was previously only an "
             "inference."

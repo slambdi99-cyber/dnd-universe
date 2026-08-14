@@ -23,3 +23,7 @@ data:
 ---
 
 Descriptive name; the log does not give it one. Rename if the table has its own.
+
+## Superseded
+
+The same location as `place/everpool`: Goluub's underground lake at the bottom of the kobold elevator. "The Drowned Amphitheater" was the session log's descriptive placeholder, recorded before the wiki had the Everpool's name. Kept because the wiki has no delete tool; do not edit.

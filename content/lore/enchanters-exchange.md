@@ -17,9 +17,9 @@ links:
 - place/lorithal
 - place/arrowfell
 - place/copper-ridge
-- place/house-vaelorith
+- faction/house-vaelorith
 - character/wren
-- archive/goltheas-tree
+- place/gulthias-tree
 - place/gulthias-tree
 - creature/goluub
 - place/dawnmere

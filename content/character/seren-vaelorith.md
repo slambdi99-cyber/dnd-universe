@@ -1,7 +1,7 @@
 ---
 name: Seren Vaelorith
 kind: character
-summary: Seren Vaelorith is Wren's cousin, Melda Vaelorith's nephew, and a House Vaelorith
+summary: Seren Vaelorith is Wren's brother, Melda Vaelorith's nephew, and a House Vaelorith
   contact for magical reference books in Lorithal.
 appearance: elf noble-scholar in restrained House Vaelorith clothing, composed and
   bookish, with sharp family features and ink-stained hands
@@ -14,7 +14,7 @@ tags:
 links:
 - character/wren
 - character/melda
-- place/house-vaelorith
+- faction/house-vaelorith
 - place/lorithal
 - lore/enchanters-exchange
 - creature/goluub

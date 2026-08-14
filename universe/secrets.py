@@ -3,10 +3,10 @@
 A page can be readable by the whole table while carrying a block only some
 people are meant to see:
 
-    Wren is from Laurelthel and has been secretive about it.
+    Wren is from Lorithal and has been secretive about it.
 
     :::secret dm, wren
-    Her aunt is the one funding the rebellion. Wren has known since Warwick's
+    Her aunt is the one funding the rebellion. Wren has known since Worrick's
     party and has not told anyone.
     :::
 

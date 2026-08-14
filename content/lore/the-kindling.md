@@ -14,7 +14,7 @@ links:
 - place/lorithal
 - place/ashbright-university
 - place/tintinabullarium
-- faction/the-fallen-heir
+- faction/the-dissenters
 - character/elaric-the-blightwarden
 - character/wren
 sources:

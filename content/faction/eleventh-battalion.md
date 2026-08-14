@@ -7,7 +7,7 @@ tags:
 - faction
 - from-session-log
 - needs-detail
-- primary-faction
+- non-primary-faction
 links:
 - character/tobias-goreguts
 sources:

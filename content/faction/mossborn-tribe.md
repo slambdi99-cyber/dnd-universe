@@ -7,7 +7,7 @@ tags:
 - faction
 - from-lore
 - from-session-log
-- primary-faction
+- non-primary-faction
 links:
 - character/korran-mossborn
 - character/thog-mossborn

@@ -65,7 +65,7 @@ def build_sandbox() -> Path:
     lib = Library(sandbox / "content")
     lib.save(Entity(
         kind="character", slug="wren", name="Wren",
-        summary="Elf fighter from Laurelthel.", appearance="an elf",
+        summary="Elf fighter from Lorithal.", appearance="an elf",
         body=(
             f"{SHARED}\n\n"
             f":::secret dm, wren\n{NICK_ONLY}\n:::\n\n"

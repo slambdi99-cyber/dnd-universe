@@ -16,13 +16,13 @@ tags:
 - dm-thread
 links:
 - character/seamus-stonebuckle
-- place/house-vaelorith
+- faction/house-vaelorith
 - place/lorithal
 - character/wren
 - character/aelan-viremont
 - place/valeshire
 - faction/hollow-root-covenant
-- faction/the-fallen-heir
+- faction/the-dissenters
 sources:
 - session-log:the-buried-star-tobias-log.txt
 - written by The DM

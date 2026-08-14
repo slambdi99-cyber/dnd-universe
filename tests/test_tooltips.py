@@ -32,7 +32,7 @@ entities = [
     Entity(kind="place", slug="brindlewood", name="Brindlewood",
            summary="A small crossroads township."),
     Entity(kind="character", slug="wren", name="Wren",
-           summary="Elf fighter from Laurelthel."),
+           summary="Elf fighter from Lorithal."),
     Entity(kind="lore", slug="dm-notes", name="DM Notes", summary="Behind the screen.",
            data={"visible_to": ["dm"]}),
 ]
