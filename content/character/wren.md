@@ -31,6 +31,7 @@ sources:
 - edited by The DM on the wiki
 art:
 - character/wren/default-9a210fa7
+- character/wren/upload-9112ad610084e165
 data:
   race: Elf
   class: Fighter

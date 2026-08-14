@@ -9,6 +9,7 @@ tags:
 - site
 - plot-critical
 - from-wiki
+- sub-location
 links:
 - place/shallow-bog
 - place/the-hollow-root
@@ -21,6 +22,8 @@ links:
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - dm-wiki
+- 'DM site organization: sub-locations index'
+- updated by The DM
 art:
 - place/underground-chamber/default-a52b6913
 - place/underground-chamber/default-1cbdaf13

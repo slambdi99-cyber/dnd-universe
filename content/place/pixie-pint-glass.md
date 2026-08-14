@@ -7,12 +7,15 @@ appearance: hidden upstairs bar, low beams, coloured glass lamps, crowded booths
 tags:
 - site
 - from-session-log
+- sub-location
 links:
 - place/pincushion-haberdashery
 - place/enchanters-guild
 - faction/underbelly-mercantile
 sources:
 - session-log:the-buried-star-tobias-log.txt
+- 'DM site organization: sub-locations index'
+- updated by The DM
 art:
 - place/pixie-pint-glass/default-02ca587d
 data:

@@ -8,10 +8,13 @@ tags:
 - site
 - from-lore
 - needs-appearance
+- sub-location
 links:
 - place/copper-vale
 sources:
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
+- 'DM site organization: sub-locations index'
+- updated by The DM
 art:
 - place/underbelly-safehouse/default-3bca55e3
 data:

@@ -7,12 +7,15 @@ appearance: hidden temple among mists and moss, low mossy stone halls, still poo
 tags:
 - site
 - from-wiki
+- sub-location
 links:
 - place/copper-vale
 - faction/bogwatchers-sanctum
 - character/korran-mossborn
 sources:
 - dm-wiki
+- 'DM site organization: sub-locations index'
+- updated by The DM
 art:
 - place/bogwatchers-sanctum-temple/default-052192e4
 data:

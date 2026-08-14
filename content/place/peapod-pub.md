@@ -8,6 +8,7 @@ appearance: low timber roadside pub, painted sign, lantern light in small window
 tags:
 - site
 - from-lore
+- sub-location
 links:
 - place/copper-vale
 - place/brindlewood
@@ -18,6 +19,8 @@ sources:
 - discord:dnd-campaign:2025-10-11-korran-backstory
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
 - dm-wiki
+- 'DM site organization: sub-locations index'
+- updated by The DM
 art:
 - place/peapod-pub/default-01607bb8
 - place/peapod-pub/upload-92f6f70682116aae
