@@ -16,13 +16,14 @@ tags:
 - dm-thread
 links:
 - character/seamus-stonebuckle
-- place/house-vaelorith
+- faction/house-vaelorith
 - place/lorithal
 - character/wren
 - character/aelan-viremont
 - place/valeshire
 - faction/hollow-root-covenant
-- faction/the-fallen-heir
+- archive/the-fallen-heir
+- faction/the-dissenters
 sources:
 - session-log:the-buried-star-tobias-log.txt
 - written by The DM
@@ -31,6 +32,8 @@ sources:
 - 'DM correction in chat: Wren aunt relationship is table-known'
 - 'DM correction in chat and DM compendium: Lore/Characters/Lorithal/Melda Vaelorith.md'
 - edited by The DM on the wiki
+- 'DM compendium: Lore/Groups/The Rebellion/The Rebellion.md; reconciled against the
+  live wiki at Sam''s request, 2026-08-14.'
 art:
 - character/melda/default-476d2e3f
 - character/melda/upload-6700fc921c21758b

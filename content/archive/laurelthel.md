@@ -11,7 +11,7 @@ tags:
 - rename-pending
 links:
 - character/wren
-- faction/the-fallen-heir
+- archive/the-fallen-heir
 sources:
 - session-log:the-buried-star-tobias-log.txt
 - edited by The DM on the wiki

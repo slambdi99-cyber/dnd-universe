@@ -11,12 +11,13 @@ tags:
 - primary-location
 links:
 - character/wren
-- faction/the-fallen-heir
+- archive/the-fallen-heir
 - character/aelan-viremont
 - place/the-ashbright-stretch
 - place/the-broadheights
 - place/the-grand-endurance
 - lore/the-kindling
+- faction/the-dissenters
 sources:
 - dm:wiki:2026-08-13
 - written by The DM
@@ -24,6 +25,8 @@ sources:
 - Codex MCP location index cleanup requested by Sam, 2026-08-14.
 - updated by The DM
 - Codex MCP link cleanup requested by Sam, 2026-08-14.
+- 'DM compendium: Lore/Groups/The Rebellion/The Rebellion.md; reconciled against the
+  live wiki at Sam''s request, 2026-08-14.'
 art:
 - place/lorithal/upload-195b5862bfaf8443
 data:

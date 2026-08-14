@@ -14,7 +14,7 @@ tags:
 - sub-location
 links:
 - place/lorithal
-- place/house-vaelorith
+- faction/house-vaelorith
 - place/ember-grove
 - place/ashbright-university
 - place/the-accomodations

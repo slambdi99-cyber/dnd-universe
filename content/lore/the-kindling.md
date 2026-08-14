@@ -14,14 +14,17 @@ links:
 - place/lorithal
 - place/ashbright-university
 - place/tintinabullarium
-- faction/the-fallen-heir
+- archive/the-fallen-heir
 - character/elaric-the-blightwarden
 - character/wren
+- faction/the-dissenters
 sources:
 - DM compendium session notes for 2026-08-12.
 - written by The DM
 - DM direction from Sam, 2026-08-14.
 - updated by The DM
+- 'DM compendium: Lore/Groups/The Rebellion/The Rebellion.md; reconciled against the
+  live wiki at Sam''s request, 2026-08-14.'
 ---
 
 The Kindling is one of Lorithal's major public rites, also spoken of as the Day of the Fallen Heir. The party arrived in Lorithal on the eve of the celebration and witnessed the city gather beneath a reactive magical field.

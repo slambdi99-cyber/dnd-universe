@@ -7,13 +7,14 @@ tags:
 - faction
 - from-session-log
 - needs-detail
-- primary-faction
+- non-primary-faction
 links:
 - character/tobias-goreguts
 sources:
 - session-log:the-buried-star-tobias-log.txt
 - Codex MCP faction index cleanup requested by Sam, 2026-08-14.
 - updated by The DM
+- edited by The DM on the wiki
 art:
 - faction/eleventh-battalion/default-32e6d997
 ---

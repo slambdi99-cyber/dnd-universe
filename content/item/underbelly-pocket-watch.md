@@ -14,4 +14,7 @@ sources:
 - session-log:the-buried-star-tobias-log.txt
 art:
 - item/underbelly-pocket-watch/default-255bbea4
+- item/underbelly-pocket-watch/upload-6ddd16f507901f9f
+data:
+  active_art: item/underbelly-pocket-watch/upload-6ddd16f507901f9f
 ---

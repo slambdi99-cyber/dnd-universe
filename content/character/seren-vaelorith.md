@@ -14,7 +14,7 @@ tags:
 links:
 - character/wren
 - character/melda
-- place/house-vaelorith
+- faction/house-vaelorith
 - place/lorithal
 - lore/enchanters-exchange
 - creature/goluub

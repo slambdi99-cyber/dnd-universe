@@ -17,3 +17,9 @@ Each line records the page, what happened to it, who the connection belonged to,
 ## Entries
 
 - 2026-08-13 12:15 — created `audit/changelog` — The DM — audit kind and changelog page added
+
+- 2026-08-14 15:35 — created `faction/abyssal-brood` — The DM — added from the DM compendium; the tribe had no page
+- 2026-08-14 15:35 — moved `place/house-vaelorith` to `faction/house-vaelorith` — The DM — the ruling house is a faction, not a landmark; rewritten from the DM compendium
+- 2026-08-14 15:36 — created `faction/the-dissenters` — The DM — correctly slugged replacement for `faction/the-fallen-heir`
+- 2026-08-14 15:36 — moved `faction/the-fallen-heir` to `archive/the-fallen-heir` — The DM — superseded; "For the Fallen Heir!" is a battle cry, not a faction
+- 2026-08-14 15:36 — updated `character/melda`, `lore/the-kindling`, `place/lorithal` — The DM — repointed at `faction/the-dissenters`
