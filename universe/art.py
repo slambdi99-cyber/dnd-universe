@@ -221,8 +221,23 @@ class ArtService:
         if not path.exists():
             return False
         current = self.library.load(entity.kind, entity.slug) or entity
-        # Last in the list is what the site shows, so re-adding promotes it.
+        # Keep the old ordering behavior for galleries, but use an explicit
+        # active marker so a page can keep art without showing a hero image.
         current.art = [a for a in current.art if a != asset_id] + [asset_id]
+        current.data["active_art"] = asset_id
+        self.library.save(current)
+        return True
+
+    def deactivate(self, entity: Entity, asset_id: str) -> bool:
+        """Keep an image in the gallery, but stop showing it on the page."""
+        current = self.library.load(entity.kind, entity.slug) or entity
+        if asset_id not in current.art:
+            return False
+        active = current.data.get("active_art")
+        if active is None and current.art:
+            active = current.art[-1]
+        if active == asset_id:
+            current.data["active_art"] = ""
         self.library.save(current)
         return True
 
