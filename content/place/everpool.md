@@ -7,6 +7,7 @@ appearance: vast still black underground water, faint pale light far below the s
 tags:
 - site
 - from-wiki
+- primary-location
 links:
 - creature/goluub
 - place/buried-star
@@ -14,9 +15,12 @@ links:
 sources:
 - session-log:the-buried-star-tobias-log.txt
 - discord:lore-drop:2026-08-13
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - place/everpool/default-d8cb6a32
 - place/everpool/default-0a004619
+- place/everpool/upload-ce29e4fb9e919663
 data:
   map_type: site
 ---

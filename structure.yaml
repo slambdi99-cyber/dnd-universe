@@ -18,7 +18,6 @@ kinds:
   label: Factions
 - key: item
   label: Items
-  nav: false
 - key: deity
   label: Deities
   nav: false

@@ -13,4 +13,5 @@ sources:
 - session-log:the-buried-star-tobias-log.txt
 art:
 - item/amalgamated-metal-fragment/default-928c73b7
+- item/amalgamated-metal-fragment/upload-e259349baf75d681
 ---

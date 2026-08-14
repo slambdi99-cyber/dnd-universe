@@ -8,6 +8,7 @@ appearance: vast hollow root cavity beneath the mountain, dwellings built into p
 tags:
 - site
 - from-wiki
+- primary-location
 links:
 - faction/hollow-root-covenant
 - place/copper-ridge
@@ -17,6 +18,8 @@ links:
 sources:
 - dm-wiki
 - discord:lore-drop:2026-08-13
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - place/the-hollow-root/default-6c6bd67d
 - place/the-hollow-root/default-9d172acf

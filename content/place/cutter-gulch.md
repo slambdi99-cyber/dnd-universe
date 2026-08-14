@@ -6,12 +6,15 @@ appearance: dry cracked riverbed, dust, bleached stones, sparse dead scrub
 tags:
 - landmark
 - from-lore
+- primary-location
 links:
 - place/copper-vale
 - archive/cutter-creek
 sources:
 - discord:dnd-campaign:2025-11-22-region-writeup
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - place/cutter-gulch/default-1121ca32
 data:

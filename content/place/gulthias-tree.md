@@ -9,12 +9,14 @@ tags:
 - landmark
 - from-session-log
 - needs-detail
+- primary-location
 links:
 - faction/hollow-root-covenant
 sources:
 - dm:wiki:2026-08-13
 - written by The DM
 - updated by The DM
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
 ---
 
 Stakes made from it kill vampires and cause them to burst into black matter roots.

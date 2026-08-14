@@ -18,6 +18,7 @@ sources:
 - edited by Timothy Tuttle on the wiki
 art:
 - character/timothy-tuttle/default-9f4b037a
+- character/timothy-tuttle/upload-477bc009d0ed3dca
 data:
   class: Druid
   race: Tortle

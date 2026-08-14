@@ -8,6 +8,7 @@ appearance: parched golden grassland, cracked dry earth, bare ruddy mountains, w
 tags:
 - region
 - from-lore
+- primary-location
 links:
 - place/brindlewood
 - place/valeshire
@@ -21,6 +22,8 @@ sources:
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
 - discord:dnd-campaign:copper-vale.png
 - dm-wiki
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - place/copper-vale/default-ba62944e
 - place/copper-vale/upload-c2ec92cd3b3b23b2

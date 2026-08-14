@@ -8,11 +8,14 @@ appearance: enormous pitch-black cavern, tiered stone like an amphitheater, stil
 tags:
 - site
 - from-session-log
+- primary-location
 links:
 - creature/goluub
 - place/rumbleshot-quarry
 sources:
 - session-log:the-buried-star-tobias-log.txt
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - place/the-drowned-amphitheater/default-6f4a94cb
 data:

@@ -8,6 +8,7 @@ tags:
 - settlement
 - city
 - from-lore
+- primary-location
 links:
 - place/copper-vale
 - place/the-last-run
@@ -15,6 +16,8 @@ sources:
 - discord:dnd-campaign:2025-11-22-region-writeup
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
 - discord:dnd-campaign:Valeshire_Map.jpg
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - place/valeshire/default-e590f84c
 data:
