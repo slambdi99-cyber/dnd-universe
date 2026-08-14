@@ -14,7 +14,7 @@ links:
 - place/everpool
 - place/rumbleshot-quarry
 - place/dire-foothills
-- place/the-drowned-amphitheater
+- archive/the-drowned-amphitheater
 sources:
 - session-log:the-buried-star-tobias-log.txt
 - discord:lore-drop:2026-08-13

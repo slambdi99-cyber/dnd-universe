@@ -31,8 +31,6 @@ kinds:
   nav: false
 - key: lore
   label: Lore
-- key: audit
-  label: Audit
 - key: archive
   label: Archive
   nav: false

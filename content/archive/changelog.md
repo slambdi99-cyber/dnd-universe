@@ -1,6 +1,6 @@
 ---
 name: Changelog
-kind: audit
+kind: archive
 summary: A running record of pages saved through the wiki's assistant connections.
 tags:
 - meta

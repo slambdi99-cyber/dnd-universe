@@ -16,6 +16,7 @@ sources:
 - discord:dnd-campaign:character-art-posts
 - dndbeyond:campaign/6916676
 - edited by Timothy Tuttle on the wiki
+- edited by The DM on the wiki
 art:
 - character/timothy-tuttle/default-9f4b037a
 - character/timothy-tuttle/upload-477bc009d0ed3dca
@@ -29,4 +30,4 @@ data:
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676
 ---
 
-Has turned into a giant frog and a giant wolf spider. Wren may have his staff.
+Has turned into a giant frog, a giant wolf spider, a wolf, a mouse, etc.
