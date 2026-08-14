@@ -125,6 +125,7 @@ ul.links li a { display: inline-block; padding: .25rem .6rem;
 .card { border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
   background: var(--panel); }
 .card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+.card a.thumb { display: block; }
 .card .body { padding: .6rem .7rem; }
 .card .body a { font-weight: bold; }
 .card .body p { margin: .2rem 0 0; font-size: .8rem; color: var(--muted); }
@@ -503,11 +504,18 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
 def _cards(items: list[Entity], images: dict[str, str], base: str) -> str:
     out = []
     for e in sorted(items, key=lambda e: e.name):
-        img = (f'<img src="{base}art/{images[e.ref]}?size=card" alt="" loading="lazy">'
+        href = f"{base}{page_url(e.ref)}"
+        # The picture is the obvious thing to click on a card, so it opens the
+        # page too. It is hidden from assistive tech and skipped by tab: it goes
+        # exactly where the title link below it goes, and announcing every card
+        # twice is worse than not linking the image at all.
+        img = (f'<a class="thumb" href="{href}" tabindex="-1" aria-hidden="true">'
+               f'<img src="{base}art/{images[e.ref]}?size=card" alt="" loading="lazy">'
+               "</a>"
                if e.ref in images else "")
         out.append(
             f'<div class="card">{img}<div class="body">'
-            f'<a href="{base}{page_url(e.ref)}">{html.escape(e.name)}</a>'
+            f'<a href="{href}">{html.escape(e.name)}</a>'
             f"<p>{html.escape(e.summary[:90])}</p></div></div>"
         )
     return f'<div class="grid">{"".join(out)}</div>'

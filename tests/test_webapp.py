@@ -233,6 +233,22 @@ check("wren cannot fetch a restricted page's image by id",
 check("traversal refused",
       wren.get("/wiki/art/id/../../secret.png").status_code in (404, 400))
 
+print("\n== card thumbnails open the page ==")
+from universe import site as site_mod  # noqa: E402
+
+card = site_mod._cards(
+    [Entity(kind="place", slug="brindlewood", name="Brindlewood", summary="A township.")],
+    {"place/brindlewood": "place-brindlewood.png"}, "/wiki/")
+check("the thumbnail is a link", '<a class="thumb" href="/wiki/place/brindlewood.html"'
+      in card, card[:120])
+check("it goes where the title goes", card.count('href="/wiki/place/brindlewood.html"') == 2)
+check("it is skipped by tab", 'tabindex="-1"' in card)
+check("and not announced twice", 'aria-hidden="true"' in card)
+nopic = site_mod._cards(
+    [Entity(kind="place", slug="brindlewood", name="Brindlewood", summary="A township.")],
+    {}, "/wiki/")
+check("a card with no art has no thumb link", "thumb" not in nopic)
+
 print("\n== the inbox ==")
 import json  # noqa: E402
 
