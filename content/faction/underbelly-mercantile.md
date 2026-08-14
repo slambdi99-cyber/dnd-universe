@@ -9,7 +9,7 @@ tags:
 - antagonist
 - from-wiki
 links:
-- character/dak-patterson
+- archive/dak-patterson
 - character/darius-vell
 - character/worrick-thistleby
 - character/seamus-stonebuckle

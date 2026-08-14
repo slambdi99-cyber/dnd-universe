@@ -1,6 +1,6 @@
 ---
 name: The Kept
-kind: character
+kind: archive
 summary: A rank within the Hollow Root Covenant, not an individual. Seamus Stonebuckle
   held it.
 appearance: covenant initiate, plain robes, root-mark brand, downcast eyes

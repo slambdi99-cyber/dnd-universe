@@ -1,13 +1,13 @@
 ---
 name: House Rules
-kind: lore
+kind: archive
 summary: The DM's rulings for this table, where they differ from the book.
 appearance: worn notebook page of handwritten table rules, ink, coffee ring
 tags:
 - rules
 - from-lore
 links:
-- lore/dungeoneering
+- archive/dungeoneering
 sources:
 - discord:dnd-campaign:2025-05-08-crafting
 - discord:dnd-campaign:2025-07-24-table-rules

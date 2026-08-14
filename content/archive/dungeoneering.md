@@ -1,6 +1,6 @@
 ---
 name: Dungeoneering
-kind: lore
+kind: archive
 summary: Third-party supplement the table uses for dungeon crawls, by Magnus Fr.
 appearance: slim rules supplement, dungeon cross-section diagram, muted print
 tags:
@@ -9,7 +9,7 @@ tags:
 - third-party
 - from-lore
 links:
-- lore/house-rules
+- archive/house-rules
 sources:
 - discord:dnd-campaign:Dungeoneering_1.01.pdf
 art:

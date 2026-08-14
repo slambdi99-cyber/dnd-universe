@@ -14,7 +14,7 @@ links:
 - place/copper-ridge
 - character/elaric-the-blightwarden
 - character/sister-lethra
-- character/kept
+- archive/kept
 - character/twigbeard
 - character/mundus-decepi
 - character/seamus-stonebuckle
