@@ -233,6 +233,23 @@ check("wren cannot fetch a restricted page's image by id",
 check("traversal refused",
       wren.get("/wiki/art/id/../../secret.png").status_code in (404, 400))
 
+print("\n== search survives the deferred index ==")
+# The index is served separately by /wiki/search.js, which is deferred, while
+# SEARCH_JS is inline and runs first. It must therefore read window.__INDEX__
+# per query; a copy taken at load time is always empty, and every search on the
+# live site answers "Nothing matches that."
+from universe import site as site_mod  # noqa: E402
+
+js = site_mod.SEARCH_JS
+check("index is not captured at load", "const idx = window.__INDEX__" not in js)
+check("index is read per query", "idx()" in js)
+page_html = wren.get("/wiki/character/wren.html").text
+check("live page defers the index", 'src="/wiki/search.js" defer' in page_html)
+check("live page does not inline the index", "window.__INDEX__=[{" not in page_html)
+check("the index endpoint serves the pages",
+      "Wren" in wren.get("/wiki/search.js").text)
+check("results are ranked, not index order", "sort(" in js and "rank(" in js)
+
 print("\n== the inbox ==")
 import json  # noqa: E402
 
