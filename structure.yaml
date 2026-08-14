@@ -56,5 +56,9 @@ home:
   kind: character
   any_tag:
   - former-party-member
-- title: Factions
+- title: Primary Factions
   kind: faction
+  tag: primary-faction
+- title: Non-Primary Factions
+  kind: faction
+  tag: non-primary-faction

@@ -24,6 +24,7 @@ from typing import Any
 from starlette.responses import HTMLResponse, RedirectResponse
 
 from . import access as access_mod
+from . import assetref
 from . import gate as gate_mod
 from . import history as history_mod
 from . import inbox as inbox_mod
@@ -114,12 +115,20 @@ class Wiki:
         return view.entities, view.refs
 
     def images_for(self, entities) -> dict[str, str]:
+        """Which entities have a picture, and the URL that serves it.
+
+        The URL keeps its .png suffix whatever the file on disk actually is.
+        It is a route, not a filename: the art route resolves the entity's
+        current asset itself, so compressing the store to WEBP changes no URL
+        and therefore no cached page.
+        """
         out = {}
         for entity in entities:
-            if entity.art:
-                kind, slug, name = entity.art[-1].split("/", 2)
-                if (self.cfg.assets_dir / kind / slug / f"{name}.png").exists():
-                    out[entity.ref] = f"{kind}-{slug}.png"
+            if not entity.art:
+                continue
+            ref = assetref.AssetRef.parse(entity.art[-1])
+            if ref and ref.image_under(self.cfg.assets_dir):
+                out[entity.ref] = f"{ref.kind}-{ref.slug}.png"
         return out
 
     # -- rendering -----------------------------------------------------

@@ -110,7 +110,7 @@ async def art_by_id(request, wiki):
     _, allowed = wiki.entities_for(viewer)
     if ref.page not in allowed:
         return wiki.not_found()
-    path = ref.path_under(wiki.cfg.assets_dir)
+    path = ref.image_under(wiki.cfg.assets_dir)
     if path is None:
         return wiki.not_found()
     size = request.query_params.get("size", "")
@@ -137,7 +137,7 @@ async def art(request, wiki):
     if not entity or not entity.art:
         return wiki.not_found()
     current = AssetRef.parse(entity.art[-1])
-    path = current.path_under(wiki.cfg.assets_dir) if current else None
+    path = current.image_under(wiki.cfg.assets_dir) if current else None
     if path is None:
         return wiki.not_found()
 
