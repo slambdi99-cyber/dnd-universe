@@ -91,6 +91,8 @@ check("matches longest term first", "sort(" in js)
 check("uses word boundaries", "\\\\b" in js)
 check("dismisses on escape", "Escape" in js)
 check("works on touch", "click" in js)
+check("renders tooltip matches as links", "<a class=" in js and "href=" in js)
+check("clicks on links are not cancelled", "el.tagName !== 'A'" in js)
 
 print()
 if FAIL:
