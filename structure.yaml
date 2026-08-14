@@ -60,19 +60,27 @@ index_tags:
   kind: faction
   tag: non-primary-faction
 home:
-- title: Where
+- title: Primary Locations
   kind: place
-  data:
-    map_type:
-    - region
-    - settlement
-- title: The Party
+  tag: primary-location
+- title: Sub-Locations
+  kind: place
+  tag: sub-location
+- title: Player Characters
   kind: character
   tag: player-character
-- title: Gone
+- title: NPC Main
   kind: character
-  any_tag:
-  - former-party-member
-  - deceased
-- title: Factions
+  tag: npc-main
+- title: NPC Side
+  kind: character
+  tag: npc-side
+- title: Player Characters Retired
+  kind: character
+  tag: former-party-member
+- title: Primary Factions
   kind: faction
+  tag: primary-faction
+- title: Non-Primary Factions
+  kind: faction
+  tag: non-primary-faction

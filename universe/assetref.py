@@ -32,6 +32,12 @@ from pathlib import Path
 # or a control character, so anything that does is a probe rather than a typo.
 SEGMENT = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 
+# An asset id carries no extension, which turns out to be load-bearing:
+# compressing the store from PNG to WEBP changes every file on disk and not a
+# single reference in content/. Resolution tries the formats in the order they
+# are most likely to exist.
+IMAGE_SUFFIXES = ("webp", "png", "jpg", "jpeg", "gif")
+
 
 def confine(root: Path, candidate: Path) -> Path | None:
     """The resolved path, if it really lives under `root`, else nothing.
@@ -85,6 +91,10 @@ class AssetRef:
         """
         return confine(
             root, Path(root) / self.kind / self.slug / f"{self.name}{suffix}")
+
+    def image_under(self, root: Path) -> Path | None:
+        """The stored image for this ref, whatever format it is in."""
+        return self.find_under(root, IMAGE_SUFFIXES)
 
     def find_under(self, root: Path, suffixes) -> Path | None:
         """The same, for a store where the extension is not known up front."""

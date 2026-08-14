@@ -8,6 +8,7 @@ tags:
 - landmark
 - from-lore
 - from-session-log
+- sub-location
 links:
 - place/copper-vale
 - character/foreman-rumbleshot
@@ -17,6 +18,8 @@ sources:
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
 - session-log:the-buried-star-tobias-log.txt
 - dm-wiki
+- 'DM site organization: sub-locations index'
+- updated by The DM
 art:
 - place/rumbleshot-quarry/default-b22abcb2
 data:

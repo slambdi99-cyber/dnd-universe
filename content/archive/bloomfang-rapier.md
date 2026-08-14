@@ -1,6 +1,6 @@
 ---
 name: Bloomfang Rapier
-kind: item
+kind: archive
 summary: Lucian Lovelyre's rapier, taken from the ritual chamber beneath the Shallow
   Bog.
 appearance: slender rapier, blossom-etched guard, thorn-wound hilt, pale steel

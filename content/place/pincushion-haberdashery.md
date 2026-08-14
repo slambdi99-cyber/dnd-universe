@@ -8,10 +8,13 @@ tags:
 - site
 - valeshire
 - from-lore
+- sub-location
 links:
 - place/valeshire
 sources:
 - discord:dnd-campaign:Valeshire_Map.jpg
+- 'DM site organization: sub-locations index'
+- updated by The DM
 art:
 - place/pincushion-haberdashery/default-c66117e9
 data:

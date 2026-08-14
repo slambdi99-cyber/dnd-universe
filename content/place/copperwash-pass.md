@@ -6,11 +6,14 @@ appearance: high narrow mountain pass, bare switchback trail, wind-scoured stone
 tags:
 - landmark
 - from-lore
+- primary-location
 links:
 - place/copper-vale
 - place/copper-ridge
 sources:
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - place/copperwash-pass/default-d4b04eaa
 data:

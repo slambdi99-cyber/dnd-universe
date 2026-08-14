@@ -8,12 +8,15 @@ tags:
 - faction
 - from-wiki
 - needs-detail
+- non-primary-faction
 links:
 - character/twigbeard
 - place/the-hollow-root
 - character/elaric-the-blightwarden
 sources:
 - discord:lore-drop:2026-08-13
+- Codex MCP faction index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - faction/six-wolves/default-023dcebe
 ---

@@ -8,14 +8,17 @@ tags:
 - artifact
 - plot-critical
 - from-wiki
+- primary-location
 links:
 - faction/hollow-root-covenant
-- character/kept
+- archive/kept
 - item/splinter-of-the-buried-star
 - character/wren
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - discord:lore-drop:2026-08-13
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - place/buried-star/default-b8df2ef6
 - place/buried-star/default-fb018ac9

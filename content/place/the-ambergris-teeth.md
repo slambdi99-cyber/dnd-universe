@@ -10,9 +10,12 @@ tags:
 - mountains
 - from-map
 - needs-detail
+- primary-location
 links:
 - place/lorithal
 sources:
 - map:lorithal-city-map
 - written by The DM
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 ---

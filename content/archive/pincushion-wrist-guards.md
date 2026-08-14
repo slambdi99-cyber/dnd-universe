@@ -1,6 +1,6 @@
 ---
 name: Pincushion Wrist Guards
-kind: item
+kind: archive
 summary: Armbands bought at the Pincushion Haberdashery for 10 gold. Grant necrotic
   resistance.
 appearance: pair of stitched leather wrist guards, fine embroidery, dark thread

@@ -20,6 +20,7 @@ sources:
 - discord:lore-drop:2026-08-13
 art:
 - character/goluub/default-a702e24c
+- creature/goluub/upload-f5ebd7a4fbb87731
 data:
   creature: Aboleth
   aka:

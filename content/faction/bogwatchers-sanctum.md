@@ -7,11 +7,14 @@ appearance: moss and water motifs, still pond sigil, muted green and grey herald
 tags:
 - order
 - from-lore
+- primary-faction
 links:
 - place/copper-vale
 - character/korran-mossborn
 sources:
 - discord:dnd-campaign:2025-10-11-korran-backstory
+- Codex MCP faction index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - faction/bogwatchers-sanctum/default-b7a868ef
 ---

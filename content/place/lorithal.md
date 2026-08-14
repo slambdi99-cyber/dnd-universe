@@ -8,6 +8,7 @@ tags:
 - realm
 - from-session-log
 - needs-detail
+- primary-location
 links:
 - character/wren
 - faction/the-fallen-heir
@@ -15,10 +16,14 @@ links:
 - place/the-ashbright-stretch
 - place/the-broadheights
 - place/the-grand-endurance
+- lore/the-kindling
 sources:
 - dm:wiki:2026-08-13
 - written by The DM
 - discord:dnd-campaign:1537290828987375757
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
+- Codex MCP link cleanup requested by Sam, 2026-08-14.
 art:
 - place/lorithal/upload-195b5862bfaf8443
 data:

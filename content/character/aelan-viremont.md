@@ -24,6 +24,7 @@ sources:
 art:
 - character/aelan-viremont/default-f654d93a
 - character/aelan-viremont/default-9d3422dd
+- character/aelan-viremont/upload-966b3654dd432f5a
 data:
   pronunciation: Ay-lan VEER-mont
   race: Human

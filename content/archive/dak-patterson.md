@@ -1,6 +1,6 @@
 ---
 name: Dak Patterson
-kind: character
+kind: archive
 summary: Regional Operator of the Underbelly Mercantile for Copper Vale. Always accompanied
   by an entourage.
 appearance: well-dressed operator, fur-collared coat, heavy rings, flanked by bodyguards

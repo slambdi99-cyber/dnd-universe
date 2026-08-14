@@ -12,6 +12,7 @@ tags:
 - residential
 - from-map
 - needs-detail
+- sub-location
 links:
 - place/lorithal
 - place/trindel-s-stride
@@ -22,4 +23,6 @@ links:
 sources:
 - map:lorithal-city-map
 - written by The DM
+- 'DM site organization: sub-locations index'
+- updated by The DM
 ---

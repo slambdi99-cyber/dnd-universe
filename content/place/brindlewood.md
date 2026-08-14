@@ -8,6 +8,7 @@ tags:
 - settlement
 - town
 - from-lore
+- primary-location
 links:
 - place/copper-vale
 - place/dire-foothills
@@ -17,6 +18,8 @@ sources:
 - discord:dnd-campaign:2025-11-22-region-writeup
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
 - dm-wiki
+- Codex MCP location index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - place/brindlewood/default-3aed9dd1
 data:
