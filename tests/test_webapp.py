@@ -93,6 +93,7 @@ check("a page redirects", c.get("/wiki/character/wren.html").status_code == 303)
 check("art redirects", c.get("/wiki/art/character-wren.png").status_code == 303)
 check("editing redirects", c.get("/wiki/character/wren/edit").status_code == 303)
 check("the art panel redirects", c.get("/wiki/character/wren/art").status_code == 303)
+check("changelog redirects", c.get("/wiki/changelog").status_code == 303)
 
 print("\n== the sign-in picker ==")
 form = c.get("/wiki/login")
@@ -119,6 +120,9 @@ check("his own secret shown", NICK_ONLY in page.text)
 check("secret is marked", 'class="secret"' in page.text)
 check("dm-only secret hidden", DM_ONLY not in page.text)
 check("header shows his name", "Wren" in page.text)
+change_page = wren.get("/wiki/changelog")
+check("changelog renders", change_page.status_code == 200, str(change_page.status_code))
+check("changelog is in the nav", "/wiki/changelog" in page.text)
 
 print("\n== what each person sees ==")
 dm = signed_in_as("dm")
@@ -228,6 +232,23 @@ check("wren cannot fetch a restricted page's image by id",
       wren.get("/wiki/art/id/lore/dm-notes/default-x.png").status_code == 404)
 check("traversal refused",
       wren.get("/wiki/art/id/../../secret.png").status_code in (404, 400))
+
+print("\n== search survives the deferred index ==")
+# The index is served separately by /wiki/search.js, which is deferred, while
+# SEARCH_JS is inline and runs first. It must therefore read window.__INDEX__
+# per query; a copy taken at load time is always empty, and every search on the
+# live site answers "Nothing matches that."
+from universe import site as site_mod  # noqa: E402
+
+js = site_mod.SEARCH_JS
+check("index is not captured at load", "const idx = window.__INDEX__" not in js)
+check("index is read per query", "idx()" in js)
+page_html = wren.get("/wiki/character/wren.html").text
+check("live page defers the index", 'src="/wiki/search.js" defer' in page_html)
+check("live page does not inline the index", "window.__INDEX__=[{" not in page_html)
+check("the index endpoint serves the pages",
+      "Wren" in wren.get("/wiki/search.js").text)
+check("results are ranked, not index order", "sort(" in js and "rank(" in js)
 
 print("\n== the inbox ==")
 import json  # noqa: E402

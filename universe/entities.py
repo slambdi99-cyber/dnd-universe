@@ -250,6 +250,13 @@ class Library:
                 )
 
     def search(self, query: str) -> list[Entity]:
+        """Matching entities, best match first.
+
+        Ranked because callers truncate. `all()` yields alphabetically by kind
+        then slug, so unranked results put `archive/` first and buried the page
+        you searched for below anything that merely mentioned it: searching
+        `Gulthias` returned the archived misspelling before `Gulthias Tree`.
+        """
         q = query.lower().strip()
         if not q:
             return []
@@ -259,8 +266,23 @@ class Library:
                 [entity.name, entity.summary, entity.body, " ".join(entity.tags)]
             ).lower()
             if q in haystack:
-                hits.append(entity)
-        return hits
+                hits.append((self._rank(entity, q), len(entity.name), entity))
+        hits.sort(key=lambda hit: (hit[0], hit[1]))
+        return [entity for _, _, entity in hits]
+
+    @staticmethod
+    def _rank(entity: Entity, q: str) -> int:
+        """Where the term hit, lowest first. An exact name beats a body mention."""
+        name = entity.name.lower()
+        if name == q:
+            return 0
+        if name.startswith(q):
+            return 1
+        if q in name:
+            return 2
+        if q in " ".join(entity.tags).lower():
+            return 3
+        return 4 if q in entity.summary.lower() else 5
 
     def backlinks(self, ref: str) -> list[Entity]:
         return [e for e in self.all() if ref in e.links]

@@ -120,6 +120,18 @@ check("search finds by body", any(e.slug == "drowned-lantern"
                                  for e in lib.search("low tide")))
 check("search is case insensitive", len(lib.search("SALTMERE")) >= 1)
 check("empty search returns nothing", lib.search("   ") == [])
+
+# Callers truncate, so order is the whole game. `all()` yields alphabetically,
+# which used to put a page that merely mentions the term above the page named
+# after it.
+ranked = Library(tmp / "ranked")
+ranked.save(Entity(kind="place", slug="anchor-house", name="Anchor House",
+                   summary="An inn.", body="The road to Whitecliff is long."))
+ranked.save(Entity(kind="place", slug="whitecliff", name="Whitecliff",
+                   summary="A chalk headland."))
+order = [e.slug for e in ranked.search("whitecliff")]
+check("exact name outranks a body mention", order == ["whitecliff", "anchor-house"],
+      str(order))
 back = lib.backlinks("place/drowned-lantern")
 check("backlink found", [e.slug for e in back] == ["saltmere"], str([e.slug for e in back]))
 

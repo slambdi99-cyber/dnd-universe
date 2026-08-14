@@ -37,6 +37,7 @@ House Vaelorith is the ruling elven house of Lorithal. Its seat is a triple-spir
 
 - **Melda Vaelorith** — Wren's aunt and a political leader of the House, who handles the matters it would rather keep off the record.
 - **Seren Vaelorith** — Wren's cousin and Melda's nephew, a House contact for magical reference books in Lorithal.
+- **Seren Vaelorith** — Wren's brother and Melda's nephew, a House contact for magical reference books in Lorithal.
 - **Wren** — of the Vaelorith line, and secretive about her connection to the city.
 
 ## The Kindling

@@ -12,7 +12,6 @@ tags:
 - human
 links:
 - place/copper-vale
-- archive/laurelthel
 - place/lorithal
 sources:
 - discord:Party-Chat-voice
@@ -36,4 +35,4 @@ data:
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676
 ---
 
-Joined the fray on 2026-08-05 when the party's carriage to Laurelthel was attacked by rebels shouting for the fallen heir. The log records the party as suspicious of them.
+Joined the fray on 2026-08-05 when the party's carriage to Lorithal was attacked by rebels shouting for the fallen heir. The log records the party as suspicious of them.

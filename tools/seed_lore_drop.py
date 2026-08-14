@@ -442,7 +442,7 @@ UPDATES = [
     )),
     ("character", "wren", dict(
         links=[VALE, "item/twigbeards-lucky-beard-twig", "character/timothy-tuttle",
-               "place/laurelthel", COVENANT, "item/splinter-of-the-buried-star",
+               "place/lorithal", COVENANT, "item/splinter-of-the-buried-star",
                "item/gnarled-staff-of-the-rooted-one"],
     )),
 ]

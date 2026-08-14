@@ -28,7 +28,7 @@ SHEETS = {
     "aelan-viremont": dict(
         data={"race": "Human", "class": "Wizard", "subclass": "Illusionist",
               "level": 4, "status": "active"},
-        summary="Human illusionist wizard. Joined the party on the road to Laurelthel in August 2026.",
+        summary="Human illusionist wizard. Joined the party on the road to Lorithal in August 2026.",
         appearance="human wizard, travelling robes over practical clothes, hooded cloak, "
                    "spellbook at the hip, faint shimmer of illusion at the fingertips",
         drop_tags=["needs-appearance"],
@@ -54,7 +54,7 @@ SHEETS = {
     "wren": dict(
         data={"race": "Elf", "class": "Fighter", "subclass": "Battle Master",
               "level": 4, "status": "active"},
-        summary="Elf fighter of the Battle Master archetype, from Laurelthel. "
+        summary="Elf fighter of the Battle Master archetype, from Lorithal. "
                 "Carries a splinter of the Buried Star.",
         add_tags=["fighter"],
         note=(

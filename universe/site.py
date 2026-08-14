@@ -277,7 +277,21 @@ a.sheetlink:hover { text-decoration: none; opacity: .9; }
 """
 
 SEARCH_JS = """
-const idx = window.__INDEX__ || [];
+// Read the index per query, never once at load. This script is inline, so it
+// runs while the page is still parsing; on the live server the index arrives
+// separately from search.js, which is deferred and has not run yet. Capturing
+// it here left every search reading an empty list and saying nothing matched.
+const idx = () => window.__INDEX__ || [];
+// Rank by where the term hit: an exact name beats a passing mention in a body.
+// Without this the order is whatever the index is in, which is alphabetical by
+// ref, so `archive/` pages sort above the page you actually searched for.
+const rank = (e, t) => {
+  const n = (e.n || '').toLowerCase();
+  if (n === t) return 0;
+  if (n.startsWith(t)) return 1;
+  if (n.includes(t)) return 2;
+  return (e.s || '').toLowerCase().includes(t) ? 3 : 4;
+};
 const q = document.getElementById('q');
 const results = document.getElementById('results');
 const page = document.getElementById('page');
@@ -286,7 +300,10 @@ if (q) {
     const t = term.trim().toLowerCase();
     if (!t) { results.innerHTML=''; results.hidden=true;
               if (page) page.hidden=false; return; }
-    const hits = idx.filter(e => e.h.includes(t)).slice(0, 40);
+    const hits = idx().filter(e => e.h.includes(t))
+      .map(e => [rank(e, t), e])
+      .sort((a, b) => a[0] - b[0] || a[1].n.length - b[1].n.length)
+      .map(pair => pair[1]).slice(0, 40);
     results.hidden = false;
     if (page) page.hidden = true;
     results.innerHTML = hits.length
@@ -319,10 +336,11 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
     # with an .html extension, or the browser downloads it instead of showing it.
     guide_href = f"{base}guide" if live else f"{base}guide.html"
     schema.reload_if_changed()
+    changelog = f'<a href="{base}changelog">Changelog</a>' if live else ""
     nav = "".join(
         f'<a href="{base}{k.key}/index.html">{html.escape(k.label)}</a>'
         for k in schema.nav
-    ) + f'<a href="{guide_href}">Guide</a>'
+    ) + f'{changelog}<a href="{guide_href}">Guide</a>'
     # ASCII separators on purpose: these strings get rewritten by tooling now
     # and then, and a stray encoding round-trip turns punctuation into mojibake.
     full = title if title == schema.name else f"{title} - {schema.name}"

@@ -17,11 +17,17 @@ sources:
 - written by The DM
 - updated by The DM
 - Codex MCP location index cleanup requested by Sam, 2026-08-14.
+
+data:
+  map_type: landmark
+  aka:
+  - Goltheas
+  - Gotheus
 ---
 
 Stakes made from it kill vampires and cause them to burst into black matter roots.
 
-Under the kobold caves, a captive said the roots there lead to a Goltheas Tree, and that he himself was born from a stake to the heart made from that wood. The log flags this as a major research lead: find one on the surface and see whether it is as indestructible.
+Under the kobold caves, a captive said the roots there lead to a Gulthias Tree, and that he himself was born from a stake to the heart made from that wood. The log flags this as a major research lead: find one on the surface and see whether it is as indestructible.
 
 ## Renamed
 

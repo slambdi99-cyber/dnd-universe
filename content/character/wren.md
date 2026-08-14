@@ -46,7 +46,7 @@ Casts Speak With Dead. The art of her doing it shows her with a tall wooden staf
 
 
 
-She is from Lorithal and has been secretive about it. She noticed an aunt at Warwick's party and behaved oddly enough that Tobias got suspicious and tried to find out why.
+She is from Lorithal and has been secretive about it. She noticed an aunt at Worrick's party and behaved oddly enough that Tobias got suspicious and tried to find out why.
 
 
 

@@ -21,6 +21,7 @@ links:
 - character/wren
 - archive/goltheas-tree
 - place/gulthias-tree
+- place/gulthias-tree
 - creature/goluub
 - place/dawnmere
 - place/ashcroft

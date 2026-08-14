@@ -24,9 +24,13 @@ art:
 - place/everpool/upload-ce29e4fb9e919663
 data:
   map_type: site
+  aka:
+  - The Drowned Amphitheater
 ---
 
 Goluub the aboleth lives here.
+
+The pool fills a vast pitch-black cavern at the bottom of the kobold elevator, tiered stone rising around the water like an amphitheater, lit by a single torch. Tobias's session log has no name for it and calls it **the Drowned Amphitheater**; that is this place, recorded before the wiki had its name.
 
 From the dream on 2026-05-27, in which Lucian appears and sings: secrets of the buried star revealed, surface of the everpool concealed. Both halves of that line now point at something real.
 

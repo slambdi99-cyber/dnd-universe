@@ -20,13 +20,8 @@ sources:
 - written by The DM
 - edited by The DM on the wiki
 ---
-
-The Abyssal Brood are a tribe of blue kobolds living in the cave systems around the Everpool, beneath the Dire Foothills of Copper Ridge. They are worshippers of Broodmaster Goluub, and a serious threat to anyone venturing into the region.
-
-## Culture and society
-
-They are hostile to outsiders in their territory, and prefer secrecy and harmony with the land, as their Broodmaster instructs. They pay attention to how their habits affect the ecosystem around them.
-
-## Beliefs
-
+The Abyssal Brood are a tribe of blue kobolds living in the cave systems around the Everpool, beneath the Dire Foothills of Copper Ridge. They are worshippers of Broodmaster Goluub, and a serious threat to anyone venturing into the region.
+## Culture and society
+They are hostile to outsiders in their territory, and prefer secrecy and harmony with the land, as their Broodmaster instructs. They pay attention to how their habits affect the ecosystem around them.
+## Beliefs
 Ritual sacrifice is a tradition of devotion. A pregnant progenitress may select a progeny to be reborn from her egg; that kobold is placed under Goluub's control, collared with a chain of lead, and walks into the Everpool. Enslaved kobolds acting as Vessels of Goluub conduct the ceremony.

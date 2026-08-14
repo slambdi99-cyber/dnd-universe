@@ -12,6 +12,7 @@ tags:
 links:
 - character/wren
 - archive/the-fallen-heir
+- faction/the-dissenters
 - character/aelan-viremont
 - place/the-ashbright-stretch
 - place/the-broadheights
@@ -38,12 +39,8 @@ data:
     by: The DM
 ---
 
-Spelled three ways in the log. Wren knows about it and is from there, but has been secretive on the subject, and noticed an aunt of hers at Warwick's party.
+Wren knows about Lorithal and is from there, but has been secretive on the subject. She noticed an aunt of hers at Worrick's party, which Tobias found suspicious.
 
-The party travelled there for festivities in August 2026 and their carriage was attacked by rebels shouting for the fallen heir.
+The party travelled to Lorithal for festivities in August 2026. Their carriage was attacked on the road by rebels shouting for the fallen heir.
 
-## Canonical spelling
-
-The realm's name is **Lorithal**. Laurelthel, Laurelfell and Laurefall are all corruptions from the session log and refer to this same place. Set by the DM on 2026-08-13.
-
-This page replaces the old `place/laurelthel`, which now sits under the Archive kind. The wiki exposes no rename or delete tool over MCP, so the slug was corrected by creating this page and archiving the original.
+Older session notes sometimes spell the realm as Laurelthel, Laurelfell, or Laurefall. Those are all the same place: Lorithal.
