@@ -35,5 +35,3 @@ The rite is presented publicly as a celebration of Lorithal's traditions and sha
 
 Elaric appeared during the Kindling, to the party's surprise. Wren recognized him in the middle of the public spectacle and suffered a severe panic attack, fainting as the rite unfolded around her.
 
-A line added the way the site adds one.
-
