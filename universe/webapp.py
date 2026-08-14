@@ -28,9 +28,10 @@ from . import uploads as uploads_mod
 from . import people as people_mod
 from . import secrets as secrets_mod
 from . import site as site_mod
+from . import wiki as wiki_mod
+from . import panels
 from . import tooltips as tooltips_mod
 from .entities import Entity, Library, slugify
-
 
 
 def _auth_page(title: str, base: str, inner: str) -> HTMLResponse:
@@ -47,117 +48,29 @@ def build(cfg, library: Library, registry: people_mod.People,
     Anyone with the link can claim any name on the roster, or add themselves.
     """
 
-    # Built on first use, so importing torch and diffusers is deferred until
-    # someone actually asks for a picture.
-    _art = None
-
     schema = schema or schema_mod.load(Path(cfg.root))
     site_mod.use(schema)
 
     lore_dir = cfg.raw.get("lore_dir")
-    inbox = inbox_mod.Inbox(
-        Path(cfg.root),
-        (Path(cfg.root) / lore_dir).resolve() if lore_dir else None,
+    wiki = wiki_mod.Wiki(
+        cfg=cfg, library=library, registry=registry, schema=schema,
+        inbox=inbox_mod.Inbox(
+            Path(cfg.root),
+            (Path(cfg.root) / lore_dir).resolve() if lore_dir else None,
+        ),
     )
 
-    def snapshot(what: str, who: str) -> None:
-        """Commit before reshaping anything, so it can be undone.
-
-        Same reasoning as the MCP tools: a rename touches every file in
-        content/, and without a commit first there is no before to return to.
-        """
-        import subprocess
-
-        try:
-            subprocess.run(["git", "add", "-A"], cwd=cfg.root, check=False,
-                           capture_output=True, timeout=30)
-            subprocess.run(
-                ["git", "commit", "-q", "-m", f"before: {what} ({who})"],
-                cwd=cfg.root, check=False, capture_output=True, timeout=30)
-        except (OSError, subprocess.SubprocessError):
-            pass
-
-    def nav_extra(user: str | None) -> str:
-        """The writing actions, on every page rather than just the front one.
-
-        Adding something was previously a link on the index, which meant
-        reading a page about a place and wanting to write down what happened
-        there took you back to the front page first. Nobody does that; they
-        forget instead.
-        """
-        if not user:
-            return ""
-        try:
-            waiting = inbox.count(library)
-        except OSError:
-            waiting = 0
-        badge = f'<span class="badge">{waiting}</span>' if waiting else ""
-        return (
-            '<a class="act" href="/wiki/new">+ New</a>'
-            f'<a class="act" href="/wiki/inbox">Inbox{badge}</a>'
-            '<a class="act" href="/wiki/structure">Structure</a>'
-        )
-
-    def render(title: str, body: str, index_json: str = "[]", *,
-               user: str | None = None, tips: bool = False,
-               status: int = 200) -> HTMLResponse:
-        return HTMLResponse(
-            site_mod.shell(title, "/wiki/", body, index_json, user=user,
-                           live=True, tips=tips, extra=nav_extra(user)),
-            status_code=status,
-        )
-
-    def reload_people() -> None:
-        """Pick up anyone added since the server started."""
-        fresh = people_mod.load(Path(cfg.root))
-        if fresh.members:
-            registry.members = fresh.members
-
-    def viewer_for(request) -> tuple[access_mod.Viewer, str | None]:
-        key = request.session.get("who")
-        if not key:
-            return access_mod.Viewer.nobody(), None
-        person = registry.members.get(key)
-        if person is None:
-            reload_people()
-            person = registry.members.get(key)
-        if person is None:
-            return access_mod.Viewer.nobody(), None
-        return access_mod.Viewer.person(person), person.name
-
-    def entities_for(viewer: access_mod.Viewer):
-        """One viewer's world, computed once per request."""
-        everything = sorted(library.all(), key=lambda e: (e.kind, e.name))
-        view = access_mod.for_viewer(everything, viewer)
-        return view.entities, view.refs
-
-    def images_for(entities) -> dict[str, str]:
-        out = {}
-        for entity in entities:
-            if entity.art:
-                kind, slug, name = entity.art[-1].split("/", 2)
-                if (cfg.assets_dir / kind / slug / f"{name}.png").exists():
-                    out[entity.ref] = f"{kind}-{slug}.png"
-        return out
-
-    def require_login(request):
-        """Two doors, in order: the shared passphrase, then who you are.
-
-        The passphrase answers "is this someone from our table". The name
-        answers "which secrets do I render". Only the first is a boundary.
-        """
-        if gate_mod.is_enabled(Path(cfg.root)) and not request.session.get("gate"):
-            return RedirectResponse("/wiki/enter", status_code=303)
-        if not request.session.get("who"):
-            return RedirectResponse("/wiki/login", status_code=303)
-        return None
+    # Short names for what this module still does itself. Everything else about
+    # a request now belongs to `wiki`, and the features to `panels`.
+    render = wiki.render
+    require_login = wiki.require_login
+    viewer_for = wiki.viewer_for
+    entities_for = wiki.entities_for
+    images_for = wiki.images_for
+    reload_people = wiki.reload_people
+    roster = wiki.roster
 
     # -- auth ----------------------------------------------------------
-
-    def roster() -> list[people_mod.Person]:
-        reload_people()
-        return sorted(registry.members.values(),
-                      key=lambda p: (not p.is_dm, p.name.lower()))
 
     async def enter(request):
         """The shared passphrase, in front of everything but the guide.
@@ -311,166 +224,6 @@ def build(cfg, library: Library, registry: people_mod.People,
             site_mod.search_index(entities, viewer), user=user, tips=True,
         )
 
-    # -- art -----------------------------------------------------------
-
-    def art_service():
-        """Built on first use so the GPU stack isn't imported at startup."""
-        nonlocal _art
-        if _art is None:
-            from .art import ArtService
-            from .assets import AssetStore
-
-            _art = ArtService(cfg, library, AssetStore(cfg.assets_dir))
-        return _art
-
-    async def art_panel(request):
-        redirect = require_login(request)
-        if redirect:
-            return redirect
-        viewer, user = viewer_for(request)
-        kind, slug = request.path_params["kind"], request.path_params["slug"]
-        _, allowed = entities_for(viewer)
-        if f"{kind}/{slug}" not in allowed:
-            return HTMLResponse("Not found", status_code=404)
-        entity = library.load(kind, slug)
-
-        prompt = ""
-        candidates: list[str] = []
-        error = ""
-        message = ""
-
-        if request.method == "POST":
-            form = await request.form()
-            action = str(form.get("action", "generate"))
-
-            if action == "upload":
-                # A picture someone drew, commissioned, or found beats anything
-                # the GPU produces, so uploads join the same gallery rather
-                # than living in a second-class section of their own.
-                sent = form.get("file")
-                data = await sent.read() if hasattr(sent, "read") else b""
-                upload, note = uploads_mod.save(
-                    Path(cfg.assets_dir), kind, slug, data,
-                    getattr(sent, "filename", "") or "")
-                if upload is None:
-                    error = note
-                elif not upload.is_image:
-                    error = ("That isn't an image the browser can show. Add it "
-                             "as an attachment on the page instead.")
-                else:
-                    art_service().attach(entity, upload.asset_id)
-                    return RedirectResponse(f"/wiki/{kind}/{slug}.html",
-                                            status_code=303)
-            elif action == "pick":
-                asset_id = str(form.get("asset", ""))
-                # Only accept ids belonging to this page, so a crafted form
-                # can't attach someone else's picture.
-                if asset_id.startswith(f"{kind}/{slug}/") and \
-                        art_service().attach(entity, asset_id):
-                    return RedirectResponse(f"/wiki/{kind}/{slug}.html",
-                                            status_code=303)
-                error = "That image is no longer available."
-            else:
-                prompt = str(form.get("prompt", "")).strip()
-                if not prompt:
-                    error = "Describe the picture you want."
-                else:
-                    try:
-                        # Off the event loop: generation takes tens of seconds
-                        # and would otherwise freeze the site for everyone.
-                        results = await run_in_threadpool(
-                            art_service().generate_custom, entity, prompt, count=3
-                        )
-                        candidates = [r.asset_id for r in results]
-                    except Exception as exc:  # GPU out of memory, model missing
-                        error = f"Couldn't generate that: {exc}"
-
-        entity = library.load(kind, slug) or entity
-        existing = [a for a in entity.art]
-        return render(f"Art for {entity.name}",
-                      _art_form(entity, existing, candidates, prompt, error,
-                                message),
-                      user=user)
-
-    # -- attachments -----------------------------------------------------
-
-    async def files_panel(request):
-        """Files that belong to a page: maps, handouts, PDFs, recordings.
-
-        Separate from art because they're different jobs. Art is the one
-        picture at the top of the page; this is everything else the table
-        wants to keep with it.
-        """
-        redirect = require_login(request)
-        if redirect:
-            return redirect
-        viewer, user = viewer_for(request)
-        kind, slug = request.path_params["kind"], request.path_params["slug"]
-        _, allowed = entities_for(viewer)
-        if f"{kind}/{slug}" not in allowed:
-            return HTMLResponse("Not found", status_code=404)
-        entity = library.load(kind, slug)
-        error = message = ""
-
-        if request.method == "POST":
-            form = await request.form()
-            if str(form.get("action", "")) == "remove":
-                if uploads_mod.detach_file(entity, str(form.get("file", ""))):
-                    library.save(entity)
-                    message = "Removed from this page."
-                else:
-                    error = "That file isn't on this page."
-            else:
-                sent = form.get("file")
-                data = await sent.read() if hasattr(sent, "read") else b""
-                upload, note = uploads_mod.save(
-                    Path(cfg.files_dir), kind, slug, data,
-                    getattr(sent, "filename", "") or "")
-                if upload is None:
-                    error = note
-                else:
-                    uploads_mod.attach_file(entity, upload, user or "")
-                    library.save(entity)
-                    message = f"Added {upload.filename}."
-
-        return render(f"Files on {entity.name}",
-                      _files_form(entity, uploads_mod.attachments_of(entity),
-                                  message, error),
-                      user=user)
-
-    async def file_download(request):
-        """Serve an attachment, permission-checked against its page.
-
-        Always as a download, never inline. A file that renders in the page is
-        a file that can run scripts on the wiki's own origin, and the point of
-        this route is to hand people back what they put in, not to host it.
-        """
-        redirect = require_login(request)
-        if redirect:
-            return redirect
-        viewer, _ = viewer_for(request)
-        asset_id = request.path_params["asset"]
-        parts = asset_id.split("/")
-        if len(parts) != 3:
-            return HTMLResponse("Not found", status_code=404)
-        _, allowed = entities_for(viewer)
-        if f"{parts[0]}/{parts[1]}" not in allowed:
-            return HTMLResponse("Not found", status_code=404)
-
-        path = uploads_mod.locate(Path(cfg.files_dir), asset_id)
-        if path is None:
-            return HTMLResponse("Not found", status_code=404)
-
-        entity = library.load(parts[0], parts[1])
-        name = next((f.get("name") for f in uploads_mod.attachments_of(entity)
-                     if f.get("id") == asset_id), path.name) if entity else path.name
-        return FileResponse(
-            path,
-            media_type=uploads_mod.media_type_for(path),
-            filename=name,
-            headers={"X-Content-Type-Options": "nosniff"},
-        )
-
     async def tooltips_js(request):
         """The tooltip index, as a script so browsers cache it across pages.
 
@@ -488,53 +241,6 @@ def build(cfg, library: Library, registry: people_mod.People,
             media_type="application/javascript",
             headers={"Cache-Control": "no-store"},
         )
-
-    async def art_by_id(request):
-        """Serve one image by asset id, for the art picker.
-
-        Permission-checked against the page it belongs to, exactly like the
-        named art route, or a restricted character's portrait would be
-        reachable by guessing an id.
-        """
-        redirect = require_login(request)
-        if redirect:
-            return redirect
-        viewer, _ = viewer_for(request)
-        asset_id = request.path_params["asset"]
-        if ".." in asset_id or asset_id.count("/") != 2:
-            return HTMLResponse("Not found", status_code=404)
-        kind, slug, name = asset_id.split("/")
-        _, allowed = entities_for(viewer)
-        if f"{kind}/{slug}" not in allowed:
-            return HTMLResponse("Not found", status_code=404)
-        path = Path(cfg.assets_dir) / kind / slug / f"{name}.png"
-        if not path.exists():
-            return HTMLResponse("Not found", status_code=404)
-        return FileResponse(path)
-
-    async def art(request):
-        redirect = require_login(request)
-        if redirect:
-            return redirect
-        viewer, _ = viewer_for(request)
-        name = request.path_params["filename"]
-        if "/" in name or "\\" in name or ".." in name:
-            return HTMLResponse("Not found", status_code=404)
-        _, allowed = entities_for(viewer)
-        # Art filenames are "<kind>-<slug>.png"; only serve one whose page this
-        # viewer may see, or a restricted page's portrait leaks by direct URL.
-        stem = name.rsplit(".", 1)[0]
-        kind, _, slug = stem.partition("-")
-        if f"{kind}/{slug}" not in allowed:
-            return HTMLResponse("Not found", status_code=404)
-        entity = library.load(kind, slug)
-        if not entity or not entity.art:
-            return HTMLResponse("Not found", status_code=404)
-        akind, aslug, aname = entity.art[-1].split("/", 2)
-        path = Path(cfg.assets_dir) / akind / aslug / f"{aname}.png"
-        if not path.exists():
-            return HTMLResponse("Not found", status_code=404)
-        return FileResponse(path)
 
     async def connect(request):
         """Everything someone needs to point their own Claude at the world.
@@ -559,123 +265,6 @@ def build(cfg, library: Library, registry: people_mod.People,
         return render("Connect Claude",
                       _connect_page(person.name, f"{base}/mcp", token),
                       user=person.name)
-
-    # -- structure -------------------------------------------------------
-
-    async def structure_page(request):
-        """Edit the shape of the wiki: kinds, front page, name.
-
-        Open to everyone signed in, same as the MCP tools. The person who runs
-        this decided the table shares the shape of the world as well as its
-        contents, so there is no DM tier here.
-        """
-        redirect = require_login(request)
-        if redirect:
-            return redirect
-        _, user = viewer_for(request)
-        schema.reload_if_changed()
-        message = error = ""
-
-        if request.method == "POST":
-            form = await request.form()
-            action = str(form.get("action", ""))
-            snapshot(f"{action or 'structure change'} from the site", user or "")
-
-            if action == "add_kind":
-                ok, note = schema_mod.add_kind(
-                    schema, str(form.get("key", "")), str(form.get("label", "")),
-                    nav=bool(form.get("in_nav")))
-            elif action == "rename_kind":
-                ok, note = schema_mod.rename_kind(
-                    schema, str(form.get("key", "")),
-                    str(form.get("rename_to", "")), library,
-                    label=str(form.get("label", "")))
-            elif action == "update_kind":
-                ok, note = schema_mod.update_kind(
-                    schema, str(form.get("key", "")),
-                    label=str(form.get("label", "")) or None,
-                    nav=bool(form.get("in_nav")))
-            elif action == "remove_kind":
-                ok, note = schema_mod.remove_kind(
-                    schema, str(form.get("key", "")), library,
-                    str(form.get("move_pages_to", "")))
-            elif action == "set_site":
-                ok, note = schema_mod.set_site(
-                    schema, str(form.get("name", "")), str(form.get("tagline", "")))
-            elif action == "set_home":
-                try:
-                    import yaml
-
-                    parsed = yaml.safe_load(str(form.get("home", ""))) or []
-                    if not isinstance(parsed, list):
-                        raise ValueError("expected a list of sections")
-                    ok, note = schema_mod.set_home(schema, parsed)
-                except (ValueError, TypeError) as exc:
-                    ok, note = False, f"That didn't parse: {exc}"
-                except Exception as exc:  # yaml.YAMLError and friends
-                    ok, note = False, f"That isn't valid YAML: {exc}"
-            else:
-                ok, note = False, "Unknown action."
-
-            message, error = (note, "") if ok else ("", note)
-
-        counts = {k: sum(1 for _ in library.all(k)) for k in schema.keys}
-        return render("Structure",
-                      _structure_page(schema, counts, message, error),
-                      user=user)
-
-    # -- the Discord inbox ----------------------------------------------
-
-    async def inbox_page(request):
-        """Everything said in Discord that no page accounts for yet.
-
-        A review queue, not an importer. The wiki is what the table decided is
-        true; Discord is four years of argument, jokes and half-ideas. Someone
-        has to choose between them, and that someone is a person.
-        """
-        redirect = require_login(request)
-        if redirect:
-            return redirect
-        _, user = viewer_for(request)
-
-        if request.method == "POST":
-            form = await request.form()
-            action = str(form.get("action", ""))
-            if action == "catch_up":
-                inbox.catch_up(str(form.get("channel", "")) or None)
-            else:
-                ids = [i for i in form.getlist("id") if i]
-                if ids:
-                    inbox.file(ids)
-            return RedirectResponse(request.url.path + (
-                f"?channel={request.query_params['channel']}"
-                if request.query_params.get("channel") else ""
-            ), status_code=303)
-
-        channel = request.query_params.get("channel") or None
-        if channel and channel not in inbox.channels():
-            channel = None
-        waiting = inbox.unfiled(library, channel=channel, limit=60)
-        total = inbox.count(library)
-        return render("Inbox",
-                      _inbox_page(waiting, total, inbox.channels(), channel,
-                                  inbox.last_sync()),
-                      user=user)
-
-    async def inbox_attachment(request):
-        """An image posted in Discord, straight from the lore archive.
-
-        Read from `dnd-scribe/lore`, which sits outside this project, so the
-        path is resolved and checked rather than trusted.
-        """
-        redirect = require_login(request)
-        if redirect:
-            return redirect
-        path = inbox.attachment_path(request.path_params["channel"],
-                                     request.path_params["filename"])
-        if path is None:
-            return HTMLResponse("Not found", status_code=404)
-        return FileResponse(path)
 
     # -- editing --------------------------------------------------------
 
@@ -800,7 +389,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         # the inbox drops it without anyone pressing a second button.
         return RedirectResponse(f"/wiki/{kind}/{slug}.html", status_code=303)
 
-    return [
+    return panels.routes(wiki) + [
         Route("/wiki/new", new_page, methods=["GET", "POST"]),
         Route("/wiki/{kind}/{slug}/edit", edit, methods=["GET", "POST"]),
         Route("/wiki/enter", enter, methods=["GET", "POST"]),
@@ -812,185 +401,9 @@ def build(cfg, library: Library, registry: people_mod.People,
         Route("/wiki/", index),
         Route("/wiki/index.html", index),
         Route("/wiki/tooltips.js", tooltips_js),
-        Route("/wiki/structure", structure_page, methods=["GET", "POST"]),
-        Route("/wiki/inbox", inbox_page, methods=["GET", "POST"]),
-        Route("/wiki/inbox/att/{channel}/{filename}", inbox_attachment),
-        Route("/wiki/{kind}/{slug}/art", art_panel, methods=["GET", "POST"]),
-        Route("/wiki/{kind}/{slug}/files", files_panel, methods=["GET", "POST"]),
-        Route("/wiki/file/{asset:path}", file_download),
-        Route("/wiki/art/id/{asset:path}.png", art_by_id),
-        Route("/wiki/art/{filename}", art),
         Route("/wiki/{kind}/index.html", kind_index),
         Route("/wiki/{kind}/{slug}.html", page),
     ]
-
-
-def _structure_page(schema, counts: dict[str, int], message: str,
-                    error: str) -> str:
-    import yaml
-
-    note = f'<div class="notice">{html.escape(message)}</div>' if message else ""
-    err = f'<div class="error">{html.escape(error)}</div>' if error else ""
-
-    rows = []
-    for kind in schema.kinds:
-        n = counts.get(kind.key, 0)
-        others = "".join(
-            f'<option value="{html.escape(k.key)}">{html.escape(k.label)}</option>'
-            for k in schema.kinds if k.key != kind.key
-        )
-        removal = (
-            f'<form method="post" class="inline">'
-            f'<input type="hidden" name="action" value="remove_kind">'
-            f'<input type="hidden" name="key" value="{html.escape(kind.key)}">'
-            + (f'<select name="move_pages_to"><option value="">move '
-               f'{n} page(s) to...</option>{others}</select>' if n else "")
-            + f'<button type="submit">Remove</button></form>'
-        )
-        rows.append(f"""
-<div class="kindrow">
-  <form method="post" class="inline">
-    <input type="hidden" name="action" value="update_kind">
-    <input type="hidden" name="key" value="{html.escape(kind.key)}">
-    <code>{html.escape(kind.key)}</code>
-    <input name="label" value="{html.escape(kind.label)}" size="14">
-    <label class="cb"><input type="checkbox" name="in_nav"
-      {"checked" if kind.nav else ""}> in nav</label>
-    <button type="submit">Save</button>
-  </form>
-  <form method="post" class="inline">
-    <input type="hidden" name="action" value="rename_kind">
-    <input type="hidden" name="key" value="{html.escape(kind.key)}">
-    <input name="rename_to" placeholder="rename to" size="12">
-    <button type="submit">Rename</button>
-  </form>
-  {removal}
-  <span class="hint">{n} page{"s" if n != 1 else ""}</span>
-</div>""")
-
-    home_yaml = yaml.safe_dump([s.as_dict() for s in schema.home],
-                               sort_keys=False, allow_unicode=True)
-
-    return f"""
-<h1>Structure</h1>
-<p class="summary">What kinds of thing this world is made of, and how the front
-page is arranged. Anyone can change this.</p>
-{note}{err}
-<div class="notice">Every change here commits to git first, so anything that
-goes wrong can be undone. Renaming a kind moves its pages and repoints every
-link to them.</div>
-
-<h2>Kinds</h2>
-{"".join(rows)}
-
-<h3>Add a kind</h3>
-<form method="post" class="inline">
-  <input type="hidden" name="action" value="add_kind">
-  <input name="key" placeholder="ship" size="10" required>
-  <input name="label" placeholder="Ships" size="12">
-  <label class="cb"><input type="checkbox" name="in_nav" checked> in nav</label>
-  <button type="submit">Add</button>
-</form>
-<p class="hint">The key is lowercase and singular; it becomes the folder and the
-URL. The label is what people see.</p>
-
-<h2>The front page</h2>
-<p class="hint">One block of cards per section, in this order. A section needs a
-<code>kind</code>; <code>tag</code>, <code>any_tag</code> and <code>data</code>
-narrow it. Empty sections are skipped.</p>
-<form method="post" class="auth wide">
-  <input type="hidden" name="action" value="set_home">
-  <textarea name="home" rows="14">{html.escape(home_yaml)}</textarea>
-  <button type="submit">Save the front page</button>
-</form>
-
-<h2>Name</h2>
-<form method="post" class="auth wide">
-  <input type="hidden" name="action" value="set_site">
-  <label for="sn">Title</label>
-  <input id="sn" name="name" value="{html.escape(schema.name)}">
-  <label for="tl">Tagline <span class="hint">the line under it</span></label>
-  <input id="tl" name="tagline" value="{html.escape(schema.tagline)}">
-  <button type="submit">Save</button>
-</form>
-"""
-
-
-def _inbox_page(messages, total: int, channels: list[str],
-                channel: str | None, last_sync: str) -> str:
-    from urllib.parse import quote
-
-    tabs = "".join(
-        f'<a href="/wiki/inbox{"" if c is None else "?channel=" + quote(c)}"'
-        f'{" class=\'on\'" if c == channel else ""}>'
-        f'{html.escape(c or "Everything")}</a>'
-        for c in [None] + channels
-    )
-    checked = (f"Last checked {html.escape(last_sync[:16].replace('T', ' '))} UTC."
-               if last_sync else
-               "Discord has not been checked yet. Run sync.ps1 in dnd-scribe.")
-
-    if not messages:
-        return f"""
-<h1>Inbox</h1>
-<p class="summary">Nothing waiting. Everything said in Discord is either
-written up or marked as read.</p>
-<div class="tabs">{tabs}</div>
-<p class="hint">{checked}</p>
-"""
-
-    cards = []
-    for m in messages:
-        shots = "".join(
-            f'<img src="/wiki/inbox/att/{quote(m.channel)}/{quote(a["file"])}" '
-            f'alt="{html.escape(a.get("filename", ""))}" loading="lazy">'
-            for a in m.attachments
-            if str(a.get("content_type", "")).startswith("image/") and a.get("file")
-        )
-        files = ", ".join(
-            html.escape(a.get("filename", "")) for a in m.attachments
-            if not str(a.get("content_type", "")).startswith("image/")
-        )
-        # The first line usually names the thing, which is the best guess at a
-        # page title anyone is going to get without reading it for them.
-        first = (m.text.splitlines() or [""])[0][:80]
-        prefill = (f"/wiki/new?name={quote(first)}&body={quote(m.text[:4000])}"
-                   f"&source={quote(m.source)}")
-        cards.append(f"""
-<div class="msg">
-  <div class="meta"><strong>{html.escape(m.author)}</strong>
-    <span class="chan">#{html.escape(m.channel)}</span>
-    <span>{html.escape(m.at[:16].replace("T", " "))}</span></div>
-  <div class="text">{html.escape(m.text)}</div>
-  {f'<div class="shots">{shots}</div>' if shots else ""}
-  {f'<p class="hint">Files: {files}</p>' if files else ""}
-  <div class="acts">
-    <a href="{prefill}">Write it up</a>
-    <form method="post">
-      <input type="hidden" name="id" value="{html.escape(m.id)}">
-      <button type="submit">Not lore</button>
-    </form>
-  </div>
-</div>""")
-
-    more = ("<p class='hint'>Showing the oldest 60. Deal with these and the "
-            "rest appear.</p>" if total > len(messages) else "")
-
-    return f"""
-<h1>Inbox</h1>
-<p class="summary">{total} message{"s" if total != 1 else ""} from Discord that
-no page accounts for yet.</p>
-<div class="tabs">{tabs}</div>
-<p class="hint">{checked} A message disappears from here when a page cites it,
-so writing it up is enough. "Not lore" is for the rest.</p>
-{"".join(cards)}
-{more}
-<form method="post" class="catchup">
-  <input type="hidden" name="action" value="catch_up">
-  {f'<input type="hidden" name="channel" value="{html.escape(channel)}">' if channel else ""}
-  <button type="submit">Mark everything here as read</button>
-</form>
-"""
 
 
 # -- forms -------------------------------------------------------------
@@ -1186,123 +599,6 @@ function cp(id, btn) {{
   );
 }}
 </script>
-"""
-
-
-def _art_form(entity, existing: list[str], candidates: list[str],
-              prompt: str, error: str, message: str = "") -> str:
-    err = f'<div class="error">{html.escape(error)}</div>' if error else ""
-    note = f'<div class="notice">{html.escape(message)}</div>' if message else ""
-    current = existing[-1] if existing else None
-
-    def gallery(ids: list[str], heading: str, note: str = "") -> str:
-        if not ids:
-            return ""
-        cards = []
-        for asset_id in ids:
-            is_current = asset_id == current
-            cards.append(
-                f'<figure class="{"current" if is_current else ""}">'
-                f'<img src="/wiki/art/id/{html.escape(asset_id)}.png" '
-                f'alt="" loading="lazy">'
-                + (
-                    "<button disabled>In use</button>" if is_current else
-                    f'<button type="submit" name="asset" '
-                    f'value="{html.escape(asset_id)}">Use this one</button>'
-                )
-                + "</figure>"
-            )
-        return (f"<h2>{heading}</h2>"
-                + (f'<p class="hint">{note}</p>' if note else "")
-                + f'<div class="artgrid">{"".join(cards)}</div>')
-
-    picker = ""
-    if candidates or existing:
-        picker = (
-            f'<form method="post" action="/wiki/{entity.kind}/{entity.slug}/art">'
-            '<input type="hidden" name="action" value="pick">'
-            + gallery(candidates, "Just generated",
-                      "Pick one to put it on the page, or write a different "
-                      "prompt and try again.")
-            + gallery([a for a in existing if a not in candidates],
-                      "Already on this page" if not candidates else "Earlier images",
-                      "Everything ever drawn for this page. Nothing is thrown away.")
-            + "</form>"
-        )
-
-    return f"""
-<div class="kind">Art<a class="edit" href="/wiki/{entity.kind}/{entity.slug}.html">Back</a></div>
-<h1>{html.escape(entity.name)}</h1>
-{err}{note}
-<form class="auth wide" method="post" action="/wiki/{entity.kind}/{entity.slug}/art">
-  <label for="p">Describe the picture
-    <span class="hint">Physical and concrete works best: what you'd see,
-    not what it means. The house style is added for you.</span></label>
-  <textarea id="p" name="prompt" rows="3"
-            placeholder="{html.escape(entity.appearance or 'a low timber tavern at dusk, lantern light, wet cobbles')}">{html.escape(prompt)}</textarea>
-  <button type="submit">Generate three</button>
-</form>
-<div class="slow">This runs on the GPU at home and takes roughly a minute for
-three pictures. Leave the tab open.</div>
-
-<h2>Or upload one</h2>
-<p class="hint">A picture you drew, commissioned or found. It goes straight on
-the page and joins the gallery below. PNG, JPEG, GIF or WEBP, up to 25MB.</p>
-<form class="auth wide" method="post" enctype="multipart/form-data"
-      action="/wiki/{entity.kind}/{entity.slug}/art">
-  <input type="hidden" name="action" value="upload">
-  <input type="file" name="file" accept="image/png,image/jpeg,image/gif,image/webp" required>
-  <button type="submit">Upload</button>
-</form>
-{picker}
-"""
-
-
-def _files_form(entity, files: list[dict], message: str, error: str) -> str:
-    err = f'<div class="error">{html.escape(error)}</div>' if error else ""
-    note = f'<div class="notice">{html.escape(message)}</div>' if message else ""
-
-    rows = []
-    for f in files:
-        size = f.get("size", 0)
-        readable = (f"{size / 1024 / 1024:.1f}MB" if size > 1024 * 1024
-                    else f"{max(1, size // 1024)}KB")
-        by = f" &middot; added by {html.escape(str(f['by']))}" if f.get("by") else ""
-        preview = (f'<img src="/wiki/file/{html.escape(f["id"])}" alt="" loading="lazy">'
-                   if str(f.get("type", "")).startswith("image/") else "")
-        rows.append(f"""
-<div class="filerow">
-  {preview}
-  <div class="what">
-    <a href="/wiki/file/{html.escape(f["id"])}">{html.escape(f.get("name", "file"))}</a>
-    <span class="hint">{html.escape(str(f.get("type", "")))} &middot; {readable}{by}</span>
-  </div>
-  <form method="post" class="inline">
-    <input type="hidden" name="action" value="remove">
-    <input type="hidden" name="file" value="{html.escape(f["id"])}">
-    <button type="submit">Remove</button>
-  </form>
-</div>""")
-
-    listing = ("".join(rows) if rows else
-               '<p class="hint">Nothing attached yet.</p>')
-
-    return f"""
-<div class="kind">Files<a class="edit" href="/wiki/{entity.kind}/{entity.slug}.html">Back</a></div>
-<h1>{html.escape(entity.name)}</h1>
-{err}{note}
-<p class="summary">Maps, handouts, PDFs, recordings: anything the table wants
-kept with this page.</p>
-{listing}
-
-<h2>Add a file</h2>
-<form class="auth wide" method="post" enctype="multipart/form-data">
-  <input type="file" name="file" required>
-  <button type="submit">Upload</button>
-</form>
-<p class="hint">Images, PDF, ZIP, MP3, OGG and MP4, up to 25MB. Not SVG: it can
-carry scripts, and it would run as part of this site. Removing a file takes it
-off the page but doesn't delete it, in case another page uses the same one.</p>
 """
 
 
