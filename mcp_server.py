@@ -55,6 +55,7 @@ from mcp.server.mcpserver import Context, MCPServer  # noqa: E402
 
 from universe import config as config_mod  # noqa: E402
 from universe import access as access_mod  # noqa: E402
+from universe import history as history_mod  # noqa: E402
 from universe import inbox as inbox_mod  # noqa: E402
 from universe import people as people_mod  # noqa: E402
 from universe import schema as schema_mod  # noqa: E402
@@ -342,27 +343,14 @@ def build_server(
     # permissions, so every structural change snapshots first and anything
     # regrettable is one `git revert` away.
 
-    def snapshot(what: str, who: str) -> None:
-        """Commit the current state before reshaping anything.
+    def snapshot(what: str, who: str) -> bool:
+        """Commit before reshaping anything, so it can be undone.
 
-        A rename touches every file in content/. Without a commit first there
-        is no before to go back to, and "I renamed a kind and now the wiki
-        looks wrong" becomes unrecoverable rather than annoying.
+        Same net as the website's, and the same implementation: two copies of
+        an undo button drift, and the one that drifts is the one nobody
+        noticed was wrong.
         """
-        import subprocess
-
-        try:
-            subprocess.run(["git", "add", "-A"], cwd=cfg.root, check=False,
-                           capture_output=True, timeout=30)
-            subprocess.run(
-                ["git", "commit", "-q", "-m", f"before: {what} ({who})"],
-                cwd=cfg.root, check=False, capture_output=True, timeout=30,
-            )
-        except (OSError, subprocess.SubprocessError):
-            # No git, or no repo. The change still goes ahead; the person asked
-            # for it, and refusing to work without version control would be a
-            # strange place to draw a line.
-            pass
+        return history_mod.snapshot(Path(cfg.root), what, who)
 
     @server.tool(
         description="The shape of the world: what kinds of page exist, how the "

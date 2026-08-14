@@ -25,6 +25,7 @@ from starlette.responses import HTMLResponse, RedirectResponse
 
 from . import access as access_mod
 from . import gate as gate_mod
+from . import history as history_mod
 from . import inbox as inbox_mod
 from . import people as people_mod
 from . import schema as schema_mod
@@ -170,22 +171,6 @@ class Wiki:
 
     # -- undo ----------------------------------------------------------
 
-    def snapshot(self, what: str, who: str) -> None:
-        """Commit before reshaping anything, so it can be undone.
-
-        A rename touches every file in content/, and without a commit first
-        there is no before to go back to.
-        """
-        import subprocess
-
-        try:
-            subprocess.run(["git", "add", "-A"], cwd=self.cfg.root, check=False,
-                           capture_output=True, timeout=30)
-            subprocess.run(
-                ["git", "commit", "-q", "-m", f"before: {what} ({who})"],
-                cwd=self.cfg.root, check=False, capture_output=True, timeout=30)
-        except (OSError, subprocess.SubprocessError):
-            # No git, or no repo. The change still goes ahead: the person asked
-            # for it, and refusing to work without version control would be a
-            # strange place to draw a line.
-            pass
+    def snapshot(self, what: str, who: str) -> bool:
+        """Commit before reshaping anything, so it can be undone."""
+        return history_mod.snapshot(Path(self.cfg.root), what, who)
