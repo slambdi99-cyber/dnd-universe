@@ -61,6 +61,18 @@ DEFAULT_HOME: tuple[dict, ...] = (
 
 
 @dataclass
+class IndexTag:
+    """One tag-backed group on a kind's index page."""
+
+    title: str
+    kind: str
+    tag: str
+
+    def as_dict(self) -> dict:
+        return {"title": self.title, "kind": self.kind, "tag": self.tag}
+
+
+@dataclass
 class Kind:
     key: str
     label: str
@@ -113,6 +125,7 @@ class Schema:
     tagline: str = ""
     kinds: list[Kind] = field(default_factory=list)
     home: list[Section] = field(default_factory=list)
+    index_tags: list[IndexTag] = field(default_factory=list)
     _stamp: float = 0.0
 
     # -- lookups -------------------------------------------------------
@@ -141,6 +154,7 @@ class Schema:
         return {
             "site": {"name": self.name, "tagline": self.tagline},
             "kinds": [k.as_dict() for k in self.kinds],
+            "index_tags": [t.as_dict() for t in self.index_tags],
             "home": [s.as_dict() for s in self.home],
         }
 
@@ -160,7 +174,9 @@ class Schema:
         if stamp != self._stamp:
             fresh = load(self.root)
             self.name, self.tagline = fresh.name, fresh.tagline
-            self.kinds, self.home = fresh.kinds, fresh.home
+            self.kinds = fresh.kinds
+            self.index_tags = fresh.index_tags
+            self.home = fresh.home
             self._stamp = stamp
 
     def save(self) -> None:
@@ -220,6 +236,16 @@ def load(root: Path) -> Schema:
                   for k, v in (entry.get("data") or {}).items()},
         ))
 
+    index_tags: list[IndexTag] = []
+    for entry in raw.get("index_tags") or []:
+        if not isinstance(entry, dict):
+            continue
+        kind = str(entry.get("kind", "")).strip().lower()
+        tag = str(entry.get("tag", "")).strip()
+        title = str(entry.get("title", "")).strip()
+        if kind and tag and title:
+            index_tags.append(IndexTag(title=title, kind=kind, tag=tag))
+
     schema = Schema(
         root=Path(root),
         name=str(site.get("name") or "The Buried Star"),
@@ -229,6 +255,7 @@ def load(root: Path) -> Schema:
                     "resources."),
         kinds=kinds,
         home=home,
+        index_tags=index_tags,
     )
     try:
         schema._stamp = path.stat().st_mtime
@@ -309,6 +336,9 @@ def rename_kind(schema: Schema, key: str, new_key: str, library,
     for section in schema.home:
         if section.kind == key:
             section.kind = new_key
+    for tag in schema.index_tags:
+        if tag.kind == key:
+            tag.kind = new_key
     schema.save()
     return True, (f"Renamed {key} to {new_key}: {moved} page(s) moved, "
                   f"{relinked} link(s) updated.")
@@ -336,6 +366,7 @@ def remove_kind(schema: Schema, key: str, library,
 
     schema.kinds = [k for k in schema.kinds if k.key != key]
     schema.home = [s for s in schema.home if s.kind != key]
+    schema.index_tags = [t for t in schema.index_tags if t.kind != key]
     schema.save()
     where = f", {count} page(s) moved to {move_pages_to}" if move_pages_to else ""
     return True, f"Removed {key}{where}."
@@ -396,6 +427,25 @@ def set_home(schema: Schema, sections: list[dict]) -> tuple[bool, str]:
     schema.home = parsed
     schema.save()
     return True, f"Front page rebuilt with {len(parsed)} section(s)."
+
+
+def set_index_tags(schema: Schema, groups: list[dict]) -> tuple[bool, str]:
+    parsed: list[IndexTag] = []
+    for entry in groups or []:
+        if not isinstance(entry, dict):
+            return False, "Each index tag group is an object with title, kind and tag."
+        kind = str(entry.get("kind", "")).strip().lower()
+        if not schema.has(kind):
+            return False, (f"No kind called {kind!r}. Existing kinds: "
+                           f"{', '.join(schema.keys)}.")
+        title = str(entry.get("title", "")).strip()
+        tag = str(entry.get("tag", "")).strip()
+        if not title or not tag:
+            return False, "Each index tag group needs a title and a tag."
+        parsed.append(IndexTag(title=title, kind=kind, tag=tag))
+    schema.index_tags = parsed
+    schema.save()
+    return True, f"Index pages rebuilt with {len(parsed)} tag group(s)."
 
 
 # -- migration helpers -------------------------------------------------

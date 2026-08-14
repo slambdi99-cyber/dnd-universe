@@ -30,7 +30,7 @@ jobs:
       # dependency and its absence only shows up on a clean machine.
       - name: Install what the tests need
         run: |
-          pip install pyyaml markdown starlette httpx python-multipart \
+          pip install pyyaml markdown pillow starlette httpx python-multipart \
                       itsdangerous "mcp[cli]" uvicorn
 
       - name: Run every suite

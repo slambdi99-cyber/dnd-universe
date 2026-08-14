@@ -162,6 +162,41 @@ check("skips sections with nothing in them", "Factions" not in html_out,
       "an empty heading is worse than no heading")
 check("names the site", schema.name in html_out)
 
+print("\n== first-class index tags ==")
+ok, msg = schema_mod.set_index_tags(schema, [
+    {"title": "Player Characters", "kind": "character", "tag": "player-character"},
+    {"title": "Lore Pages", "kind": "lore", "tag": "worldbuilding"},
+])
+check("index tag groups saved", ok and len(schema.index_tags) == 2, msg)
+check("rejects a tag group for a kind that doesn't exist",
+      not schema_mod.set_index_tags(schema, [
+          {"title": "Dragons", "kind": "dragon", "tag": "dragon"}
+      ])[0])
+check("a rejected index tag list changes nothing", len(schema.index_tags) == 2)
+check("rejects incomplete index tag groups",
+      not schema_mod.set_index_tags(schema, [
+          {"title": "Nameless", "kind": "character"}
+      ])[0])
+check("an empty index tag list is allowed",
+      schema_mod.set_index_tags(schema, [])[0])
+schema_mod.set_index_tags(schema, [
+    {"title": "Player Characters", "kind": "character", "tag": "player-character"},
+    {"title": "Lore Pages", "kind": "lore", "tag": "worldbuilding"},
+])
+grouped = site_mod.Renderer(schema).kind_index(
+    "character",
+    [
+        Entity(kind="character", slug="wren", name="Wren",
+               tags=["player-character"]),
+        Entity(kind="character", slug="other", name="Other"),
+    ],
+    {},
+    "/wiki/",
+)
+check("configured tags split kind index pages",
+      "Player Characters" in grouped and "Other Characters" in grouped,
+      grouped)
+
 print("\n== naming ==")
 ok, msg = schema_mod.set_site(schema, name="The Hollow Root", tagline="A darker one.")
 check("renamed", ok and schema.name == "The Hollow Root", msg)
@@ -178,6 +213,7 @@ check("labels survive", reloaded.label("deity") == "Gods")
 check("nav flags survive",
       "session" not in [k.key for k in reloaded.nav])
 check("front page survives", len(reloaded.home) == 2)
+check("index tags survive", len(reloaded.index_tags) == 2)
 
 written = yaml.safe_load((sandbox / "structure.yaml").read_text(encoding="utf-8"))
 check("the file is readable YAML", isinstance(written, dict))
@@ -190,6 +226,15 @@ other = schema_mod.load(sandbox)
 schema_mod.add_kind(other, "quest", "Quests")
 live.reload_if_changed()
 check("a change made elsewhere appears without a restart", live.has("quest"))
+
+schema_mod.set_index_tags(live, [
+    {"title": "Quests", "kind": "quest", "tag": "quest"}
+])
+schema_mod.rename_kind(live, "quest", "mission", lib)
+check("renaming a kind moves index tag groups too",
+      live.index_tags[0].kind == "mission")
+schema_mod.remove_kind(live, "mission", lib)
+check("removing a kind drops its index tag groups too", live.index_tags == [])
 
 print("\n== two schemas at once ==")
 # Impossible before: rendering read a module-level global, so a second schema

@@ -69,6 +69,18 @@ async def structure_page(request, wiki):
                 ok, note = False, f"That didn't parse: {exc}"
             except Exception as exc:  # yaml.YAMLError and friends
                 ok, note = False, f"That isn't valid YAML: {exc}"
+        elif action == "set_index_tags":
+            try:
+                import yaml
+
+                parsed = yaml.safe_load(str(form.get("index_tags", ""))) or []
+                if not isinstance(parsed, list):
+                    raise ValueError("expected a list of tag groups")
+                ok, note = schema_mod.set_index_tags(wiki.schema, parsed)
+            except (ValueError, TypeError) as exc:
+                ok, note = False, f"That didn't parse: {exc}"
+            except Exception as exc:  # yaml.YAMLError and friends
+                ok, note = False, f"That isn't valid YAML: {exc}"
         else:
             ok, note = False, "Unknown action."
 
@@ -125,6 +137,8 @@ def _structure_page(schema, counts: dict[str, int], message: str,
 
     home_yaml = yaml.safe_dump([s.as_dict() for s in schema.home],
                                sort_keys=False, allow_unicode=True)
+    index_tags_yaml = yaml.safe_dump([t.as_dict() for t in schema.index_tags],
+                                     sort_keys=False, allow_unicode=True)
 
     return f"""
 <h1>Structure</h1>
@@ -157,6 +171,16 @@ narrow it. Empty sections are skipped.</p>
   <input type="hidden" name="action" value="set_home">
   <textarea name="home" rows="14">{html.escape(home_yaml)}</textarea>
   <button type="submit">Save the front page</button>
+</form>
+
+<h2>Index pages</h2>
+<p class="hint">First-class tags split a kind's index page into sections. Each
+entry needs <code>title</code>, <code>kind</code> and <code>tag</code>. Pages
+without any configured tag still appear under an automatic Other section.</p>
+<form method="post" class="auth wide">
+  <input type="hidden" name="action" value="set_index_tags">
+  <textarea name="index_tags" rows="16">{html.escape(index_tags_yaml)}</textarea>
+  <button type="submit">Save index page groups</button>
 </form>
 
 <h2>Name</h2>

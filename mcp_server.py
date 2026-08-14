@@ -370,6 +370,7 @@ def build_server(
             "site": {"name": schema.name, "tagline": schema.tagline},
             "kinds": [{**k.as_dict(), "pages": counts.get(k.key, 0)}
                       for k in schema.kinds],
+            "index_tags": [t.as_dict() for t in schema.index_tags],
             "home_sections": [s.as_dict() for s in schema.home],
             "folders_with_no_kind": stray,
             "note": "Anyone connected can change all of this. Changes are "
@@ -499,6 +500,30 @@ def build_server(
         ok, message = schema_mod.set_home(schema, sections)
         return {"ok": ok, "message": message,
                 "home_sections": [s.as_dict() for s in schema.home]} if ok \
+            else {"error": message}
+
+    @server.tool(
+        description="Rebuild the tag groups used to split kind index pages. "
+        "Each group is {title, kind, tag}. Pages without a configured tag stay "
+        "visible in an automatic Other section. Call get_structure first and "
+        "send back a modified index_tags list; this replaces all of them."
+    )
+    def set_index_tags(
+        ctx: Context,
+        groups: Annotated[
+            list[dict],
+            "In display order, e.g. [{'title':'Player Characters',"
+            "'kind':'character','tag':'player-character'}]",
+        ],
+    ) -> dict:
+        if read_only:
+            return {"error": "This connection is read-only."}
+        _, who = viewer(ctx)
+        schema.reload_if_changed()
+        snapshot("rebuild index page tag groups", who)
+        ok, message = schema_mod.set_index_tags(schema, groups)
+        return {"ok": ok, "message": message,
+                "index_tags": [t.as_dict() for t in schema.index_tags]} if ok \
             else {"error": message}
 
     # -- files ---------------------------------------------------------
@@ -972,4 +997,3 @@ def main(argv: list[str]) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main(sys.argv))
-
