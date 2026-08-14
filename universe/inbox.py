@@ -29,6 +29,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+from . import assetref
+
 STATE_FILE = ".inbox.json"
 DEFAULT_LORE = Path("..") / "dnd-scribe" / "lore"
 
@@ -254,17 +256,20 @@ class Inbox:
         return moved
 
     def attachment_path(self, channel: str, filename: str) -> Path | None:
-        """Locate a downloaded attachment, refusing anything outside lore/."""
-        if not channel or "/" in filename or "\\" in filename or ".." in filename:
-            return None
+        """Locate a downloaded attachment, refusing anything outside lore/.
+
+        A third shape, and the loosest of them: these filenames were made by
+        Discord rather than by this project, so they carry an extension and
+        whatever punctuation the uploader's phone produced. `confine` does the
+        part that matters, which is proving the resolved path really sits under
+        the archive.
+        """
         if channel not in self.channels():
             return None
-        path = (self.lore / channel / "attachments" / filename).resolve()
-        try:
-            path.relative_to(self.lore.resolve())
-        except ValueError:
+        if not assetref.safe_filename(filename):
             return None
-        return path if path.exists() else None
+        return assetref.confine(
+            self.lore, self.lore / channel / "attachments" / filename)
 
     def last_sync(self) -> str:
         """When dnd-scribe last checked Discord, if it has ever said."""

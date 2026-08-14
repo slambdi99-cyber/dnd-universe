@@ -394,6 +394,25 @@ check("bad YAML is reported, not raised",
       "valid YAML" in r.text or "parse" in r.text,
       "a broken paste must not 500 the page")
 
+print("\n== switching person ==")
+# The bug this covers: /wiki/login used to redirect to the front page whenever
+# someone was already signed in, so clearing the passphrase dropped you on the
+# homepage as whoever you were last time and the picker was unreachable.
+already = signed_in_as("wren")
+switch = already.get("/wiki/login")
+check("the picker is reachable while signed in", switch.status_code == 200,
+      str(switch.status_code))
+check("it says so rather than looking broken", "signed in already" in switch.text)
+check("the current person is marked", 'class="who on"' in switch.text)
+check("every other name is still offered", "Tobias Goreguts" in switch.text)
+already.post("/wiki/login", data={"who": "tobias"})
+check("switching actually switches",
+      "Tobias Goreguts" in already.get("/wiki/").text)
+check("and the old identity is gone",
+      NICK_ONLY not in already.get("/wiki/character/wren.html").text,
+      "otherwise you would keep the previous person's secrets")
+check("the header offers the switch", "not you?" in already.get("/wiki/").text)
+
 print("\n== the shared passphrase ==")
 from universe import gate as gate_mod  # noqa: E402
 

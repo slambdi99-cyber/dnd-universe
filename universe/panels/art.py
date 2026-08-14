@@ -19,6 +19,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse, HTMLResponse, RedirectResponse
 from starlette.routing import Route
 
+from ..assetref import ArtName, AssetRef
 from .. import uploads as uploads_mod
 
 async def art_panel(request, wiki):
@@ -102,17 +103,14 @@ async def art_by_id(request, wiki):
     if redirect:
         return redirect
     viewer, _ = wiki.viewer_for(request)
-    asset_id = request.path_params["asset"]
-    if ".." in asset_id or asset_id.count("/") != 2:
-        return HTMLResponse("Not found", status_code=404)
-    kind, slug, name = asset_id.split("/")
+    ref = AssetRef.parse(request.path_params["asset"])
+    if ref is None:
+        return wiki.not_found()
     _, allowed = wiki.entities_for(viewer)
-    if f"{kind}/{slug}" not in allowed:
-        return HTMLResponse("Not found", status_code=404)
-    path = Path(wiki.cfg.assets_dir) / kind / slug / f"{name}.png"
-    if not path.exists():
-        return HTMLResponse("Not found", status_code=404)
-    return FileResponse(path)
+    if ref.page not in allowed:
+        return wiki.not_found()
+    path = ref.path_under(wiki.cfg.assets_dir)
+    return FileResponse(path) if path else wiki.not_found()
 
 
 async def art(request, wiki):
@@ -120,24 +118,20 @@ async def art(request, wiki):
     if redirect:
         return redirect
     viewer, _ = wiki.viewer_for(request)
-    name = request.path_params["filename"]
-    if "/" in name or "\\" in name or ".." in name:
-        return HTMLResponse("Not found", status_code=404)
+    # "<kind>-<slug>.png". Only served if this viewer may see the page it
+    # belongs to, or a restricted character's portrait leaks by direct URL.
+    named = ArtName.parse(request.path_params["filename"])
+    if named is None:
+        return wiki.not_found()
     _, allowed = wiki.entities_for(viewer)
-    # Art filenames are "<kind>-<slug>.png"; only serve one whose page this
-    # viewer may see, or a restricted page's portrait leaks by direct URL.
-    stem = name.rsplit(".", 1)[0]
-    kind, _, slug = stem.partition("-")
-    if f"{kind}/{slug}" not in allowed:
-        return HTMLResponse("Not found", status_code=404)
-    entity = wiki.library.load(kind, slug)
+    if named.page not in allowed:
+        return wiki.not_found()
+    entity = wiki.library.load(named.kind, named.slug)
     if not entity or not entity.art:
-        return HTMLResponse("Not found", status_code=404)
-    akind, aslug, aname = entity.art[-1].split("/", 2)
-    path = Path(wiki.cfg.assets_dir) / akind / aslug / f"{aname}.png"
-    if not path.exists():
-        return HTMLResponse("Not found", status_code=404)
-    return FileResponse(path)
+        return wiki.not_found()
+    current = AssetRef.parse(entity.art[-1])
+    path = current.path_under(wiki.cfg.assets_dir) if current else None
+    return FileResponse(path) if path else wiki.not_found()
 
 
 def _art_form(entity, existing: list[str], candidates: list[str],

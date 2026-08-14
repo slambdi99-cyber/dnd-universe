@@ -26,6 +26,8 @@ from __future__ import annotations
 import hashlib
 import re
 from dataclasses import dataclass
+
+from .assetref import AssetRef
 from pathlib import Path
 
 MAX_BYTES = 25 * 1024 * 1024
@@ -125,21 +127,22 @@ def save(root: Path, kind: str, slug: str, data: bytes,
     ), "Uploaded."
 
 
-def locate(root: Path, asset_id: str) -> Path | None:
-    """Find a stored upload by id, refusing anything that escapes the store."""
-    if not asset_id or ".." in asset_id or asset_id.count("/") != 2:
+KNOWN_EXTENSIONS = ({e for e, _, _ in IMAGE_SIGNATURES}
+                    | {e for e, _, _ in FILE_SIGNATURES}
+                    | {"webp", "mp4", "heic"})
+
+
+def locate(root: Path, asset_id) -> Path | None:
+    """Find a stored upload, whatever extension it was saved with.
+
+    Takes an `AssetRef` or the string form of one. Parsing is what makes this
+    safe, so a string that will not parse simply has no file: there is no path
+    to build from it.
+    """
+    ref = asset_id if isinstance(asset_id, AssetRef) else AssetRef.parse(asset_id)
+    if ref is None:
         return None
-    base = Path(root).resolve()
-    for extension in {e for e, _, _ in IMAGE_SIGNATURES} | \
-            {e for e, _, _ in FILE_SIGNATURES} | {"webp", "mp4", "heic"}:
-        candidate = (base / f"{asset_id}.{extension}").resolve()
-        try:
-            candidate.relative_to(base)
-        except ValueError:
-            return None
-        if candidate.exists():
-            return candidate
-    return None
+    return ref.find_under(root, KNOWN_EXTENSIONS)
 
 
 def media_type_for(path: Path) -> str:

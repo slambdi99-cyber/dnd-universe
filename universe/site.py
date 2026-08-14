@@ -163,6 +163,7 @@ label.cb input { width: auto; }
 .newpage { float: right; font-size: .85rem; }
 .whogrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
   gap: .7rem; margin: 1.4rem 0; }
+button.who.on { border-color: var(--accent); background: var(--accent-soft); }
 button.who { display: flex; flex-direction: column; gap: .15rem; text-align: left;
   padding: .8rem 1rem; border: 1px solid var(--line); border-radius: 6px;
   background: var(--panel); color: var(--ink); font: inherit; cursor: pointer; }
@@ -304,6 +305,7 @@ def shell(title: str, base: str, body: str, index_json: str,
     if live:
         account = (
             f'<span class="who">{html.escape(user)} &middot; '
+            f'<a href="{base}login">not you?</a> &middot; '
             f'<a href="{base}connect">connect an assistant</a> &middot; '
             f'<a href="{base}logout">sign out</a></span>'
             if user else f'<span class="who"><a href="{base}login">sign in</a></span>'

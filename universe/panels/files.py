@@ -17,6 +17,7 @@ from pathlib import Path
 from starlette.responses import FileResponse, HTMLResponse
 from starlette.routing import Route
 
+from ..assetref import AssetRef
 from .. import uploads as uploads_mod
 
 async def files_panel(request, wiki):
@@ -75,21 +76,20 @@ async def file_download(request, wiki):
     if redirect:
         return redirect
     viewer, _ = wiki.viewer_for(request)
-    asset_id = request.path_params["asset"]
-    parts = asset_id.split("/")
-    if len(parts) != 3:
-        return HTMLResponse("Not found", status_code=404)
+    ref = AssetRef.parse(request.path_params["asset"])
+    if ref is None:
+        return wiki.not_found()
     _, allowed = wiki.entities_for(viewer)
-    if f"{parts[0]}/{parts[1]}" not in allowed:
-        return HTMLResponse("Not found", status_code=404)
+    if ref.page not in allowed:
+        return wiki.not_found()
 
-    path = uploads_mod.locate(Path(wiki.cfg.files_dir), asset_id)
+    path = uploads_mod.locate(Path(wiki.cfg.files_dir), ref)
     if path is None:
-        return HTMLResponse("Not found", status_code=404)
+        return wiki.not_found()
 
-    entity = wiki.library.load(parts[0], parts[1])
+    entity = wiki.library.load(ref.kind, ref.slug)
     name = next((f.get("name") for f in uploads_mod.attachments_of(entity)
-                 if f.get("id") == asset_id), path.name) if entity else path.name
+                 if f.get("id") == str(ref)), path.name) if entity else path.name
     return FileResponse(
         path,
         media_type=uploads_mod.media_type_for(path),

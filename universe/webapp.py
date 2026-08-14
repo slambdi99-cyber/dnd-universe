@@ -110,9 +110,14 @@ def build(cfg, library: Library, registry: people_mod.People,
             return RedirectResponse("/wiki/enter", status_code=303)
 
         if request.method == "GET":
-            if request.session.get("who"):
-                return RedirectResponse("/wiki/", status_code=303)
-            return _auth_page("Who are you?", "/wiki/", _signin_form(roster()))
+            # Shown even when already signed in. Bouncing straight to the front
+            # page made this look broken: you would clear the passphrase, land
+            # on the homepage as whoever you were last time, and never see the
+            # picker. Switching person is also the only way to check what
+            # someone else can see, which is the point of the whole feature.
+            return _auth_page(
+                "Who are you?", "/wiki/",
+                _signin_form(roster(), current=request.session.get("who")))
 
         form = await request.form()
         key = str(form.get("who", "")).strip().lower()
@@ -620,17 +625,20 @@ here? Read the <a href="/wiki/guide">guide</a>.</p>
 """
 
 
-def _signin_form(roster: list, error: str = "") -> str:
+def _signin_form(roster: list, error: str = "", current: str | None = None) -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""
 
     buttons = "".join(
-        f'<button class="who" type="submit" name="who" '
-        f'value="{html.escape(p.key)}">'
+        f'<button class="who{" on" if p.key == current else ""}" type="submit" '
+        f'name="who" value="{html.escape(p.key)}">'
         f'<span class="n">{html.escape(p.name)}</span>'
         f'<span class="c">{html.escape(p.character) if p.character else ("Dungeon Master" if p.is_dm else "Player")}</span>'
         f"</button>"
         for p in roster
     )
+    if current:
+        err = err + ('<div class="notice">You are signed in already. Pick a '
+                     'different name to see the world as they do.</div>')
 
     return f"""
 <h1>Who are you?</h1>
