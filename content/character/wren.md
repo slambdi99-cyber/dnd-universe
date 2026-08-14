@@ -12,12 +12,12 @@ tags:
 - fighter
 links:
 - place/copper-vale
-- item/twigbeards-lucky-beard-twig
+- archive/twigbeards-lucky-beard-twig
 - character/timothy-tuttle
 - place/lorithal
 - faction/hollow-root-covenant
 - item/splinter-of-the-buried-star
-- item/gnarled-staff-of-the-rooted-one
+- archive/gnarled-staff-of-the-rooted-one
 sources:
 - discord:dnd-campaign:2025-10-15-magic-items
 - discord:dnd-campaign:character-art-posts

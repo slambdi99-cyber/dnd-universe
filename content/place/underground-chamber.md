@@ -18,7 +18,7 @@ links:
 - character/barnaby-thistlewick
 - item/bloodroot-greatsword
 - archive/bloomfang-rapier
-- item/rootbound-dagger
+- archive/rootbound-dagger
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - dm-wiki
