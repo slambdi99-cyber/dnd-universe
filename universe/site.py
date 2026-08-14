@@ -542,8 +542,24 @@ def render_index(schema, entities: list[Entity], images: dict[str, str],
 def render_kind_index(schema, kind: str, items: list[Entity],
                       images: dict[str, str], base: str) -> str:
     label = schema.label(kind)
-    return (f"<h1>{label}</h1><p class=\"summary\">{len(items)} pages.</p>"
-            + _cards(items, images, base))
+    parts = [f"<h1>{label}</h1><p class=\"summary\">{len(items)} pages.</p>"]
+    groups = [g for g in schema.index_tags if g.kind == kind]
+    if groups:
+        grouped: set[str] = set()
+        for spec in groups:
+            group = [e for e in items if spec.tag in e.tags]
+            grouped.update(e.ref for e in group)
+            if group:
+                parts.append(f"<h2>{html.escape(spec.title)}</h2>")
+                parts.append(_cards(group, images, base))
+        other = [e for e in items if e.ref not in grouped]
+        if other:
+            parts.append(f"<h2>Other {html.escape(label)}</h2>")
+            parts.append(_cards(other, images, base))
+        return "".join(parts)
+
+    parts.append(_cards(items, images, base))
+    return "".join(parts)
 
 
 def search_index(schema, entities: list[Entity], viewer) -> str:
@@ -564,5 +580,3 @@ def search_index(schema, entities: list[Entity], viewer) -> str:
         ],
         ensure_ascii=False,
     )
-
-
