@@ -70,6 +70,13 @@ async def art_panel(request, wiki):
                 return RedirectResponse(f"/wiki/{kind}/{slug}.html",
                                         status_code=303)
             error = "That image is no longer available."
+        elif action == "remove":
+            asset_id = str(form.get("asset", ""))
+            if asset_id.startswith(f"{kind}/{slug}/") and \
+                    wiki.art().deactivate(entity, asset_id):
+                return RedirectResponse(f"/wiki/{kind}/{slug}/art",
+                                        status_code=303)
+            error = "That image is not on this page."
         else:
             prompt = str(form.get("prompt", "")).strip()
             if not prompt:
@@ -136,7 +143,7 @@ async def art(request, wiki):
     entity = wiki.library.load(named.kind, named.slug)
     if not entity or not entity.art:
         return wiki.not_found()
-    current = AssetRef.parse(entity.art[-1])
+    current = AssetRef.parse(wiki.active_art(entity))
     path = current.path_under(wiki.cfg.assets_dir) if current else None
     if path is None:
         return wiki.not_found()
@@ -160,23 +167,37 @@ def _art_form(entity, existing: list[str], candidates: list[str],
               prompt: str, error: str, message: str = "") -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""
     note = f'<div class="notice">{html.escape(message)}</div>' if message else ""
-    current = existing[-1] if existing else None
+    current = entity.data.get("active_art")
+    if current is None:
+        current = existing[-1] if existing else None
+    elif current not in existing:
+        current = None
 
-    def gallery(ids: list[str], heading: str, note: str = "") -> str:
+    def gallery(ids: list[str], heading: str, note: str = "",
+                removable: bool = False) -> str:
         if not ids:
             return ""
         cards = []
         for asset_id in ids:
             is_current = asset_id == current
+            buttons = (
+                "<button disabled>In use</button>" if is_current else
+                '<button type="submit" name="action" value="pick">Use this one</button>'
+            )
+            if removable:
+                buttons += (
+                    '<button type="submit" name="action" value="remove">'
+                    'Mark inactive</button>'
+                    if is_current else ""
+                )
             cards.append(
                 f'<figure class="{"current" if is_current else ""}">'
                 f'<img src="/wiki/art/id/{html.escape(asset_id)}.png?size=card" '
                 f'alt="" loading="lazy">'
-                + (
-                    "<button disabled>In use</button>" if is_current else
-                    f'<button type="submit" name="asset" '
-                    f'value="{html.escape(asset_id)}">Use this one</button>'
-                )
+                f'<form method="post" action="/wiki/{entity.kind}/{entity.slug}/art">'
+                f'<input type="hidden" name="asset" value="{html.escape(asset_id)}">'
+                + buttons
+                + "</form>"
                 + "</figure>"
             )
         return (f"<h2>{heading}</h2>"
@@ -186,15 +207,14 @@ def _art_form(entity, existing: list[str], candidates: list[str],
     picker = ""
     if candidates or existing:
         picker = (
-            f'<form method="post" action="/wiki/{entity.kind}/{entity.slug}/art">'
-            '<input type="hidden" name="action" value="pick">'
-            + gallery(candidates, "Just generated",
+            gallery(candidates, "Just generated",
                       "Pick one to put it on the page, or write a different "
                       "prompt and try again.")
             + gallery([a for a in existing if a not in candidates],
                       "Already on this page" if not candidates else "Earlier images",
-                      "Everything ever drawn for this page. Nothing is thrown away.")
-            + "</form>"
+                      "Everything ever drawn for this page. Marking one inactive "
+                      "keeps it here but takes it off the page.",
+                      removable=True)
         )
 
     return f"""

@@ -20,6 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from starlette.responses import HTMLResponse, RedirectResponse
 
@@ -116,11 +117,24 @@ class Wiki:
     def images_for(self, entities) -> dict[str, str]:
         out = {}
         for entity in entities:
-            if entity.art:
-                kind, slug, name = entity.art[-1].split("/", 2)
+            active = self.active_art(entity)
+            if active:
+                kind, slug, name = active.split("/", 2)
                 if (self.cfg.assets_dir / kind / slug / f"{name}.png").exists():
-                    out[entity.ref] = f"{kind}-{slug}.png"
+                    out[entity.ref] = f"{kind}-{slug}.png?v={quote(name)}"
         return out
+
+    def active_art(self, entity: Entity) -> str:
+        """The image currently shown for a page.
+
+        Older pages use the last art entry as the current image. Once someone
+        marks art inactive, `data.active_art` becomes the explicit source of
+        truth, with an empty string meaning "show no hero image".
+        """
+        active = entity.data.get("active_art")
+        if active is None:
+            return entity.art[-1] if entity.art else ""
+        return active if active in entity.art else ""
 
     # -- rendering -----------------------------------------------------
 
