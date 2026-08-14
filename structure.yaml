@@ -43,13 +43,18 @@ home:
     map_type:
     - region
     - settlement
-- title: The Party
+- title: Player Characters
   kind: character
   tag: player-character
-- title: Gone
+- title: NPC Main
+  kind: character
+  tag: npc-main
+- title: NPC Side
+  kind: character
+  tag: npc-side
+- title: Player Characters Retired
   kind: character
   any_tag:
   - former-party-member
-  - deceased
 - title: Factions
   kind: faction

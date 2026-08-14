@@ -1,6 +1,6 @@
 ---
 name: Cutter Creek
-kind: place
+kind: archive
 summary: The vanished river that carried Copper Vale's lumber trade. Tobias Goreguts'
   village stood on it.
 appearance: remembered river, timber rafts on fast green water, crowded log booms

@@ -10,7 +10,7 @@ tags:
 - needs-detail
 links:
 - place/copper-vale
-- place/cutter-creek
+- archive/cutter-creek
 - character/tobias-goreguts
 sources:
 - dm-wiki
