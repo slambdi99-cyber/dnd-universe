@@ -319,10 +319,11 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
     # with an .html extension, or the browser downloads it instead of showing it.
     guide_href = f"{base}guide" if live else f"{base}guide.html"
     schema.reload_if_changed()
+    changelog = f'<a href="{base}changelog">Changelog</a>' if live else ""
     nav = "".join(
         f'<a href="{base}{k.key}/index.html">{html.escape(k.label)}</a>'
         for k in schema.nav
-    ) + f'<a href="{guide_href}">Guide</a>'
+    ) + f'{changelog}<a href="{guide_href}">Guide</a>'
     # ASCII separators on purpose: these strings get rewritten by tooling now
     # and then, and a stray encoding round-trip turns punctuation into mojibake.
     full = title if title == schema.name else f"{title} - {schema.name}"

@@ -22,6 +22,7 @@ from starlette.responses import (FileResponse, HTMLResponse,
 from starlette.routing import Route
 
 from . import access as access_mod
+from . import changelog as changelog_mod
 from . import gate as gate_mod
 from . import inbox as inbox_mod
 from . import schema as schema_mod
@@ -303,6 +304,16 @@ def build(cfg, library: Library, registry: people_mod.People,
                       _connect_page(person.name, f"{base}/mcp", token),
                       user=person.name)
 
+    async def changelog(request):
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        _, allowed = entities_for(viewer)
+        log = changelog_mod.restrict(
+            changelog_mod.load(Path(cfg.root), library), allowed)
+        return render("Changelog", changelog_mod.render(log, "/wiki/"), user=user)
+
     # -- editing --------------------------------------------------------
 
     def form_values(entity: Entity | None, viewer: access_mod.Viewer) -> dict:
@@ -436,6 +447,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         Route("/wiki/logout", logout),
         Route("/wiki/guide", guide),
         Route("/wiki/connect", connect),
+        Route("/wiki/changelog", changelog),
         Route("/wiki/", index),
         Route("/wiki/index.html", index),
         Route("/wiki/tooltips.js", tooltips_js),
