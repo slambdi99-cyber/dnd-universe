@@ -129,7 +129,6 @@ Write-Host "  https://$dnsName/mcp"
 Write-Host ""
 Write-Host "Restart the MCP server so it accepts that hostname:" -ForegroundColor Yellow
 Write-Host "  cd C:\Claude\dnd-universe"
-Write-Host "  `$env:UNIVERSE_MCP_TOKEN = (Get-Content .mcp-token -Raw).Trim()"
 Write-Host "  .\.venv\Scripts\python.exe mcp_server.py --http --allowed-host $dnsName"
 Write-Host ""
 Write-Host "Check what Funnel is serving with:  & '$ts' funnel status" -ForegroundColor DarkGray

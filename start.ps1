@@ -30,15 +30,10 @@ if (-not (Test-Path $python)) {
     exit 1
 }
 
-$tokenFile = Join-Path $root ".mcp-token"
-if (-not (Test-Path $tokenFile)) {
-    Write-Host "No .mcp-token. Generating one..." -ForegroundColor Yellow
-    $bytes = New-Object byte[] 32
-    [System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
-    ([Convert]::ToBase64String($bytes) -replace '[+/=]','') |
-        Set-Content $tokenFile -NoNewline -Encoding ascii
-}
-$env:UNIVERSE_MCP_TOKEN = (Get-Content $tokenFile -Raw).Trim()
+# No shared token any more. Everyone connects with their own, minted by
+# tools\make_people_tokens.py and handed out by the connect page. The one that
+# used to live here was dropped after a copy turned up pasted into a Discord
+# channel, which is what a shared secret does eventually.
 
 # Ask Tailscale what this machine is called, so the transport accepts requests
 # arriving through the funnel. Without it every authenticated request 421s.

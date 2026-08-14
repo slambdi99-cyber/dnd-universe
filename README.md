@@ -188,15 +188,15 @@ cloudflared tunnel --url http://127.0.0.1:8787
 It prints a URL like `https://some-words-here.trycloudflare.com`. Then:
 
 ```powershell
-$env:UNIVERSE_MCP_TOKEN = (Get-Content .mcp-token -Raw).Trim()
-```
-
-```powershell
 .\.venv\Scripts\python.exe mcp_server.py --http --allowed-host some-words-here.trycloudflare.com
 ```
 
 Your players connect to `<that-url>/mcp` with an `Authorization: Bearer <token>`
-header.
+header, using their own token. Mint them with `tools/make_people_tokens.py`,
+or let each person collect their own from the connect page on the wiki.
+There is no shared token: it was dropped after a copy turned up pasted into
+a Discord channel, and a personal token does everything it did while also
+telling the server who is calling.
 
 **`--allowed-host` is not optional behind a tunnel.** The MCP transport has DNS
 rebinding protection that rejects any request whose `Host` header it doesn't

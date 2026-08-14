@@ -15,8 +15,7 @@ Pages can carry blocks only some people may read:
 
 Every read is filtered by who is asking, which the server works out from the
 caller's token. Each person has their own; mint them with
-`tools/make_people_tokens.py`. Anyone using the old shared token is a guest and
-sees no secrets at all.
+`tools/make_people_tokens.py`. An unrecognised token is refused at the door.
 
 Whole pages can be restricted too, with `visible_to` in their data:
 
@@ -37,8 +36,11 @@ Over the network, for the rest of your table:
 
     python mcp_server.py --http --wiki site --allowed-host <host>
 
-`--token` (or UNIVERSE_MCP_TOKEN) is the shared guest token and is required in
-HTTP mode. `--read-only` serves the world without the write tools.
+Everyone connects with their own token, minted by `tools/make_people_tokens.py`
+and handed out by the connect page. There is no shared token: it was dropped
+after one turned up pasted into a Discord channel, and it bought nothing a
+personal token does not while telling the server less about who was calling.
+`--read-only` serves the world without the write tools.
 """
 
 from __future__ import annotations
@@ -736,7 +738,6 @@ def _basic_ok(header: str, password: str) -> bool:
 
 def http_app(
     server: MCPServer,
-    token: str,
     allowed_hosts: list[str],
     registry: people_mod.People,
     wiki_dir: Path | None = None,
@@ -746,12 +747,16 @@ def http_app(
 ):
     """Wrap the MCP app with auth.
 
-    Accepts either the shared guest token or any person's own token. The tools
-    themselves re-resolve the token to decide what to show; this layer only
-    decides whether the request is let through at all.
-    """
-    import hmac
+    Only a person's own token opens this door. There used to be a shared guest
+    token as well, which let an unrecognised caller in as nobody: no secrets,
+    but the write tools were still reachable, so a stranger holding it could
+    edit the campaign.
 
+    It was dropped after a copy turned up pasted into a Discord channel. That
+    is what a shared secret does eventually, and there was nothing left for it
+    to buy, because everyone has a personal token that also says who they are,
+    which this one never could.
+    """
     from mcp.server.mcpserver.server import TransportSecuritySettings
     from starlette.applications import Starlette
     from starlette.middleware import Middleware
@@ -763,10 +768,9 @@ def http_app(
         scheme, _, supplied = header.partition(" ")
         if scheme.lower() != "bearer" or not supplied:
             return False
-        supplied = supplied.strip()
-        if token and hmac.compare_digest(supplied, token):
-            return True
-        return registry.resolve(supplied) is not None
+        # `resolve` compares against every known token in constant time, so a
+        # near-miss does not take measurably longer than a wild guess.
+        return registry.resolve(supplied.strip()) is not None
 
     class Auth(BaseHTTPMiddleware):
         async def dispatch(self, request, call_next):
@@ -830,8 +834,6 @@ def main(argv: list[str]) -> int:
     ap.add_argument("--http", action="store_true", help="Serve over HTTP instead of stdio")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8787)
-    ap.add_argument("--token", default=os.environ.get("UNIVERSE_MCP_TOKEN", ""),
-                    help="Shared guest token for HTTP mode. Required.")
     ap.add_argument("--read-only", action="store_true",
                     help="Serve without the create/update/link tools")
     ap.add_argument("--as", dest="as_person", metavar="KEY",
@@ -893,11 +895,12 @@ def main(argv: list[str]) -> int:
         server.run(transport="stdio")
         return 0
 
-    if not args.token:
+    if not registry.tokens:
         print(
-            "Refusing to serve over HTTP without --token.\n\n"
-            "These tools can rewrite the campaign, and an unauthenticated\n"
-            "endpoint behind a public tunnel is an open invitation.",
+            "Refusing to serve over HTTP with no personal tokens.\n\n"
+            "Nobody could connect, and an endpoint that accepts nothing is\n"
+            "just a slower way of being offline. Mint them with:\n"
+            "  python tools\\make_people_tokens.py",
             file=sys.stderr,
         )
         return 2
@@ -960,7 +963,7 @@ def main(argv: list[str]) -> int:
         file=sys.stderr,
     )
     uvicorn.run(
-        http_app(server, args.token, list(dict.fromkeys(hosts)), registry,
+        http_app(server, list(dict.fromkeys(hosts)), registry,
                  wiki_dir, args.wiki_password, live_routes, session_secret),
         host=args.host, port=args.port, log_level="warning",
     )

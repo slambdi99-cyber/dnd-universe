@@ -121,7 +121,8 @@ Write-Host "  ..\dnd-scribe\.venv\Scripts\python.exe mcp_server.py --http --wiki
 Write-Host ""
 Write-Host "Your players then connect to:" -ForegroundColor Yellow
 Write-Host "  https://$Hostname/mcp"
-Write-Host "  with header  Authorization: Bearer <the token in .mcp-token>"
+Write-Host "  with header  Authorization: Bearer <their own token>"
+Write-Host "  (from the connect page on the wiki, or tools\make_people_tokens.py)"
 Write-Host ""
 Write-Host "--allowed-host is required. Without it the transport's DNS rebinding" -ForegroundColor DarkGray
 Write-Host "protection returns 421 to every authenticated request." -ForegroundColor DarkGray

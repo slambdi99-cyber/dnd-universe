@@ -215,19 +215,37 @@ async def run() -> None:
 
 
 def check_http_refuses_without_token() -> None:
-    """HTTP mode must not start unauthenticated."""
+    """HTTP mode must not start with nobody able to authenticate.
+
+    There is no shared token any more, so the thing that would make the
+    endpoint useless is having no personal tokens at all. Run it somewhere
+    with no .people-tokens.json and it should say so rather than listen.
+
+    Runs in a throwaway copy, and on a port nothing else uses: pointing it at
+    the project would have it read the real content and fight the live server
+    for 8787.
+    """
     import subprocess
 
-    print("\n== HTTP mode refuses to run without a token ==")
-    env = {**os.environ}
-    env.pop("UNIVERSE_MCP_TOKEN", None)
+    print("\n== HTTP mode refuses to run with no personal tokens ==")
+    bare = Path(tempfile.mkdtemp(prefix="mcp-notokens-"))
+    shutil.copytree(ROOT / "universe", bare / "universe")
+    shutil.copy(ROOT / "mcp_server.py", bare / "mcp_server.py")
+    shutil.copy(ROOT / "config.yaml", bare / "config.yaml")
+    shutil.copy(ROOT / "people.yaml", bare / "people.yaml")
+    (bare / "content" / "lore").mkdir(parents=True)
+    (bare / "content" / "lore" / "x.md").write_text(
+        "---\nname: X\nkind: lore\n---\n", encoding="utf-8")
+
     proc = subprocess.run(
-        [sys.executable, str(ROOT / "mcp_server.py"), "--http"],
-        capture_output=True, text=True, cwd=str(ROOT), env=env, timeout=60,
+        [sys.executable, str(bare / "mcp_server.py"), "--http", "--port", "8799"],
+        capture_output=True, text=True, cwd=str(bare), timeout=60,
     )
     check("exits non-zero", proc.returncode == 2, f"rc={proc.returncode}")
-    check("explains why", "Refusing to serve over HTTP" in proc.stderr,
+    check("explains why", "no personal tokens" in proc.stderr,
           proc.stderr.strip()[:70])
+    check("says how to fix it", "make_people_tokens" in proc.stderr)
+    shutil.rmtree(bare, ignore_errors=True)
 
 
 def check_http_auth() -> None:
@@ -242,13 +260,15 @@ def check_http_auth() -> None:
     import urllib.request
 
     print("\n== HTTP bearer auth ==")
-    token = "test-secret-do-not-use"
+    # A real person's token, because that is now the only kind there is.
+    from universe import people as people_mod
+
+    token = people_mod.ensure_token(ROOT, "wren")
     port = 8791
-    env = {**os.environ, "UNIVERSE_MCP_TOKEN": token}
     proc = subprocess.Popen(
         [sys.executable, str(ROOT / "mcp_server.py"), "--http",
          "--port", str(port), "--host", "127.0.0.1"],
-        cwd=str(ROOT), env=env,
+        cwd=str(ROOT), env={**os.environ},
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
     url = f"http://127.0.0.1:{port}/mcp"
@@ -286,7 +306,12 @@ def check_http_auth() -> None:
         check("no auth header is rejected", post(None) == 401, str(post(None)))
         check("wrong token is rejected", post("Bearer nope") == 401)
         check("malformed header is rejected", post(token) == 401)
-        check("correct token is accepted", post(f"Bearer {token}") == 200)
+        check("a person's own token is accepted", post(f"Bearer {token}") == 200)
+        # The one this change exists for: the shared token is gone, so a
+        # caller who is nobody in particular gets nothing at all.
+        check("an unrecognised token is nobody, not a guest",
+              post("Bearer dcQv5FUs7SHLxRC3C9gDbnTo") == 401,
+              "the value that turned up in a Discord channel")
     finally:
         proc.terminate()
         try:
