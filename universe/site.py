@@ -353,7 +353,8 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
   <div id="results" hidden></div>
   <div id="page">{body}</div>
 </main>
-<script>const BASE={json.dumps(base)};window.__INDEX__={index_json};{SEARCH_JS}</script>
+<script>const BASE={json.dumps(base)};{"window.__INDEX__=" + index_json + ";" if index_json != "[]" else ""}{SEARCH_JS}</script>
+{f'<script src="{base}search.js" defer></script>' if live else ""}
 {f'<script src="{base}tooltips.js"></script>' if tips else ""}
 </body></html>
 """
@@ -394,7 +395,7 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
         parts.append(f'<p class="summary">{html.escape(entity.summary)}</p>')
     if entity.ref in images:
         parts.append(
-            f'<img class="hero" src="{base}art/{images[entity.ref]}" '
+            f'<img class="hero" src="{base}art/{images[entity.ref]}?size=page" '
             f'alt="{html.escape(entity.name)}" loading="lazy">'
         )
 
@@ -501,7 +502,7 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
 def _cards(items: list[Entity], images: dict[str, str], base: str) -> str:
     out = []
     for e in sorted(items, key=lambda e: e.name):
-        img = (f'<img src="{base}art/{images[e.ref]}" alt="" loading="lazy">'
+        img = (f'<img src="{base}art/{images[e.ref]}?size=card" alt="" loading="lazy">'
                if e.ref in images else "")
         out.append(
             f'<div class="card">{img}<div class="body">'

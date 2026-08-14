@@ -18,8 +18,16 @@ links:
 sources:
 - dm:wiki:2026-08-13
 - written by The DM
+- discord:dnd-campaign:1537290828987375757
 art:
 - place/lorithal/upload-195b5862bfaf8443
+data:
+  files:
+  - id: place/lorithal/upload-06acf3cc2a99af7e
+    name: Lorithal.jpg
+    type: image/jpeg
+    size: 1919353
+    by: The DM
 ---
 
 Spelled three ways in the log. Wren knows about it and is from there, but has been secretive on the subject, and noticed an aunt of hers at Warwick's party.

@@ -19,6 +19,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse, HTMLResponse, RedirectResponse
 from starlette.routing import Route
 
+from .. import thumbs as thumbs_mod
 from ..assetref import ArtName, AssetRef
 from .. import uploads as uploads_mod
 
@@ -110,7 +111,13 @@ async def art_by_id(request, wiki):
     if ref.page not in allowed:
         return wiki.not_found()
     path = ref.path_under(wiki.cfg.assets_dir)
-    return FileResponse(path) if path else wiki.not_found()
+    if path is None:
+        return wiki.not_found()
+    size = request.query_params.get("size", "")
+    if size in thumbs_mod.SIZES:
+        path = thumbs_mod.make(path, size) or path
+    # An asset id is a content hash, so these bytes are immutable.
+    return FileResponse(path, headers={"Cache-Control": "private, max-age=604800"})
 
 
 async def art(request, wiki):
@@ -131,7 +138,22 @@ async def art(request, wiki):
         return wiki.not_found()
     current = AssetRef.parse(entity.art[-1])
     path = current.path_under(wiki.cfg.assets_dir) if current else None
-    return FileResponse(path) if path else wiki.not_found()
+    if path is None:
+        return wiki.not_found()
+
+    # ?size=card for the grids, ?size=page for a hero. A card was pulling the
+    # full-size original, so a front page of thirty of them was tens of
+    # megabytes to draw thumbnails a few hundred pixels wide.
+    size = request.query_params.get("size", "")
+    if size in thumbs_mod.SIZES:
+        path = thumbs_mod.make(path, size) or path
+
+    # Art is content-addressed: a given URL's bytes never change, because
+    # picking a different picture changes the entity's current asset id and
+    # therefore what this route resolves to. A week is conservative.
+    return FileResponse(path, headers={
+        "Cache-Control": "private, max-age=604800",
+    })
 
 
 def _art_form(entity, existing: list[str], candidates: list[str],
@@ -148,7 +170,7 @@ def _art_form(entity, existing: list[str], candidates: list[str],
             is_current = asset_id == current
             cards.append(
                 f'<figure class="{"current" if is_current else ""}">'
-                f'<img src="/wiki/art/id/{html.escape(asset_id)}.png" '
+                f'<img src="/wiki/art/id/{html.escape(asset_id)}.png?size=card" '
                 f'alt="" loading="lazy">'
                 + (
                     "<button disabled>In use</button>" if is_current else

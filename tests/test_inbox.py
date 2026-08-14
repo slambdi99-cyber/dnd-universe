@@ -108,6 +108,35 @@ check("bot filtered", all(w.author != "The DM" or "nat 20" not in w.text for w i
 check("source is citable", waiting[0].source == f"discord:lore-drop:{BASE + 4}",
       waiting[0].source)
 
+print("\n== what counts as worth reading ==")
+from universe.inbox import _worth_reading, prose_of  # noqa: E402
+
+KEEP = [
+    ("a sentence", "The Everpool is fed by a spring nobody has found."),
+    ("a link with something said around it",
+     "https://example.test/wiki sign in as yourself and pick your name"),
+    ("a mention with a question after it",
+     "<@123456789012345678> do you want the passphrase in here"),
+    ("prose with an emoji on the end", "can we rename it to Buried Star \U0001f642"),
+]
+DROP = [
+    ("a bare gif link", "https://klipy.com/gifs/the-voices-voices-in-my-head-1"),
+    ("a bare repo link", "https://github.com/example/thing"),
+    ("a lone mention", "<@123456789012345678>"),
+    ("emoji only", "\U0001f604\U0001f642"),
+    ("one word", "lol"),
+    ("a command", "!roll 2d6"),
+    ("nothing at all", "   "),
+]
+for label, text in KEEP:
+    check(f"keeps {label}", _worth_reading({"content": text}), repr(prose_of(text)[:40]))
+for label, text in DROP:
+    check(f"drops {label}", not _worth_reading({"content": text}), repr(prose_of(text)[:40]))
+
+check("an image with no caption is still kept",
+      _worth_reading({"content": "", "attachments": [{"file": "map.png"}]}),
+      "it might be a map or a portrait, which beats most of the words")
+
 print("\n== writing it up clears it ==")
 lib.save(Entity(
     kind="character", slug="sister-lethra", name="Sister Lethra",

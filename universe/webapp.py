@@ -12,6 +12,7 @@ sensitive behind it.
 
 from __future__ import annotations
 
+import hashlib
 import html
 from pathlib import Path
 
@@ -186,7 +187,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         return render(
             schema.name,
             wiki.pages.index(entities, images, "/wiki/", editable=True),
-            wiki.pages.search_index(entities, viewer), user=user, tips=True,
+            user=user, tips=True,
         )
 
     async def kind_index(request):
@@ -203,7 +204,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         return render(
             schema.label(kind),
             wiki.pages.kind_index(kind, items, images, "/wiki/"),
-            wiki.pages.search_index(entities, viewer), user=user, tips=True,
+            user=user, tips=True,
         )
 
     async def page(request):
@@ -225,7 +226,27 @@ def build(cfg, library: Library, registry: people_mod.People,
             entity.name,
             wiki.pages.body(entity, library, images, "/wiki/", viewer, allowed,
                             editable=True),
-            wiki.pages.search_index(entities, viewer), user=user, tips=True,
+            user=user, tips=True,
+        )
+
+    def cached_script(request, body: str) -> Response:
+        """Serve a per-viewer script that the browser may keep, with an ETag.
+
+        These are big: the tooltip index is 400KB and the search index 60KB.
+        They were marked `no-store`, so every page load fetched both again,
+        which on a phone is most of the wait. They are still built per viewer,
+        because a page you cannot see must not appear in either, so the cache
+        is `private` and the ETag is a hash of what this viewer actually gets.
+        A permission change alters the hash and the browser is told to refetch.
+        """
+        tag = '"' + hashlib.sha256(body.encode("utf-8")).hexdigest()[:16] + '"'
+        if request.headers.get("if-none-match") == tag:
+            return Response(status_code=304, headers={
+                "ETag": tag, "Cache-Control": "private, max-age=300"})
+        return Response(
+            body,
+            media_type="application/javascript",
+            headers={"ETag": tag, "Cache-Control": "private, max-age=300"},
         )
 
     async def tooltips_js(request):
@@ -240,11 +261,23 @@ def build(cfg, library: Library, registry: people_mod.People,
         viewer, _ = viewer_for(request)
         entities, _ = entities_for(viewer)
         index = tooltips_mod.build(entities, viewer, Path(cfg.root), "/wiki/")
-        return Response(
-            f"window.__TIPS__={index};\n{tooltips_mod.TOOLTIP_JS}",
-            media_type="application/javascript",
-            headers={"Cache-Control": "no-store"},
-        )
+        return cached_script(
+            request, f"window.__TIPS__={index};\n{tooltips_mod.TOOLTIP_JS}")
+
+    async def search_js(request):
+        """The search index, out of the page and into something cacheable.
+
+        It was inlined into every page: 60KB of the same JSON on all 112 of
+        them, re-sent on every navigation. The page is a quarter of its old
+        size without it.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, _ = viewer_for(request)
+        entities, _ = entities_for(viewer)
+        return cached_script(
+            request, f"window.__INDEX__={wiki.pages.search_index(entities, viewer)};")
 
     async def connect(request):
         """Everything someone needs to point their own Claude at the world.
@@ -406,6 +439,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         Route("/wiki/", index),
         Route("/wiki/index.html", index),
         Route("/wiki/tooltips.js", tooltips_js),
+        Route("/wiki/search.js", search_js),
         Route("/wiki/{kind}/index.html", kind_index),
         Route("/wiki/{kind}/{slug}.html", page),
     ]

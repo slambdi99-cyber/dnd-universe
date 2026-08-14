@@ -42,6 +42,26 @@ CITED = re.compile(r"discord:[^\s:]+:(\d{15,})")
 # Discord posts a lot of noise. None of this is worth a person's attention.
 SKIP_PREFIXES = ("!", "/", "http://tenor.com", "https://tenor.com")
 
+URL = re.compile(r"https?://\S+")
+MENTION = re.compile(r"<[@#!&:][^>]*>")
+# Emoji and the punctuation people put around them. Not exhaustive, and does
+# not need to be: this only decides whether anything *else* is left.
+DECORATION = re.compile(
+    r"[\s -⁯←-⯿⸀-⹿\U0001f000-\U0001faff!?.,:;)(\-]+"
+)
+
+
+def prose_of(text: str) -> str:
+    """What is left of a message once links, mentions and emoji are removed.
+
+    A message that is only a gif link, or only a mention, has nothing for a
+    person to read and nothing to write up. Judging that on the leftover words
+    rather than on the prefix catches the link posted mid-sentence too, and
+    keeps the ones where somebody actually said something alongside it.
+    """
+    stripped = MENTION.sub(" ", URL.sub(" ", text or ""))
+    return DECORATION.sub(" ", stripped).strip()
+
 
 @dataclass
 class Message:
@@ -78,14 +98,25 @@ def _worth_reading(record: dict) -> bool:
     if record.get("is_bot"):
         return False
     text = (record.get("content") or "").strip()
-    if record.get("attachments") or record.get("embeds"):
+
+    # An image with no caption stays. It might be a map, a portrait, or a
+    # character sheet, and those are worth more than most of the words in the
+    # channel. The cost of showing one is a glance.
+    if record.get("attachments"):
         return True
-    if not text:
+
+    if not text or text.startswith(SKIP_PREFIXES):
         return False
-    if text.startswith(SKIP_PREFIXES):
+
+    # A gif link, a bare URL, a lone mention: nothing a person could write up.
+    # Judged on what is left after the decoration, so a link with a sentence
+    # around it survives and a link on its own does not.
+    prose = prose_of(text)
+    if not prose:
         return False
+
     # Single words and reactions ("lol", "nice", "^") are chat, not lore.
-    return len(text) > 12 and len(text.split()) > 2
+    return len(prose) > 12 and len(prose.split()) > 2
 
 
 class Inbox:

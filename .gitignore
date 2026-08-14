@@ -43,3 +43,6 @@ data/srd.json
 
 # The shared passphrase, stored as a scrypt hash. Never commit it.
 .wiki-passphrase
+
+# Generated thumbnails. Rebuilt on demand from the originals.
+assets/**/.thumbs/
