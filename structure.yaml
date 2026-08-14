@@ -37,12 +37,12 @@ kinds:
   label: Archive
   nav: false
 home:
-- title: Where
+- title: Primary Locations
   kind: place
-  data:
-    map_type:
-    - region
-    - settlement
+  tag: primary-location
+- title: Sub-Locations
+  kind: place
+  tag: sub-location
 - title: Player Characters
   kind: character
   tag: player-character

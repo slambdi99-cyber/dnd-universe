@@ -7,11 +7,14 @@ tags:
 - faction
 - from-lore
 - from-session-log
+- primary-faction
 links:
 - character/korran-mossborn
 - character/thog-mossborn
 sources:
 - session-log:the-buried-star-tobias-log.txt
+- Codex MCP faction index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - faction/mossborn-tribe/default-4ce4aa1a
 ---

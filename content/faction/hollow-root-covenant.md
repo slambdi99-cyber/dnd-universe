@@ -8,6 +8,7 @@ tags:
 - faction
 - antagonist
 - from-wiki
+- primary-faction
 links:
 - place/the-hollow-root
 - place/buried-star
@@ -22,6 +23,8 @@ sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - session-log:the-buried-star-tobias-log.txt
 - discord:lore-drop:2026-08-13
+- Codex MCP faction index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - faction/hollow-root-covenant/default-32df4181
 ---

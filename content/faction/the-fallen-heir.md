@@ -10,6 +10,7 @@ tags:
 - needs-detail
 - from-dm-compendium
 - lorithal
+- primary-faction
 links:
 - archive/laurelthel
 - place/lorithal
@@ -19,6 +20,7 @@ sources:
 - dm:wiki:2026-08-13
 - updated by The DM
 - 'DM compendium: Lore/Groups/The Rebellion/The Rebellion.md'
+- Codex MCP faction index cleanup requested by Sam, 2026-08-14.
 art:
 - faction/the-fallen-heir/default-4510eec7
 ---

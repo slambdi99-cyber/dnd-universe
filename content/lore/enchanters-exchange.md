@@ -22,9 +22,14 @@ links:
 - archive/goltheas-tree
 - place/gulthias-tree
 - creature/goluub
+- place/dawnmere
+- place/ashcroft
+- place/ironfeld
 sources:
 - 'DM chat: Enchanters'' Exchange notes'
 - written by The DM
+- Codex MCP link cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 ---
 
 The Enchanters' Exchange brings several guild chapters together for instruction, demonstration, and rivalry.

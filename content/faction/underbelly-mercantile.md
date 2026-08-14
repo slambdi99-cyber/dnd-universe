@@ -8,6 +8,7 @@ tags:
 - faction
 - antagonist
 - from-wiki
+- primary-faction
 links:
 - archive/dak-patterson
 - character/darius-vell
@@ -21,6 +22,8 @@ links:
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - discord:lore-drop:2026-08-13
+- Codex MCP faction index cleanup requested by Sam, 2026-08-14.
+- updated by The DM
 art:
 - faction/underbelly-mercantile/default-431be774
 ---
