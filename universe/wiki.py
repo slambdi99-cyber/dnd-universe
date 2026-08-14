@@ -20,6 +20,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 from starlette.responses import HTMLResponse, RedirectResponse
 
@@ -124,12 +125,29 @@ class Wiki:
         """
         out = {}
         for entity in entities:
-            if not entity.art:
+            # Which picture is showing is `active_art`; which file that is on
+            # disk is whatever format it was compressed to. Both matter, and
+            # the `?v=` is what makes the week-long cache on the art route
+            # safe: the URL changes when the chosen picture does.
+            active = self.active_art(entity)
+            if not active:
                 continue
-            ref = assetref.AssetRef.parse(entity.art[-1])
+            ref = assetref.AssetRef.parse(active)
             if ref and ref.image_under(self.cfg.assets_dir):
-                out[entity.ref] = f"{ref.kind}-{ref.slug}.png"
+                out[entity.ref] = f"{ref.kind}-{ref.slug}.png?v={quote(ref.name)}"
         return out
+
+    def active_art(self, entity: Entity) -> str:
+        """The image currently shown for a page.
+
+        Older pages use the last art entry as the current image. Once someone
+        marks art inactive, `data.active_art` becomes the explicit source of
+        truth, with an empty string meaning "show no hero image".
+        """
+        active = entity.data.get("active_art")
+        if active is None:
+            return entity.art[-1] if entity.art else ""
+        return active if active in entity.art else ""
 
     # -- rendering -----------------------------------------------------
 

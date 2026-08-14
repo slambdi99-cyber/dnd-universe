@@ -72,12 +72,12 @@ def _inbox_page(messages, total: int, channels: list[str],
                 channel: str | None, last_sync: str) -> str:
     from urllib.parse import quote
 
-    tabs = "".join(
-        f'<a href="/wiki/inbox{"" if c is None else "?channel=" + quote(c)}"'
-        f'{" class=\'on\'" if c == channel else ""}>'
-        f'{html.escape(c or "Everything")}</a>'
-        for c in [None] + channels
-    )
+    def tab(c: str | None) -> str:
+        href = "/wiki/inbox" if c is None else f"/wiki/inbox?channel={quote(c)}"
+        cls = " class='on'" if c == channel else ""
+        return f'<a href="{href}"{cls}>{html.escape(c or "Everything")}</a>'
+
+    tabs = "".join(tab(c) for c in [None] + channels)
     checked = (f"Last checked {html.escape(last_sync[:16].replace('T', ' '))} UTC."
                if last_sync else
                "Discord has not been checked yet. Run sync.ps1 in dnd-scribe.")

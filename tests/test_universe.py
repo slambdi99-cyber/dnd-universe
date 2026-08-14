@@ -13,7 +13,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from universe import style  # noqa: E402
+from universe import schema as schema_mod  # noqa: E402
+from universe import site, style  # noqa: E402
 from universe.assets import AssetSpec, AssetStore  # noqa: E402
 from universe.entities import Entity, Library, slugify  # noqa: E402
 from universe.worldmap import azgaar  # noqa: E402
@@ -182,11 +183,13 @@ check("truncation never leaves a dangling conjunction",
 print("\n== context inheritance direction ==")
 region = Entity(kind="place", slug="the-vale", name="The Vale",
                 appearance="parched golden grassland, cracked dry earth, bare mountains",
-                data={"map_type": "region"}, links=["place/rivertown"])
+                tags=["primary-location"], data={"map_type": "region"}, links=["place/rivertown"])
 town = Entity(kind="place", slug="rivertown", name="Rivertown",
               appearance="walled river city, stone bridges, tiled roofs",
-              data={"map_type": "settlement"}, links=["place/the-vale"])
-lib.save(region); lib.save(town)
+              tags=["sub-location"], data={"map_type": "settlement"}, links=["place/the-vale"])
+uncategorized = Entity(kind="place", slug="old-road", name="Old Road",
+                       summary="An uncategorized road.")
+lib.save(region); lib.save(town); lib.save(uncategorized)
 
 pr = style.build(region, house_style=HOUSE, negative="", max_words=60, library=lib)
 check("a region does not inherit its cities' look", "walled river city" not in pr.text,
@@ -203,6 +206,66 @@ pc2 = style.build(
            links=["place/the-vale"]),
     house_style=HOUSE, negative="", variant="portrait", max_words=60, library=lib)
 check("a portrait gets no landscape glued on", "grassland" not in pc2.text, pc2.text)
+
+print("\n== place index grouping ==")
+schema = schema_mod.load(tmp)
+schema_mod.set_index_tags(schema, [
+    {"title": "Primary Locations", "kind": "place", "tag": "primary-location"},
+    {"title": "Sub-Locations", "kind": "place", "tag": "sub-location"},
+    {"title": "Player Characters", "kind": "character", "tag": "player-character"},
+    {"title": "NPC Main", "kind": "character", "tag": "npc-main"},
+    {"title": "NPC Side", "kind": "character", "tag": "npc-side"},
+    {"title": "Player Characters Retired", "kind": "character",
+     "tag": "former-party-member"},
+    {"title": "Primary Factions", "kind": "faction", "tag": "primary-faction"},
+    {"title": "Non-Primary Factions", "kind": "faction",
+     "tag": "non-primary-faction"},
+])
+place_index = site.render_kind_index(schema, "place", list(lib.all("place")), {}, "/wiki/")
+check("primary locations come first",
+      place_index.index("Primary Locations") < place_index.index("Sub-Locations"),
+      place_index)
+check("uncategorized locations still show",
+      "Other Places" in place_index and "Old Road" in place_index,
+      place_index)
+check("ordinary indexes stay ungrouped",
+      "Primary Locations" not in site.render_kind_index(
+          schema, "item",
+          [Entity(kind="item", slug="coin", name="Coin")], {}, "/wiki/"))
+
+print("\n== character index grouping ==")
+characters = [
+    Entity(kind="character", slug="wren", name="Wren", tags=["player-character"]),
+    Entity(kind="character", slug="melda", name="Melda", tags=["npc-main"]),
+    Entity(kind="character", slug="tavin", name="Tavin", tags=["npc-side"]),
+    Entity(kind="character", slug="lucian", name="Lucian", tags=["former-party-member"]),
+    Entity(kind="character", slug="stranger", name="Stranger"),
+]
+character_index = site.render_kind_index(schema, "character", characters, {}, "/wiki/")
+check("character groups are ordered",
+      character_index.index("Player Characters") < character_index.index("NPC Main")
+      < character_index.index("NPC Side")
+      < character_index.index("Player Characters Retired")
+      < character_index.index("Other Characters"),
+      character_index)
+check("untagged characters still show",
+      "Stranger" in character_index and "Other Characters" in character_index,
+      character_index)
+
+print("\n== faction index grouping ==")
+factions = [
+    Entity(kind="faction", slug="underbelly", name="Underbelly", tags=["primary-faction"]),
+    Entity(kind="faction", slug="belt", name="The Belt", tags=["non-primary-faction"]),
+    Entity(kind="faction", slug="unknown", name="Unknown Faction"),
+]
+faction_index = site.render_kind_index(schema, "faction", factions, {}, "/wiki/")
+check("faction groups are ordered",
+      faction_index.index("Primary Factions") < faction_index.index("Non-Primary Factions")
+      < faction_index.index("Other Factions"),
+      faction_index)
+check("untagged factions still show",
+      "Unknown Faction" in faction_index and "Other Factions" in faction_index,
+      faction_index)
 
 print("\n== clause-safe trimming ==")
 check("cuts on a comma", style.trim_to_words("aaa bb, ccc dd, eee ff", 4) == "aaa bb, ccc dd",

@@ -212,6 +212,9 @@ check("picking attaches it", r.status_code == 303, str(r.status_code))
 after = lib.load("character", "wren")
 check("recorded as current", after.art[-1] == "character/wren/custom1-abc123",
       str(after.art))
+check("records explicit active art",
+      after.data.get("active_art") == "character/wren/custom1-abc123",
+      str(after.data))
 r = wren.post("/wiki/character/wren/art",
               data={"action": "pick", "asset": "lore/dm-notes/default-x"})
 check("cannot attach another page's image", "no longer available" in r.text)
@@ -317,6 +320,25 @@ check("recorded as current", after.art[-1].startswith("character/wren/upload-"),
       str(after.art[-1]))
 check("and it serves",
       wren.get(f"/wiki/art/id/{after.art[-1]}.png").status_code == 200)
+uploaded_page = wren.get("/wiki/character/wren.html").text
+check("page image URL changes with selected art",
+      f"/wiki/art/character-wren.png?v={after.art[-1].split('/')[-1]}" in uploaded_page)
+panel = wren.get("/wiki/character/wren/art").text
+check("current art can be marked inactive", "Mark inactive" in panel)
+r = wren.post("/wiki/character/wren/art",
+              data={"action": "remove", "asset": after.art[-1]})
+check("marking inactive redirects to art panel", r.status_code == 303,
+      str(r.status_code))
+after_inactive = lib.load("character", "wren")
+check("inactive art stays in the gallery list", after.art[-1] in after_inactive.art,
+      str(after_inactive.art))
+check("inactive art is no longer active",
+      after_inactive.data.get("active_art") == "",
+      str(after_inactive.data))
+check("inactive art drops off the page",
+      "/wiki/art/character-wren.png" not in wren.get("/wiki/character/wren.html").text)
+check("inactive art can be picked again",
+      "Use this one" in wren.get("/wiki/character/wren/art").text)
 bad = wren.post("/wiki/character/wren/art", data={"action": "upload"},
                 files={"file": ("evil.png", SVG, "image/svg+xml")})
 # Apostrophes come back HTML-escaped, so match on text that has none.

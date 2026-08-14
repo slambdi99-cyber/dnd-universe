@@ -36,6 +36,31 @@ kinds:
 - key: archive
   label: Archive
   nav: false
+index_tags:
+- title: Primary Locations
+  kind: place
+  tag: primary-location
+- title: Sub-Locations
+  kind: place
+  tag: sub-location
+- title: Player Characters
+  kind: character
+  tag: player-character
+- title: NPC Main
+  kind: character
+  tag: npc-main
+- title: NPC Side
+  kind: character
+  tag: npc-side
+- title: Player Characters Retired
+  kind: character
+  tag: former-party-member
+- title: Primary Factions
+  kind: faction
+  tag: primary-faction
+- title: Non-Primary Factions
+  kind: faction
+  tag: non-primary-faction
 home:
 - title: Primary Locations
   kind: place

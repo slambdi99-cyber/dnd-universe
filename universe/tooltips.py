@@ -186,8 +186,13 @@ TOOLTIP_JS = r"""
         // Ambiguous single words only count when capitalised.
         if (e.c && match[0] !== match[0].toUpperCase()) return match;
         const cls = e.k === 'wiki' ? 'tt tt-wiki' : 'tt';
-        return '<span class="' + cls + '" data-t="' +
-               e.t.toLowerCase().replace(/"/g, '&quot;') + '">' + match + '</span>';
+        const key = e.t.toLowerCase().replace(/"/g, '&quot;');
+        if (e.u) {
+          const target = e.k === 'wiki' ? '' : ' target="_blank" rel="noopener"';
+          return '<a class="' + cls + '" data-t="' + key + '" href="' +
+                 e.u.replace(/"/g, '&quot;') + '"' + target + '>' + match + '</a>';
+        }
+        return '<span class="' + cls + '" data-t="' + key + '">' + match + '</span>';
       });
       if (html !== node.nodeValue) {
         const span = document.createElement('span');
@@ -231,10 +236,11 @@ TOOLTIP_JS = r"""
   document.addEventListener('mouseout', e => {
     if (e.target.closest('.tt')) hide();
   });
-  // Tap to open on touch, tap elsewhere to dismiss.
+  // Links navigate normally; non-link tooltip spans still open on tap.
   document.addEventListener('click', e => {
     const el = e.target.closest('.tt');
-    if (el) { e.preventDefault(); show(el); } else if (!e.target.closest('#tip')) hide();
+    if (el && el.tagName !== 'A') { e.preventDefault(); show(el); }
+    else if (!e.target.closest('.tt') && !e.target.closest('#tip')) hide();
   });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') hide(); });
   window.addEventListener('scroll', hide, { passive: true });
