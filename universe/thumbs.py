@@ -80,8 +80,3 @@ def sweep(root: Path) -> int:
         except OSError:
             pass
     return removed
-
-# Touched by a collaborator, to prove the update job restarts the server.
-
-# second probe
-

@@ -63,5 +63,14 @@ Write-Host ""
 Write-Host "  Leave this window open. Ctrl+C to stop." -ForegroundColor DarkGray
 Write-Host ""
 
-Set-Location $root
-& $python @args
+# Record which process is serving, so update.ps1 can restart it after pulling
+# new code. Without this it would have to guess from the process list, and
+# guessing wrong means killing something else's python.
+$pidFile = Join-Path $root ".server-pid"
+$PID | Set-Content $pidFile -Encoding ascii
+try {
+    Set-Location $root
+    & $python @args
+} finally {
+    Remove-Item $pidFile -ErrorAction SilentlyContinue
+}
