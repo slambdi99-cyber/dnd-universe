@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+from universe import access  # noqa: E402
 from universe import tooltips as tt  # noqa: E402
 from universe.entities import Entity  # noqa: E402
 
@@ -37,7 +38,7 @@ entities = [
 ]
 
 print("\n== the index ==")
-raw = tt.build(entities, frozenset({"wren", "player"}), ROOT, "/wiki/")
+raw = tt.build(entities, access.Viewer.of({"wren", "player"}), ROOT, "/wiki/")
 index = json.loads(raw)
 by_term = {e["t"].lower(): e for e in index}
 check("built something", len(index) > 0, f"{len(index)} entries")
@@ -70,14 +71,14 @@ check("multi-word names are never gated",
 print("\n== visibility ==")
 check("a restricted page is absent for a player", "dm notes" not in by_term)
 sam_index = {e["t"].lower() for e in
-             json.loads(tt.build(entities, frozenset({"dm", "dm"}), ROOT, "/wiki/"))}
+             json.loads(tt.build(entities, access.Viewer.of({"dm", "dm"}), ROOT, "/wiki/"))}
 check("but present for the DM", "dm notes" in sam_index)
 
 print("\n== wiki wins name clashes with the SRD ==")
 clash = [Entity(kind="item", slug="shield", name="Shield",
                 summary="Tobias's dented shield.")]
 merged = {e["t"].lower(): e for e in
-          json.loads(tt.build(clash, frozenset({"wren"}), ROOT, "/wiki/"))}
+          json.loads(tt.build(clash, access.Viewer.of({"wren"}), ROOT, "/wiki/"))}
 check("wiki entry takes the name", merged["shield"]["k"] == "wiki", merged["shield"]["k"])
 check("and keeps its own summary", "Tobias" in merged["shield"]["d"])
 

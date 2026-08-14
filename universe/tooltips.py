@@ -31,6 +31,7 @@ from pathlib import Path
 from urllib.parse import quote_plus
 
 from . import secrets as secrets_mod
+from . import access as access_mod
 from .entities import Entity
 
 # Single words common enough in prose that matching them unconditionally would
@@ -69,13 +70,9 @@ def load_srd(root: Path) -> list[dict]:
         return []
 
 
-def _readable(entity: Entity, viewer: frozenset[str]) -> bool:
-    allowed = entity.data.get("visible_to")
-    if not allowed:
-        return True
-    if isinstance(allowed, str):
-        allowed = [allowed]
-    return bool(viewer & {str(a).strip().lower() for a in allowed})
+def _readable(entity: Entity, viewer) -> bool:
+    """Kept as a name, delegating to the one implementation of the rule."""
+    return access_mod.readable(entity, viewer)
 
 
 def wiki_entries(entities: list[Entity], viewer: frozenset[str],
@@ -88,7 +85,7 @@ def wiki_entries(entities: list[Entity], viewer: frozenset[str],
     for entity in (e for e in entities if _readable(e, viewer)):
         summary = entity.summary.strip()
         if not summary:
-            body = secrets_mod.redact(entity.body, viewer)
+            body = access_mod.redact(entity.body, viewer)
             summary = body.split("\n\n")[0][:200] if body else ""
         out.append({
             "term": entity.name,

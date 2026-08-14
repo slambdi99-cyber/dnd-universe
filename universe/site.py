@@ -14,6 +14,7 @@ from collections import defaultdict
 
 import markdown as md
 
+from . import access as access_mod
 from . import secrets as secrets_mod
 from . import tooltips as tooltips_mod
 from pathlib import Path
@@ -350,7 +351,7 @@ def render_guide(source: str) -> str:
 
 
 def render_body(entity: Entity, library: Library, images: dict[str, str],
-                base: str, viewer: frozenset[str], allowed: set[str],
+                base: str, viewer, allowed: set[str],
                 editable: bool = False) -> str:
     edit_link = (
         f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/edit">Edit</a>'
@@ -376,7 +377,7 @@ def render_body(entity: Entity, library: Library, images: dict[str, str],
     for segment in secrets_mod.parse(entity.body):
         if segment.audience is None:
             parts.append(_markdown(segment.text))
-        elif viewer & segment.audience:
+        elif viewer.all_access or (viewer.identities & segment.audience):
             who = ", ".join(sorted(segment.audience))
             parts.append(
                 f'<div class="secret"><span class="who">secret &middot; {html.escape(who)}'
@@ -518,7 +519,7 @@ def render_kind_index(kind: str, items: list[Entity], images: dict[str, str],
             + _cards(items, images, base))
 
 
-def search_index(entities: list[Entity], viewer: frozenset[str]) -> str:
+def search_index(entities: list[Entity], viewer) -> str:
     """Client-side index containing only text this viewer may read."""
     return json.dumps(
         [
@@ -528,7 +529,7 @@ def search_index(entities: list[Entity], viewer: frozenset[str]) -> str:
                 "s": e.summary[:120],
                 "u": page_url(e.ref),
                 "h": " ".join(
-                    [e.name, e.summary, secrets_mod.redact(e.body, viewer),
+                    [e.name, e.summary, access_mod.redact(e.body, viewer),
                      " ".join(e.tags)]
                 ).lower(),
             }
@@ -537,17 +538,4 @@ def search_index(entities: list[Entity], viewer: frozenset[str]) -> str:
         ensure_ascii=False,
     )
 
-
-def visible_to(entities: list[Entity], viewer: frozenset[str]) -> list[Entity]:
-    out = []
-    for entity in entities:
-        allowed = entity.data.get("visible_to")
-        if not allowed:
-            out.append(entity)
-            continue
-        if isinstance(allowed, str):
-            allowed = [allowed]
-        if viewer & {str(a).strip().lower() for a in allowed}:
-            out.append(entity)
-    return out
 

@@ -20,6 +20,7 @@ from starlette.responses import (FileResponse, HTMLResponse,
                                  RedirectResponse, Response)
 from starlette.routing import Route
 
+from . import access as access_mod
 from . import gate as gate_mod
 from . import inbox as inbox_mod
 from . import schema as schema_mod
@@ -30,7 +31,6 @@ from . import site as site_mod
 from . import tooltips as tooltips_mod
 from .entities import Entity, Library, slugify
 
-PUBLIC: frozenset[str] = frozenset()
 
 
 def _auth_page(title: str, base: str, inner: str) -> HTMLResponse:
@@ -113,22 +113,23 @@ def build(cfg, library: Library, registry: people_mod.People,
         if fresh.members:
             registry.members = fresh.members
 
-    def viewer_for(request) -> tuple[frozenset[str], str | None]:
+    def viewer_for(request) -> tuple[access_mod.Viewer, str | None]:
         key = request.session.get("who")
         if not key:
-            return PUBLIC, None
+            return access_mod.Viewer.nobody(), None
         person = registry.members.get(key)
         if person is None:
             reload_people()
             person = registry.members.get(key)
         if person is None:
-            return PUBLIC, None
-        return person.identities, person.name
+            return access_mod.Viewer.nobody(), None
+        return access_mod.Viewer.person(person), person.name
 
-    def entities_for(viewer: frozenset[str]):
+    def entities_for(viewer: access_mod.Viewer):
+        """One viewer's world, computed once per request."""
         everything = sorted(library.all(), key=lambda e: (e.kind, e.name))
-        allowed_list = site_mod.visible_to(everything, viewer)
-        return allowed_list, {e.ref for e in allowed_list}
+        view = access_mod.for_viewer(everything, viewer)
+        return view.entities, view.refs
 
     def images_for(entities) -> dict[str, str]:
         out = {}
@@ -678,7 +679,7 @@ def build(cfg, library: Library, registry: people_mod.People,
 
     # -- editing --------------------------------------------------------
 
-    def form_values(entity: Entity | None, viewer: frozenset[str]) -> dict:
+    def form_values(entity: Entity | None, viewer: access_mod.Viewer) -> dict:
         if entity is None:
             return {"name": "", "summary": "", "appearance": "", "body": "",
                     "tags": "", "links": "", "kind": "place", "source": ""}
@@ -686,7 +687,7 @@ def build(cfg, library: Library, registry: people_mod.People,
             "name": entity.name,
             "summary": entity.summary,
             "appearance": entity.appearance,
-            "body": secrets_mod.redact(entity.body, viewer),
+            "body": access_mod.redact(entity.body, viewer),
             "tags": ", ".join(entity.tags),
             "links": ", ".join(entity.links),
             "kind": entity.kind,
@@ -703,7 +704,7 @@ def build(cfg, library: Library, registry: people_mod.People,
             return HTMLResponse("Not found", status_code=404)
         entity = library.load(kind, slug)
 
-        withheld = len(secrets_mod.withheld_blocks(entity.body, viewer))
+        withheld = len(secrets_mod.withheld_blocks(entity.body, viewer.identities))
 
         if request.method == "GET":
             return render(
@@ -729,7 +730,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         if secret_text and audience:
             body = body.rstrip() + "\n\n" + secrets_mod.wrap(secret_text, audience)
         # Anything this editor could not see is carried across untouched.
-        entity.body = secrets_mod.merge_edit(entity.body, body, viewer)
+        entity.body = secrets_mod.merge_edit(entity.body, body, viewer.identities)
 
         note = f"edited by {user} on the wiki"
         if note not in entity.sources:

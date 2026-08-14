@@ -27,12 +27,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from universe import access as access_mod  # noqa: E402
 from universe import config as config_mod  # noqa: E402
 from universe import site as site_mod
 from universe import tooltips as tooltips_mod  # noqa: E402
 from universe.entities import Entity, Library  # noqa: E402
 
-PUBLIC: frozenset[str] = frozenset()
+PUBLIC = access_mod.Viewer.nobody()
 
 
 def main() -> int:
@@ -43,7 +44,7 @@ def main() -> int:
     cfg = config_mod.load()
     library = Library(cfg.content_dir)
     everything = sorted(library.all(), key=lambda e: (e.kind, e.name))
-    entities = site_mod.visible_to(everything, PUBLIC)
+    entities = access_mod.visible(everything, PUBLIC)
     restricted = {e.ref for e in everything} - {e.ref for e in entities}
     if not entities:
         print("No content to export.", file=sys.stderr)

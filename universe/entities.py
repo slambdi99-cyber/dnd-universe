@@ -49,6 +49,23 @@ def slugify(name: str) -> str:
     return slug or "unnamed"
 
 
+def _audience(meta: dict) -> list[str]:
+    """Read `visible_to` from either place, tolerating a bare string.
+
+    It lived under `data` first and is a top-level field now. Both spellings
+    are accepted so no existing page needs editing; a page moves to the new
+    shape the next time anything saves it.
+    """
+    raw = meta.get("visible_to")
+    if raw is None:
+        raw = (meta.get("data") or {}).get("visible_to")
+    if raw is None:
+        return []
+    if isinstance(raw, str):
+        raw = [raw]
+    return [str(a) for a in raw]
+
+
 @dataclass
 class Entity:
     kind: str
@@ -69,10 +86,29 @@ class Entity:
     # `summary` because what a thing looks like and what it means are
     # different questions.
     appearance: str = ""
+    # Who may see this page at all. Empty means everyone. A first-class field
+    # rather than a key in `data`, because it is the one entry that changes who
+    # the page renders for: leaving it in the freeform dict meant every reader
+    # had to normalise it itself and every writer had to remember to strip it
+    # back out of rendered output.
+    visible_to: list[str] = field(default_factory=list)
     # Kind-specific structured fields (population, alignment, coordinates...).
     data: dict[str, Any] = field(default_factory=dict)
     # Freeform prose. Everything below the frontmatter.
     body: str = ""
+
+    def __post_init__(self) -> None:
+        """Lift `visible_to` out of `data`, however this entity was built.
+
+        Doing it only in `parse` was not enough: a seed script or a test that
+        constructs an Entity directly with data={"visible_to": [...]} would
+        silently produce a public page, because the restriction sat somewhere
+        nothing reads any more. Silent is the whole problem with this rule, so
+        normalisation happens on every Entity, not just parsed ones.
+        """
+        stray = self.data.pop("visible_to", None) if self.data else None
+        if stray and not self.visible_to:
+            self.visible_to = [stray] if isinstance(stray, str) else list(stray)
 
     @property
     def ref(self) -> str:
@@ -84,7 +120,7 @@ class Entity:
             value = getattr(self, key)
             if value:
                 out[key] = value
-        for key in ("tags", "links", "sources", "art"):
+        for key in ("tags", "links", "sources", "art", "visible_to"):
             value = getattr(self, key)
             if value:
                 out[key] = value
@@ -123,7 +159,12 @@ class Entity:
             links=list(meta.get("links") or []),
             sources=list(meta.get("sources") or []),
             art=list(meta.get("art") or []),
-            data=dict(meta.get("data") or {}),
+            visible_to=_audience(meta),
+            # `visible_to` is lifted out of `data` on the way in, so a page
+            # written before it was a field parses the same as one written
+            # after, and nothing downstream has to special-case it back out.
+            data={k: v for k, v in (meta.get("data") or {}).items()
+                  if k != "visible_to"},
             body=body,
         )
 

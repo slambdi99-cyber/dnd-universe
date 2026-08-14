@@ -54,6 +54,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from mcp.server.mcpserver import Context, MCPServer  # noqa: E402
 
 from universe import config as config_mod  # noqa: E402
+from universe import access as access_mod  # noqa: E402
 from universe import inbox as inbox_mod  # noqa: E402
 from universe import people as people_mod  # noqa: E402
 from universe import schema as schema_mod  # noqa: E402
@@ -61,7 +62,11 @@ from universe import uploads as uploads_mod  # noqa: E402
 from universe import secrets as secrets_mod  # noqa: E402
 from universe.entities import Entity, Library, slugify  # noqa: E402
 
-GUEST = frozenset({"guest"})
+# An unrecognised token is nobody, exactly like a signed-out web reader and
+# exactly like an export. It used to be frozenset({"guest"}), which quietly
+# made a page marked visible_to: [guest] readable by strangers over MCP while
+# staying hidden on the website. Nobody designed that.
+GUEST = access_mod.Viewer.nobody()
 
 INSTRUCTIONS = """
 This is the shared world of The Buried Star, a D&D campaign set in the dying
@@ -102,7 +107,7 @@ def build_server(
     library: Library,
     registry: people_mod.People,
     read_only: bool,
-    default_identity: frozenset[str],
+    default_identity: access_mod.Viewer,
     default_name: str,
     schema: schema_mod.Schema | None = None,
 ) -> MCPServer:
@@ -117,7 +122,7 @@ def build_server(
 
     # -- identity ------------------------------------------------------
 
-    def viewer(ctx: Context | None) -> tuple[frozenset[str], str]:
+    def viewer(ctx: Context | None) -> tuple[access_mod.Viewer, str]:
         """Work out who is asking, from the token they presented.
 
         Headers are client-supplied, so nothing here trusts a claimed name. The
@@ -139,20 +144,15 @@ def build_server(
         person = registry.resolve(token.strip())
         if person is None:
             return GUEST, "guest"
-        return person.identities, person.name
+        return access_mod.Viewer.person(person), person.name
 
-    def can_see(entity: Entity, ids: frozenset[str]) -> bool:
-        allowed = entity.data.get("visible_to")
-        if not allowed:
-            return True
-        if isinstance(allowed, str):
-            allowed = [allowed]
-        return bool(ids & {str(a).strip().lower() for a in allowed})
+    def can_see(entity: Entity, viewer) -> bool:
+        return access_mod.readable(entity, viewer)
 
-    def visible(ids: frozenset[str], kind: str | None = None) -> list[Entity]:
-        return [e for e in library.all(kind) if can_see(e, ids)]
+    def visible(viewer, kind: str | None = None) -> list[Entity]:
+        return access_mod.visible(library.all(kind), viewer)
 
-    def find(ref: str, ids: frozenset[str]) -> Entity | None:
+    def find(ref: str, ids: access_mod.Viewer) -> Entity | None:
         ref = ref.strip()
         candidates = visible(ids)
         if "/" in ref:
@@ -167,7 +167,7 @@ def build_server(
         partial = [e for e in candidates if lowered in e.name.lower()]
         return partial[0] if len(partial) == 1 else None
 
-    def render(entity: Entity, ids: frozenset[str], *, full: bool = True) -> dict:
+    def render(entity: Entity, ids: access_mod.Viewer, *, full: bool = True) -> dict:
         out: dict[str, Any] = {
             "ref": entity.ref,
             "name": entity.name,
@@ -177,7 +177,7 @@ def build_server(
         if not full:
             return out
 
-        body = secrets_mod.redact(entity.body, ids)
+        body = access_mod.redact(entity.body, ids)
         allowed = {e.ref for e in visible(ids)}
         out.update(
             {
@@ -187,7 +187,7 @@ def build_server(
                 # page's existence doesn't leak through someone else's page.
                 "links": [r for r in entity.links if r in allowed],
                 "sources": entity.sources,
-                "data": {k: v for k, v in entity.data.items() if k != "visible_to"},
+                "data": dict(entity.data),
                 "body": body,
                 "art_count": len(entity.art),
                 "linked_from": [
@@ -195,21 +195,21 @@ def build_server(
                 ],
             }
         )
-        if secrets_mod.hidden_from(entity.body, ids):
+        if access_mod.withheld_from(entity.body, ids):
             out["note"] = (
                 "This page contains secret sections you are not shown. "
                 "Do not speculate about their contents."
             )
         return out
 
-    def haystack(entity: Entity, ids: frozenset[str]) -> str:
+    def haystack(entity: Entity, ids: access_mod.Viewer) -> str:
         """Searchable text, secrets excluded unless this viewer may read them.
 
         Search must never match on hidden text: a page surfacing for a word
         only present in a secret would reveal the secret's contents.
         """
         return " ".join(
-            [entity.name, entity.summary, secrets_mod.redact(entity.body, ids),
+            [entity.name, entity.summary, access_mod.redact(entity.body, ids),
              " ".join(entity.tags)]
         ).lower()
 
@@ -222,7 +222,9 @@ def build_server(
         allowed = [e for e in entities if can_see(e, ids)]
         return {
             "you": name,
-            "identities": sorted(ids),
+            "identities": sorted(ids.identities),
+            # True only for the process holding the files, never for a token.
+            "full_access": ids.all_access,
             "pages_visible": len(allowed),
             "pages_hidden": len(entities) - len(allowed),
             "can_write": not read_only,
@@ -650,7 +652,7 @@ def build_server(
             body=secret_block(body, secret_audience),
             tags=list(tags or []), links=list(links or []),
             sources=[source] if source else [],
-            data={"visible_to": [v.lower() for v in visible_to]} if visible_to else {},
+            visible_to=[v.lower() for v in visible_to] if visible_to else [],
         )
         entity.sources.append(f"written by {who}")
         library.save(entity)
@@ -871,7 +873,10 @@ def main(argv: list[str]) -> int:
 
     # stdio callers already hold the files, so they get everything unless they
     # ask to be someone specific.
-    default_identity = frozenset({"dm"} | {p.key for p in registry.members.values()})
+    # Full access is a flag, not a set containing everyone's key. The old
+    # spelling was indistinguishable from a person who happened to be in every
+    # audience, and it silently widened whenever someone joined the table.
+    default_identity = access_mod.Viewer.local()
     default_name = "local (full access)"
     if args.as_person:
         person = registry.members.get(args.as_person.strip().lower())
@@ -879,7 +884,8 @@ def main(argv: list[str]) -> int:
             print(f"No person with key {args.as_person!r} in people.yaml.",
                   file=sys.stderr)
             return 1
-        default_identity, default_name = person.identities, person.name
+        default_identity = access_mod.Viewer.person(person)
+        default_name = person.name
 
     # One schema object shared by the tools and the wiki, so a kind added
     # through Claude appears in the site's nav without a restart.
@@ -890,7 +896,7 @@ def main(argv: list[str]) -> int:
     mode = "read-only" if args.read_only else "read/write"
     secret_pages = sum(
         1 for e in library.all()
-        if secrets_mod.has_secrets(e.body) or e.data.get("visible_to")
+        if secrets_mod.has_secrets(e.body) or e.visible_to
     )
 
     if not args.http:
