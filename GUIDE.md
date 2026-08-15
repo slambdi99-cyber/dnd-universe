@@ -47,6 +47,13 @@ the people we've lost.
   **Mentioned by** shows what points back at it.
 - The nav bar filters by type: Places, Characters, Factions, Items.
 
+Places sit inside other places. A shop's page shows the trail above it, like
+*Copper Vale › Valeshire › The Valeshire Tavern*, so you always know roughly
+where you are, and a city's page lists everything inside it. If a place looks
+like it's in the wrong container, the Edit form has an **Inside** dropdown.
+Most of those were worked out from old tags rather than typed by a person, so
+some of them are wrong.
+
 Good places to start: **Copper Vale** for how the region is dying, **Hollow
 Root Covenant** for what we're up against, or your own character.
 
@@ -78,14 +85,18 @@ delete something you can't see.
 
 ### Making a picture for a page
 
-Every page has an **Art** button next to Edit. Type what you want to see and it
-draws three versions on the machine in The DM's office. Click the one you like and
-it becomes the page's picture.
+Every page has an **Art** button next to Edit. Type what you want to see and
+three versions get drawn on the machine in Timothy Tuttle's office.
 
-It takes roughly a minute, so leave the tab open. Nothing is attached until you
-pick one, so a prompt that comes out badly costs nothing but the wait. The
-earlier pictures for that page stay listed underneath, and you can go back to
-one at any time.
+**This one is not instant.** The website runs on a small server with no
+graphics card, so asking puts your request in a queue and the page tells you it
+is waiting. The machine at home draws it the next time it is on, usually within
+the hour, and the pictures are there when you come back. Close the tab; you are
+not missing anything by leaving.
+
+Nothing is attached until you pick one, so a prompt that comes out badly costs
+nothing at all. The earlier pictures for that page stay listed underneath, and
+you can go back to one at any time.
 
 Describe what you'd see, not what it is. "Weathered stone bridge over a dry
 riverbed, dusk, low mist" gets you something; "the bridge" gets you a bridge
@@ -166,18 +177,14 @@ whatever you already have.
 You don't need to ask anyone for anything. Once you're signed in to the
 website, click **connect an assistant** in the top right.
 
-That page has your own connection details already filled in, several ways:
+There is one block on that page with your own details already in it. Press
+Copy, paste it to your assistant, and it sets itself up. That is the whole
+procedure.
 
-- **The three facts any MCP client needs** (URL, transport, auth header), which
-  is all you need if your client has a settings box for them.
-- **A prompt to paste in**, which gets your assistant to work out its own client
-  and set itself up. Easiest, and what most people should use.
-- **A one-line command** for Claude Code and the CLIs that copied its syntax.
-- **The raw config**, which is the same shape in Claude Desktop, Cursor,
-  Windsurf, Cline and Zed.
-- **A curl command**, to prove the endpoint is up without any assistant at all.
-
-Each has a Copy button. Pick whichever suits and paste it.
+If your assistant cannot do it for itself, the same page has the raw settings,
+a one-line command for Claude Code, and the config file shape used by Claude
+Desktop, Cursor, Windsurf, Cline and Zed. They are folded away under **if your
+client wants it spelled out**, because most people never need them.
 
 ### Check it worked
 
@@ -360,10 +367,15 @@ a couple of minutes before assuming it's stuck.
 an assistant** on the website and use the Copy button rather than selecting by
 hand.
 
-**It can't connect at all, or the site won't load.** The whole thing runs
-on Timothy's player's PC. If it's off, the wiki and the MCP both stop working. It isn't
-broken, it's asleep. Timothy Tuttle: `powershell -ExecutionPolicy Bypass -File
-.\start.ps1` from `C:\Claude\dnd-universe`.
+**It can't connect at all, or the site won't load.** The wiki lives on a small
+server that stays on, so this should be rare now rather than a nightly event.
+It used to run on Timothy Tuttle's computer and went down whenever that slept.
+If the site really is unreachable, say so and it gets looked at.
+
+**A picture never turned up.** Art is the one thing that did not move to the
+server, because drawing needs a graphics card the server does not have. Asking
+for one queues it, the page says so, and the machine at home draws it next time
+it is on. Nothing is lost, it is just not instant.
 
 **It says something that's wrong.** Tell The DM, and check the page's Sources
 line: it records where each fact came from. Some of it was reconstructed from

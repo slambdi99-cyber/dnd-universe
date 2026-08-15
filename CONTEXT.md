@@ -85,11 +85,30 @@ stays consistent instead of each surface assembling its own allowed set.
 static site export, the Obsidian export. All four ask `access` the same
 question, and that is the invariant this codebase most needs to keep.
 
+**Within**: the one larger place a place sits inside, as a ref. Nests to any
+depth: a shop inside a city inside a region. Recorded only on the child, so
+there is one fact in one file and a district cannot be inside two cities. What
+a place *contains* is worked out by looking, in `universe/hierarchy.py`. Only
+places nest; everything else relates through ordinary links.
+
+**Trail**: the ancestors shown above a place, outermost first. Cut at the first
+one the reader may not see, showing nothing above it, because half a trail
+announces that something is hidden in between and a place name is usually the
+whole spoiler. Hiding a parent does not hide its visible children.
+
 **Inbox**: Discord messages that no page accounts for yet. A review queue, never
 an importer: nothing is written to the wiki without a person deciding.
 
+**Art queue**: pictures the website asked for but cannot draw, as files under
+`art-queue/`. The wiki runs on a server with no graphics card, so pressing Art
+there commits a request and the machine at home drains it with
+`tools/draw_queued.py`. A machine that cannot draw says so with a `.no-gpu`
+marker file, which is gitignored because it describes the machine rather than
+the campaign.
+
 **Asset**: a generated or uploaded image, content-addressed under `assets/`.
-Regenerable, so it is gitignored.
+Regenerable, and committed anyway: the machine that draws is no longer the
+machine that serves, and the repo is the only route between them.
 
 **Attachment**: a file someone uploaded to a page, such as a map, a handout, a
 PDF or a recording, under `files/`. Not regenerable, so it is committed.

@@ -215,6 +215,10 @@ Tailscale Funnel gives you a stable public address on a `.ts.net` hostname for
 free, with no domain required. Your players don't need Tailscale; Funnel serves
 the open internet.
 
+**This is now done on the server, not here.** `deploy/CHECKLIST.md` covers it.
+What follows is the same thing for a machine serving the wiki itself, which is
+development or a fallback.
+
 ```powershell
 winget install --id tailscale.tailscale
 ```
@@ -273,13 +277,31 @@ Page references are forgiving: `get_page` accepts `"Korran Mossborn"`,
 
 ## Running it
 
+**The wiki runs on a server now, not on this machine.** A free Oracle Cloud VM
+serves the site, reads Discord, and pushes what people write; `deploy/` holds
+its setup and `deploy/CHECKLIST.md` the parts that need a login. The site stays
+up when this computer is off, which was the whole point.
+
+One job stayed here, because it needs the graphics card: drawing. Pressing Art
+on the site writes a request into `art-queue/`, and this machine drains it.
+
+```powershell
+python tools\draw_queued.py            # draw what has been asked for
+python tools\draw_queued.py --list     # just say what is waiting
+```
+
+`tools\install_draw_schedule.ps1` does that every 20 minutes while you are
+logged in.
+
+To run the wiki here anyway, for development or if the server is gone:
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\start.ps1
 ```
 
-That's the whole thing: it finds the Python environment, loads the token, asks
-Tailscale for this machine's hostname so the transport accepts requests through
-the funnel, and starts the wiki and MCP server together. Leave the window open.
+That finds the Python environment, asks Tailscale for this machine's hostname
+so the transport accepts requests through the funnel, and starts the wiki and
+MCP server together. Leave the window open.
 
 Note there is **no venv in this folder**. The interpreter lives next door in
 `dnd-scribe\.venv`, which is why `.\.venv\Scripts\python.exe` fails from here.
@@ -304,35 +326,42 @@ it alongside the MCP server, on the same address and tunnel:
 .\.venv\Scripts\python.exe mcp_server.py --http --wiki site --allowed-host <your-host>
 ```
 
-- `https://<your-host>/wiki` — the wiki, **open, no token**
-- `https://<your-host>/mcp` — the MCP tools, **token required**
+- `https://<your-host>/wiki`, the wiki, behind the shared passphrase
+- `https://<your-host>/mcp`, the MCP tools, behind a per-person bearer token
 
-The split is deliberate. The wiki is a read-only rendering meant to be opened
-from a shared link. The MCP tools can rewrite the campaign, so they stay behind
-the bearer token.
+The split is deliberate, and the two doors are not the same strength. The
+passphrase answers "is this someone from our table" for something opened from a
+shared link. The MCP tokens are per person and can rewrite the campaign, so
+they say who is calling as well as whether they may.
 
-### Putting a password on it
+That describes `--wiki-live`, which is what runs. `--wiki` serves a static
+export instead and is the older, read-only path.
 
-Without `--wiki-password` the wiki is readable by anyone with the link. To lock
-it:
+### Putting a passphrase on it
 
-```powershell
-.\.venv\Scripts\python.exe tools\make_wiki_password.py
-```
-
-That writes a five-word passphrase to `.wiki-password` (gitignored). Words
-rather than random characters, because five people have to type it on phones,
-and a passphrase they'll use beats a stronger one they lose. Then:
+The live wiki has two doors, in that order. The first is one shared passphrase
+for the whole table, which answers "is this someone we know". The second is
+picking your name, which decides whose secrets get rendered. Only the first is
+a security boundary.
 
 ```powershell
-$env:UNIVERSE_WIKI_PASSWORD = (Get-Content .wiki-password -Raw).Trim()
+python tools\set_passphrase.py
 ```
 
-and start the server as above. Browsers prompt once and remember it. The
-username is ignored; there's one shared secret.
+It prompts twice without echoing, so the passphrase never lands in your shell
+history or in a screen share, and writes a scrypt hash to `.wiki-passphrase`.
+The passphrase itself is never stored, so nobody can recover it from the repo
+or a backup; forgetting it means setting a new one. `--suggest` invents a
+memorable one, and `--remove` takes the door off entirely.
 
-Pages and images are both covered, and the MCP token is entirely separate, so
-changing one never affects the other.
+Words rather than random characters, because five people have to type it on
+phones, and a passphrase they will use beats a stronger one they lose.
+
+The MCP tokens are entirely separate and per person, so changing one never
+affects the other.
+
+The older `--wiki-password` flag still exists, but it only guards `--wiki`, the
+exported static folder. It does nothing for the live wiki.
 
 Re-run `export_site.py` after changing content; the folder is rewritten each
 time.
@@ -452,8 +481,12 @@ nothing points at, which is how a shared wiki quietly rots.
 | `universe/webapp.py` | The live wiki: sign-in, editing, art, inbox. |
 | `universe/inbox.py` | What's been said in Discord that no page accounts for. |
 | `universe/schema.py` | Kinds, front page layout, site name, and editing them. |
+| `universe/hierarchy.py` | Which places sit inside which, and who may see the trail. |
+| `universe/artqueue.py` | Asking for a picture when the GPU is on another machine. |
 | `universe/uploads.py` | Uploaded pictures and attachments, and what's refused. |
 | `universe/worldmap/azgaar.py` | Azgaar export to entities. |
 | `cli.py` | All commands. |
 | `content/` | Your world. This is the real deliverable. |
-| `assets/` | Generated art. Regenerable, gitignored. |
+| `assets/` | Generated art. Regenerable, but committed: the server has no GPU. |
+| `art-queue/` | Pictures the site asked for, waiting for the machine at home. |
+| `deploy/` | Setting the server up, and keeping it in step with GitHub. |
