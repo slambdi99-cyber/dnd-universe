@@ -36,12 +36,17 @@ and bill you past it.
    Ubuntu**, and then check the version in the list. It offers 20.04, 22.04
    and 24.04, and the one it lands on by default is not always the newest.
 
-   The version is not cosmetic and cannot be changed afterwards. 20.04 ships
-   Python 3.8, every package here needs 3.10 or newer, and there is no way
-   back: deadsnakes dropped 20.04 when it went end of life, so its package
-   list for that release is now empty. The only remaining route would be
-   compiling Python from source on a 1GB machine. Recreating takes three
-   minutes; that does not.
+   The version cannot be changed after the instance exists, and it matters:
+   20.04 ships Python 3.8, while every package here needs 3.10 or newer.
+
+   It is recoverable, just untidy. deadsnakes dropped 20.04 when it went end of
+   life, so apt has nothing newer, but a prebuilt standalone Python 3.12 runs
+   fine on it and installs in a minute. The real cost of 20.04 is that it left
+   standard support in April 2025, so it receives no security patches unless
+   you enable Ubuntu Pro, which is free for up to five machines. On a box with
+   a public IP that is worth caring about.
+
+   Picking 24.04 here avoids all of it.
 4. Change the shape to **Ampere**, **VM.Standard.A1.Flex**, and set it to
    **1 OCPU and 6GB**.
 
