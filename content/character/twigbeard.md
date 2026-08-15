@@ -13,7 +13,7 @@ tags:
 - npc-side
 links:
 - faction/six-wolves
-- item/twigbeards-lucky-beard-twig
+- archive/twigbeards-lucky-beard-twig
 - lore/twigball
 - faction/hollow-root-covenant
 sources:

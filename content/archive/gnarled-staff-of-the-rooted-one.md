@@ -1,6 +1,6 @@
 ---
 name: Gnarled Staff of the Rooted One
-kind: item
+kind: archive
 summary: Taken from the Rooted One's chamber beneath the Shallow Bog.
 appearance: tall gnarled staff of dead root-wood, twisted grain, knotted head
 tags:

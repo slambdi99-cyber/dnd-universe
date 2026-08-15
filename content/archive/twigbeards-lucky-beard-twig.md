@@ -1,6 +1,6 @@
 ---
 name: Twigbeard's Lucky Beard Twig
-kind: item
+kind: archive
 summary: Wren's charm.
 appearance: small gnarled twig charm on a leather cord, worn smooth, faintly green
 tags:

@@ -1,6 +1,6 @@
 ---
 name: Rootbound Dagger
-kind: item
+kind: archive
 summary: Mundus Decepi's dagger, taken from the ritual chamber beneath the Shallow
   Bog.
 appearance: short dagger bound in living root, dark iron blade, knotted wooden grip
