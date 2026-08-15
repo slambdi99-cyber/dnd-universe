@@ -33,12 +33,15 @@ if [ "$(id -u)" = "0" ]; then
 fi
 
 say "system packages"
-sudo apt-get update -qq
+# Nothing here is attended, and apt asks about service restarts and config
+# files if it thinks a human is watching.
+export DEBIAN_FRONTEND=noninteractive
+sudo -E apt-get update -qq
 # git for the repo, python3-venv because Ubuntu ships python without it.
 # No build toolchain and no image headers: Pillow ships manylinux wheels for
 # both architectures this runs on, and a 1GB machine compiling it from source
 # is a long wait for the same result.
-sudo apt-get install -y -qq git python3-venv curl ca-certificates
+sudo -E apt-get install -y -qq git python3-venv curl ca-certificates >/dev/null
 
 say "swap, if this is a small machine"
 # Oracle's free ARM capacity is a lottery, and the fallback everyone ends up on
@@ -46,18 +49,22 @@ say "swap, if this is a small machine"
 # to `pip install` into, or to run a git operation over 50MB of pictures. Both
 # die with a bare "Killed" that looks like a bug rather than an out-of-memory.
 MEM_KB="$(awk '/MemTotal/ {print $2}' /proc/meminfo)"
-if [ "${MEM_KB:-0}" -lt 2000000 ] && [ ! -f /swapfile ]; then
-    sudo fallocate -l 2G /swapfile
+SWAP_KB="$(awk '/SwapTotal/ {print $2}' /proc/meminfo)"
+if [ "${MEM_KB:-0}" -ge 2000000 ]; then
+    echo "   plenty of memory, skipping"
+elif [ "${SWAP_KB:-0}" -gt 0 ]; then
+    skip "swap is already on"
+else
+    # Keyed on swap being active rather than the file existing. A previous run
+    # that died between creating the file and formatting it would otherwise be
+    # skipped forever, leaving 2GB of nothing.
+    [ -f /swapfile ] || sudo fallocate -l 2G /swapfile
     sudo chmod 600 /swapfile
-    sudo mkswap -q /swapfile
+    sudo mkswap /swapfile >/dev/null
     sudo swapon /swapfile
     grep -q '^/swapfile' /etc/fstab || \
         echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
     echo "   added 2GB of swap"
-elif [ -f /swapfile ]; then
-    skip "swap"
-else
-    echo "   plenty of memory, skipping"
 fi
 
 say "the repo"
