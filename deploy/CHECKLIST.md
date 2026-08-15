@@ -19,12 +19,11 @@ Budget about half an hour, most of it waiting for Oracle.
 
 ## 1. Get the machine
 
-Oracle Cloud's free tier includes an ARM server with 4 cores and 24GB of
-memory, permanently, with no card charged at the end of a trial. It is far more
-than this needs. The catch is that the free ARM capacity is genuinely scarce in
-popular regions, so the create button sometimes fails with "out of capacity".
-If that happens, try a different availability domain, or try again in a few
-hours. It does eventually work.
+Oracle Cloud's free tier includes an ARM server, permanently, with no card
+charged at the end of a trial. It also includes 10TB of outbound traffic a
+month, which is the reason to use Oracle rather than anywhere else: this site
+serves 50MB of pictures, and the other free hosts cap outbound traffic at 1GB
+and bill you past it.
 
 1. Sign up at [cloud.oracle.com](https://cloud.oracle.com). It wants a card for
    identity checking and does not charge it. Pick a home region close to you
@@ -33,8 +32,7 @@ hours. It does eventually work.
    **Create instance**.
 3. Change the image to **Canonical Ubuntu 24.04**.
 4. Change the shape to **Ampere**, **VM.Standard.A1.Flex**, and set it to
-   **4 OCPUs and 24GB**. Taking the whole free allowance costs nothing and
-   means you never have to think about it again.
+   **1 OCPU and 6GB**. See the note below before reaching for more.
 5. Under **Add SSH keys**, choose **Generate a key pair** and download the
    private key. Keep it somewhere you will find again, such as
    `C:\Claude\oracle-key`.
@@ -42,6 +40,28 @@ hours. It does eventually work.
    internet: traffic reaches this machine through Tailscale, which dials out
    rather than being dialled into.
 7. Create it, and write down the public IP address once it appears.
+
+### When it says "out of capacity"
+
+This is the normal experience, not a mistake. Oracle's free ARM capacity is
+heavily oversubscribed and the check happens per shape configuration, so the
+size you ask for changes your odds a great deal.
+
+Ask for less. 1 OCPU and 6GB gets in where 4 and 24 does not, and the server
+does not need more: there is no graphics card work here, just a Python process
+serving text and cached thumbnails.
+
+If it still refuses, try the other availability domains, if the create screen
+offers any. Smaller regions only have AD-1 and there is nothing to try.
+
+If that fails too, take the AMD instead: shape **VM.Standard.E2.1.Micro**,
+1/8 OCPU and 1GB. It is also Always Free, you get two of them, and it is nearly
+always available because nobody is competing for it. Everything here works the
+same on it. 1GB is tight, so the setup script adds swap when it sees a machine
+that small.
+
+Retrying at intervals does eventually work if you would rather hold out for the
+ARM. There is no trick to it beyond patience.
 
 Then connect from PowerShell:
 

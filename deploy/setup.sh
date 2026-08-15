@@ -39,6 +39,26 @@ sudo apt-get update -qq
 sudo apt-get install -y -qq git python3-venv python3-dev build-essential \
     libjpeg-dev zlib1g-dev libwebp-dev curl
 
+say "swap, if this is a small machine"
+# Oracle's free ARM capacity is a lottery, and the fallback everyone ends up on
+# is the 1GB AMD micro. 1GB is enough to serve the site and nowhere near enough
+# to `pip install` into, or to run a git operation over 50MB of pictures. Both
+# die with a bare "Killed" that looks like a bug rather than an out-of-memory.
+MEM_KB="$(awk '/MemTotal/ {print $2}' /proc/meminfo)"
+if [ "${MEM_KB:-0}" -lt 2000000 ] && [ ! -f /swapfile ]; then
+    sudo fallocate -l 2G /swapfile
+    sudo chmod 600 /swapfile
+    sudo mkswap -q /swapfile
+    sudo swapon /swapfile
+    grep -q '^/swapfile' /etc/fstab || \
+        echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab >/dev/null
+    echo "   added 2GB of swap"
+elif [ -f /swapfile ]; then
+    skip "swap"
+else
+    echo "   plenty of memory, skipping"
+fi
+
 say "the repo"
 if [ -d "$ROOT/.git" ]; then
     skip "$ROOT"
