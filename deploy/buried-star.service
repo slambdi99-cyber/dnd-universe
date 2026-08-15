@@ -6,6 +6,15 @@ Description=The Buried Star wiki and MCP server
 After=network-online.target tailscaled.service
 Wants=network-online.target
 
+# The thing this replaces was a PowerShell window somebody had to leave open,
+# and the site went down whenever the machine slept. Restarting forever is the
+# entire point, so never give up on it.
+#
+# This belongs in [Unit], not [Service]. systemd on Ubuntu 20.04 ignores it in
+# [Service] with a warning and then quietly enforces the default limit, which
+# means the service stops retrying after five failures in ten seconds.
+StartLimitIntervalSec=0
+
 [Service]
 Type=simple
 User=ubuntu
@@ -13,11 +22,6 @@ WorkingDirectory=/home/ubuntu/dnd-universe
 ExecStart=/home/ubuntu/dnd-universe/deploy/run-wiki.sh
 Restart=always
 RestartSec=5
-
-# The thing this replaces was a PowerShell window somebody had to leave open,
-# and the site went down whenever the machine slept. Restarting forever is the
-# entire point.
-StartLimitIntervalSec=0
 
 # Read-write only where it needs to be. The wiki writes pages, uploads,
 # thumbnails, the passphrase hash and the inbox cursor, all under its own

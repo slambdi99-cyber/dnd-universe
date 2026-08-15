@@ -77,6 +77,22 @@ else
 fi
 cd "$ROOT"
 
+# The curl one-liner fetches this through GitHub's raw CDN, which keeps serving
+# a cached copy for a few minutes after a push. That is invisible, and it
+# produces the worst kind of bug: a fix that is definitely committed, definitely
+# pushed, and definitely not the code that just ran.
+#
+# The repo is cloned by this point, so the authoritative copy is now on disk. If
+# it differs from whatever is executing, hand over to it, once.
+SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
+REPO_COPY="$ROOT/deploy/setup.sh"
+if [ "${BURIED_STAR_REEXEC:-}" != "1" ] && [ -f "$REPO_COPY" ] && \
+   [ "$SELF" != "$REPO_COPY" ] && ! cmp -s "$SELF" "$REPO_COPY"; then
+    echo "   this copy is older than the repo's; continuing with that one"
+    export BURIED_STAR_REEXEC=1
+    exec bash "$REPO_COPY" "$@"
+fi
+
 say "python environment"
 # Not necessarily the system python3. On Ubuntu 20.04 that is 3.8, and every
 # package below needs 3.10 or newer.
