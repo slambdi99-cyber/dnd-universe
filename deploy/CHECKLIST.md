@@ -34,12 +34,22 @@ and bill you past it.
 4. Change the shape to **Ampere**, **VM.Standard.A1.Flex**, and set it to
    **1 OCPU and 6GB**. See the note below before reaching for more.
 5. Under **Add SSH keys**, choose **Generate a key pair** and download the
-   private key. Keep it somewhere you will find again, such as
-   `C:\Claude\oracle-key`.
+   private key.
 6. Leave the networking defaults alone. Nothing needs to be open to the
    internet: traffic reaches this machine through Tailscale, which dials out
    rather than being dialled into.
 7. Create it, and write down the public IP address once it appears.
+
+Downloaded keys live in `%USERPROFILE%\.ssh\`, locked so only you can read
+them. If you generate a pair on each create attempt, which is easy to do while
+fighting for capacity, keep them all and try each: the wrong key fails with
+"Permission denied (publickey)" and costs you nothing.
+
+Then connect from PowerShell:
+
+```bash
+ssh -i $env:USERPROFILE\.ssh\oracle-key ubuntu@YOUR-IP
+```
 
 ### When it says "out of capacity"
 
@@ -63,15 +73,12 @@ that small.
 Retrying at intervals does eventually work if you would rather hold out for the
 ARM. There is no trick to it beyond patience.
 
-Then connect from PowerShell:
+If ssh ever refuses a key as too open, it means the file inherited permissions
+from the folder it was downloaded into. Strip them:
 
 ```bash
-ssh -i C:\Claude\oracle-key ubuntu@YOUR-IP
+icacls $env:USERPROFILE\.ssh\oracle-key /inheritance:r /grant:r "${env:USERNAME}:(R)"
 ```
-
-If it refuses the key as too open, run
-`icacls C:\Claude\oracle-key /inheritance:r /grant:r "$env:USERNAME:R"` and try
-again.
 
 ---
 
@@ -130,7 +137,7 @@ I have not touched any of them and will not. Run these yourself, from
 PowerShell on your PC, replacing `YOUR-IP`:
 
 ```bash
-scp -i C:\Claude\oracle-key C:\Claude\dnd-universe\.wiki-passphrase C:\Claude\dnd-universe\.people-tokens.json C:\Claude\dnd-universe\.session-secret C:\Claude\dnd-universe\.accounts.json ubuntu@YOUR-IP:~/dnd-universe/
+scp -i $env:USERPROFILE\.ssh\oracle-key C:\Claude\dnd-universe\.wiki-passphrase C:\Claude\dnd-universe\.people-tokens.json C:\Claude\dnd-universe\.session-secret C:\Claude\dnd-universe\.accounts.json ubuntu@YOUR-IP:~/dnd-universe/
 ```
 
 What each one is, so you know what you are moving:
@@ -147,7 +154,7 @@ treats every message it has ever seen as new, and the inbox arrives with
 several hundred things in it:
 
 ```bash
-scp -i C:\Claude\oracle-key C:\Claude\dnd-universe\.inbox.json ubuntu@YOUR-IP:~/dnd-universe/
+scp -i $env:USERPROFILE\.ssh\oracle-key C:\Claude\dnd-universe\.inbox.json ubuntu@YOUR-IP:~/dnd-universe/
 ```
 
 ---
@@ -184,8 +191,8 @@ git clone git@github-dnd-scribe:slambdi99-cyber/dnd-scribe.git ~/dnd-scribe
 Then send the bot token across, from your PC:
 
 ```bash
-scp -i C:\Claude\oracle-key C:\Claude\dnd-scribe\.discord-token ubuntu@YOUR-IP:~/dnd-scribe/
-scp -i C:\Claude\oracle-key C:\Claude\dnd-scribe\.sync-state.json ubuntu@YOUR-IP:~/dnd-scribe/
+scp -i $env:USERPROFILE\.ssh\oracle-key C:\Claude\dnd-scribe\.discord-token ubuntu@YOUR-IP:~/dnd-scribe/
+scp -i $env:USERPROFILE\.ssh\oracle-key C:\Claude\dnd-scribe\.sync-state.json ubuntu@YOUR-IP:~/dnd-scribe/
 ```
 
 And turn the reader on:
