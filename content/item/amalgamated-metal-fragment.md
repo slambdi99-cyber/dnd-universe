@@ -9,9 +9,15 @@ tags:
 - needs-detail
 links:
 - character/korran-mossborn
+- character/melda
+- place/valeshire
 sources:
 - session-log:the-buried-star-tobias-log.txt
+- Told by Sam, 2026-08-14.
+- updated by The DM
 art:
 - item/amalgamated-metal-fragment/default-928c73b7
 - item/amalgamated-metal-fragment/upload-e259349baf75d681
 ---
+
+Melda was seen experimenting with a similar specimen in Valeshire.
