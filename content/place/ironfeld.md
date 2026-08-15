@@ -6,7 +6,6 @@ summary: Ironfeld is an Enchanters' Exchange chapter west of the foothills, know
 appearance: workmanlike western settlement, forge smoke, metal roofs, practical halls
   beside workshops
 tags:
-- primary-location
 - enchanters-exchange
 - magic
 - from-dm-chat

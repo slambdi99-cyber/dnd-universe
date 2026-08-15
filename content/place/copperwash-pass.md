@@ -6,7 +6,6 @@ appearance: high narrow mountain pass, bare switchback trail, wind-scoured stone
 tags:
 - landmark
 - from-lore
-- primary-location
 links:
 - place/copper-vale
 - place/copper-ridge

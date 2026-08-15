@@ -8,7 +8,6 @@ tags:
 - site
 - from-lore
 - needs-appearance
-- sub-location
 links:
 - place/copper-vale
 sources:

@@ -7,7 +7,6 @@ appearance: stagnant shallow wetland, drowned scrub willows, still brown water, 
 tags:
 - wilderness
 - from-lore
-- primary-location
 links:
 - place/copper-vale
 - place/brindlewood

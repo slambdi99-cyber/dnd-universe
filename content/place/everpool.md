@@ -7,10 +7,8 @@ appearance: vast still black underground water, faint pale light far below the s
 tags:
 - site
 - from-wiki
-- primary-location
 links:
 - creature/goluub
-- place/buried-star
 - place/rumbleshot-quarry
 sources:
 - session-log:the-buried-star-tobias-log.txt

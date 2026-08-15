@@ -5,13 +5,12 @@ summary: The public house in Brindlewood where Korran Mossborn tends bar, and wh
   the Misenchanted Lavender Mead was served.
 appearance: low timber roadside pub, painted sign, lantern light in small windows,
   benches and a hitching rail outside
+within: place/brindlewood
 tags:
 - site
 - from-lore
-- sub-location
 links:
 - place/copper-vale
-- place/brindlewood
 - character/korran-mossborn
 - character/maera-broadkettle
 - item/misenchanted-lavender-mead
@@ -29,6 +28,7 @@ data:
   aka:
   - Peapod Pub
   - PPP
+  within_inferred: link
 ---
 
 Marked 'PPP' on the regional map, beside the military encampment on Brindlewood's eastern edge. Where secrets flow as freely as ale.

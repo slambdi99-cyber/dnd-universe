@@ -5,17 +5,14 @@ summary: 'Lorithal''s upper tier: spacious grassy hills, the seat of its lordshi
   and its university.'
 appearance: highest terrace of the city, broad open grassland and low hills, few but
   splendid buildings, pale spires against a wooded ridge
+within: place/lorithal
 tags:
-- lorithal
 - tier
 - district
 - from-map
 - needs-detail
-- sub-location
 links:
-- place/lorithal
 - faction/house-vaelorith
-- place/ember-grove
 - place/ashbright-university
 - place/the-accomodations
 sources:
@@ -23,4 +20,6 @@ sources:
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
+data:
+  within_inferred: tag
 ---

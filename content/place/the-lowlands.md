@@ -8,7 +8,6 @@ tags:
 - region
 - from-map
 - needs-detail
-- primary-location
 links:
 - place/lorithal
 - place/cutter-gulch

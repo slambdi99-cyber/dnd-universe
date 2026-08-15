@@ -38,7 +38,7 @@ lib = Library(sandbox / "content")
 
 lib.save(Entity(kind="place", slug="brindlewood", name="Brindlewood",
                 summary="A township.", data={"map_type": "settlement"},
-                links=["character/wren"]))
+                links=["character/wren"], within="place/copper-vale"))
 lib.save(Entity(kind="place", slug="copper-vale", name="Copper Vale",
                 summary="The region.", data={"map_type": "region"}))
 lib.save(Entity(kind="character", slug="wren", name="Wren",
@@ -100,6 +100,13 @@ check("front page section followed",
       any(s.kind == "location" for s in schema.home))
 check("the moved page kept its frontmatter",
       lib.load("location", "brindlewood").data.get("map_type") == "settlement")
+# Renaming the kind moves every page. A child still saying `within: place/...`
+# would point at a folder that no longer exists, and every place would silently
+# become top level: the hierarchy would not error, it would just be gone.
+check("the hierarchy survives the rename",
+      lib.load("location", "brindlewood").within == "location/copper-vale",
+      str(lib.load("location", "brindlewood").within))
+
 check("refuses renaming onto an existing kind",
       not schema_mod.rename_kind(schema, "location", "character", lib)[0])
 check("refuses a bad new key",
@@ -258,6 +265,31 @@ check("building one does not disturb the other",
 check("nothing global is left to poke",
       not hasattr(site_mod, "SCHEMA") and not hasattr(site_mod, "use"),
       "a test that forgot site.use() used to render against whatever was on disk")
+
+print("\n== a place with things inside it cannot be moved out ==")
+# Last, because it empties a kind, and earlier sections need one that is not.
+#
+# `location` is what `place` was renamed to earlier in this file, which is the
+# point: nothing in hierarchy.py compares against the string "place", so a
+# renamed kind still nests. Moving Copper Vale to another kind would leave
+# Brindlewood pointing at something that is no longer a place, and the
+# hierarchy would flatten with no error at all.
+lib.save(Entity(kind="location", slug="the-reach", name="The Reach",
+                summary="A region nothing else uses."))
+lib.save(Entity(kind="location", slug="thornhold", name="Thornhold",
+                summary="A township.", within="location/the-reach"))
+check("the rename left the nesting intact",
+      lib.load("location", "thornhold").within == "location/the-reach")
+
+ok, msg = schema_mod.move_page(lib, "location/the-reach", "lore", schema)
+check("refused", not ok, msg)
+check("and says what is in the way", "Thornhold" in msg, msg)
+check("the page did not move", lib.load("location", "the-reach") is not None)
+
+check("one with nothing inside it moves fine",
+      schema_mod.move_page(lib, "location/thornhold", "lore", schema)[0])
+check("and then the parent can move too",
+      schema_mod.move_page(lib, "location/the-reach", "lore", schema)[0])
 
 shutil.rmtree(sandbox, ignore_errors=True)
 shutil.rmtree(elsewhere, ignore_errors=True)

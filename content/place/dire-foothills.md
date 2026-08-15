@@ -6,7 +6,6 @@ appearance: dense pine foothills, blasted rock faces, fallen timber, low grey mi
 tags:
 - wilderness
 - from-lore
-- primary-location
 links:
 - place/copper-vale
 - place/brindlewood

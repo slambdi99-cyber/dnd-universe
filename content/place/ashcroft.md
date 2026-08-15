@@ -6,7 +6,6 @@ summary: Ashcroft is an Enchanters' Exchange chapter south of Arrowfell, known f
 appearance: hard-edged southern chapter hall, practice yard, banners pulled tight
   in dry wind
 tags:
-- primary-location
 - enchanters-exchange
 - magic
 - from-dm-chat

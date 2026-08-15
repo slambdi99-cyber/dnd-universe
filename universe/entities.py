@@ -92,6 +92,13 @@ class Entity:
     # had to normalise it itself and every writer had to remember to strip it
     # back out of rendered output.
     visible_to: list[str] = field(default_factory=list)
+    # The place this one sits inside, as "place/slug". Empty means top level.
+    #
+    # Recorded on the child rather than as a list on the parent, so there is one
+    # fact in one file: a district cannot be inside two cities, and moving it is
+    # a one-line edit that cannot leave the old parent still claiming it. What a
+    # place contains is worked out by looking, in `hierarchy.py`.
+    within: str = ""
     # Kind-specific structured fields (population, alignment, coordinates...).
     data: dict[str, Any] = field(default_factory=dict)
     # Freeform prose. Everything below the frontmatter.
@@ -110,13 +117,24 @@ class Entity:
         if stray and not self.visible_to:
             self.visible_to = [stray] if isinstance(stray, str) else list(stray)
 
+        # Same treatment for `within`, and for the same reason: an Entity built
+        # by hand with data={"within": ...} would otherwise sit at the top level
+        # while looking, in the file, exactly like one that does not.
+        stray = self.data.pop("within", None) if self.data else None
+        if stray and not self.within:
+            self.within = str(stray)
+        # A bare slug is what a person types. Only places nest, so the kind is
+        # never ambiguous and demanding the prefix would just be a trap.
+        if self.within and "/" not in self.within:
+            self.within = f"place/{self.within}"
+
     @property
     def ref(self) -> str:
         return f"{self.kind}/{self.slug}"
 
     def to_frontmatter(self) -> dict[str, Any]:
         out: dict[str, Any] = {"name": self.name, "kind": self.kind}
-        for key in ("summary", "appearance"):
+        for key in ("summary", "appearance", "within"):
             value = getattr(self, key)
             if value:
                 out[key] = value
@@ -155,6 +173,7 @@ class Entity:
             name=meta.get("name", slug),
             summary=meta.get("summary", "") or "",
             appearance=meta.get("appearance", "") or "",
+            within=str(meta.get("within") or ""),
             tags=list(meta.get("tags") or []),
             links=list(meta.get("links") or []),
             sources=list(meta.get("sources") or []),
@@ -164,7 +183,7 @@ class Entity:
             # written before it was a field parses the same as one written
             # after, and nothing downstream has to special-case it back out.
             data={k: v for k, v in (meta.get("data") or {}).items()
-                  if k != "visible_to"},
+                  if k not in ("visible_to", "within")},
             body=body,
         )
 
@@ -220,7 +239,7 @@ class Library:
             self.save(entity)
             return entity, True
 
-        for scalar in ("summary", "appearance"):
+        for scalar in ("summary", "appearance", "within"):
             if not getattr(existing, scalar) and getattr(entity, scalar):
                 setattr(existing, scalar, getattr(entity, scalar))
         if not existing.body.strip() and entity.body.strip():

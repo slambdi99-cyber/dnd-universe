@@ -8,7 +8,6 @@ tags:
 - landmark
 - from-lore
 - from-session-log
-- sub-location
 links:
 - place/copper-vale
 - character/foreman-rumbleshot

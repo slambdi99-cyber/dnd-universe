@@ -9,7 +9,6 @@ tags:
 - landmark
 - from-session-log
 - needs-detail
-- primary-location
 links:
 - faction/hollow-root-covenant
 sources:
@@ -17,7 +16,6 @@ sources:
 - written by The DM
 - updated by The DM
 - Codex MCP location index cleanup requested by Sam, 2026-08-14.
-
 data:
   map_type: landmark
   aka:

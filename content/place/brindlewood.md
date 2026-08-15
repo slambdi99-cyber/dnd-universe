@@ -8,11 +8,9 @@ tags:
 - settlement
 - town
 - from-lore
-- primary-location
 links:
 - place/copper-vale
 - place/dire-foothills
-- place/peapod-pub
 - place/shallow-bog
 sources:
 - discord:dnd-campaign:2025-11-22-region-writeup

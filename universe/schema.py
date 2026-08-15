@@ -21,6 +21,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from . import hierarchy as hierarchy_mod
+
 import yaml
 
 KEY = re.compile(r"^[a-z][a-z0-9-]{1,23}$")
@@ -386,6 +388,21 @@ def move_page(library, ref: str, to_kind: str, schema: Schema) -> tuple[bool, st
     if library.exists(to_kind, slug):
         return False, f"{to_kind}/{slug} already exists."
 
+    # Only places nest, so moving one to another kind would leave whatever is
+    # inside it pointing at something that is no longer a place. Refuse, and
+    # say what is in the way, rather than silently flattening a city's worth of
+    # shops to the top level.
+    if kind != to_kind:
+        inside = hierarchy_mod.children(entity.ref, library.all(kind))
+        if inside:
+            names = ", ".join(p.name for p in inside[:5])
+            more = f" and {len(inside) - 5} more" if len(inside) > 5 else ""
+            return False, (
+                f"{entity.name} has {len(inside)} place(s) inside it: {names}"
+                f"{more}. Move them out first, or they would be left pointing "
+                f"at something that is no longer a place."
+            )
+
     entity.kind = to_kind
     library.save(entity)
     library.path_for(kind, slug).unlink()
@@ -465,20 +482,40 @@ def _move_pages(library, old_kind: str, new_kind: str) -> int:
     return moved
 
 
+def _swap(ref: str, swaps: dict[str, str]) -> tuple[str, bool]:
+    for old, new in swaps.items():
+        if ref == old.rstrip("/"):
+            return new, True
+        if ref.startswith(old):
+            return new + ref[len(old):], True
+    return ref, False
+
+
 def _rewrite_links(library, swaps: dict[str, str]) -> int:
-    """Repoint every cross-link after a move. Returns links changed."""
+    """Repoint every cross-link after a move. Returns references changed.
+
+    `within` is repointed too. Renaming the `place` kind moves every page and
+    used to leave each child still saying `within: place/valeshire`, pointing
+    at a folder that no longer existed, which silently flattened the entire
+    hierarchy into a list of top-level places.
+    """
     changed = 0
     for entity in list(library.all()):
-        new_links = []
         touched = False
+        new_links = []
         for link in entity.links:
-            for old, new in swaps.items():
-                if link == old.rstrip("/") or link.startswith(old):
-                    link = new + link[len(old):] if link.startswith(old) else new
-                    touched = True
-                    changed += 1
-                    break
+            link, hit = _swap(link, swaps)
+            touched = touched or hit
+            changed += 1 if hit else 0
             new_links.append(link)
+
+        if entity.within:
+            parent, hit = _swap(entity.within, swaps)
+            if hit:
+                entity.within = parent
+                touched = True
+                changed += 1
+
         if touched:
             entity.links = new_links
             library.save(entity)

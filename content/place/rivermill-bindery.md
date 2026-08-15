@@ -5,15 +5,13 @@ summary: Lorithal's most important book binding facility, and a major resource f
   Ashbright University.
 appearance: steep-gabled mill building with a spire, set on a water channel, north-centre
   of the city
+within: place/lorithal
 tags:
-- lorithal
 - landmark
 - industry
 - from-map
 - needs-detail
-- sub-location
 links:
-- place/lorithal
 - place/the-broadheights
 - place/ashbright-university
 sources:
@@ -21,4 +19,6 @@ sources:
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
+data:
+  within_inferred: tag
 ---

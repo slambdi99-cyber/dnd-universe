@@ -9,7 +9,6 @@ tags:
 - site
 - plot-critical
 - from-wiki
-- sub-location
 links:
 - place/shallow-bog
 - place/the-hollow-root

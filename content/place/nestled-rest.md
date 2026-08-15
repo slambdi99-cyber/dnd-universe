@@ -5,19 +5,20 @@ summary: Posh accommodations for travellers of importance, tucked away from most
   Lorithal's activity.
 appearance: handful of ornate roofs set low against the south-western wall, a sheltered
   pocket apart from the city
+within: place/the-grand-endurance
 tags:
 - lorithal
 - landmark
 - lodging
 - from-map
 - needs-detail
-- sub-location
 links:
 - place/lorithal
-- place/the-grand-endurance
 sources:
 - map:lorithal-city-map
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
+data:
+  within_inferred: link
 ---

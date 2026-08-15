@@ -5,19 +5,19 @@ summary: Lorithal's masonry and stoneworks, serving its buildings and its comple
   interconnected sewer and irrigation systems.
 appearance: low broad hall inside a walled yard, stacked stone terraces, working district
   north of the city's centre
+within: place/lorithal
 tags:
-- lorithal
 - landmark
 - industry
 - from-map
 - needs-detail
-- sub-location
 links:
-- place/lorithal
 - place/the-broadheights
 sources:
 - map:lorithal-city-map
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
+data:
+  within_inferred: tag
 ---

@@ -8,12 +8,9 @@ appearance: parched golden grassland, cracked dry earth, bare ruddy mountains, w
 tags:
 - region
 - from-lore
-- primary-location
 links:
 - place/brindlewood
-- place/valeshire
 - place/shallow-bog
-- place/bogwatchers-sanctum-temple
 - place/cutter-gulch
 - place/copper-ridge
 - place/dire-foothills

@@ -5,6 +5,7 @@ summary: Responsible for the majority of Lorithal's food production; most farmer
   and fieldworkers here live a monastic life in service of the community.
 appearance: walled abbey with steep roofs and a bell spire, orchards and conifers
   around it, on the city's western terrace
+within: place/the-broadheights
 tags:
 - lorithal
 - landmark
@@ -12,14 +13,14 @@ tags:
 - agriculture
 - from-map
 - needs-detail
-- sub-location
 links:
 - place/lorithal
-- place/the-broadheights
 - place/tintinabullarium
 sources:
 - map:lorithal-city-map
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
+data:
+  within_inferred: link
 ---

@@ -8,7 +8,6 @@ tags:
 - settlement
 - from-wiki
 - needs-detail
-- primary-location
 links:
 - place/copper-vale
 - archive/cutter-creek

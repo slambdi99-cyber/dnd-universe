@@ -8,7 +8,6 @@ appearance: vast hollow root cavity beneath the mountain, dwellings built into p
 tags:
 - site
 - from-wiki
-- primary-location
 links:
 - faction/hollow-root-covenant
 - place/copper-ridge

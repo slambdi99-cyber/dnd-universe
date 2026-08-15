@@ -5,18 +5,18 @@ summary: Lorithal's eastern gate tower, on the road toward the Frostlands and th
   Green Ravine.
 appearance: square gate tower astride the outer wall, banner atop, road running east
   out of the city
+within: place/lorithal
 tags:
-- lorithal
 - gate
 - from-map
 - needs-detail
-- sub-location
 links:
-- place/lorithal
 - place/the-frostlands
 sources:
 - map:lorithal-city-map
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
+data:
+  within_inferred: tag
 ---

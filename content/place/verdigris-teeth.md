@@ -8,7 +8,6 @@ tags:
 - mountains
 - landmark
 - from-lore
-- primary-location
 links:
 - place/copper-vale
 - place/copper-ridge

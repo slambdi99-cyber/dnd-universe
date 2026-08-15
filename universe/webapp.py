@@ -24,6 +24,7 @@ from starlette.routing import Route
 from . import access as access_mod
 from . import changelog as changelog_mod
 from . import gate as gate_mod
+from . import hierarchy as hierarchy_mod
 from . import inbox as inbox_mod
 from . import schema as schema_mod
 from . import uploads as uploads_mod
@@ -314,12 +315,64 @@ def build(cfg, library: Library, registry: people_mod.People,
             changelog_mod.load(Path(cfg.root), library), allowed)
         return render("Changelog", changelog_mod.render(log, "/wiki/"), user=user)
 
+    async def places(request):
+        """The whole world as a shape, for checking it is right.
+
+        The Places index stays a flat list, which is the right thing when you
+        know what you are looking for. This is the other question: is Harvest
+        Abbey really in The Broadheights, and what did nothing say anything
+        about?
+
+        Most of these parents were worked out from tags and links rather than
+        stated by a person, so the ones that were guessed say so, and fixing
+        one is editing that place.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        _, allowed = entities_for(viewer)
+        everything = [p for p in library.all(hierarchy_mod.KIND)
+                      if p.ref in allowed]
+
+        rows = []
+        for depth, place in hierarchy_mod.tree(everything):
+            guess = str(place.data.get("within_inferred") or "")
+            note = ""
+            if guess:
+                how = {"tag": "from a tag", "name": "from its name",
+                       "link": "from a link"}.get(guess, guess)
+                note = f'<span class="guess">guessed {html.escape(how)}</span>'
+            rows.append(
+                f'<li style="margin-left:{depth * 1.4:.1f}rem">'
+                f'<a href="/wiki/{place.kind}/{place.slug}.html">'
+                f"{html.escape(place.name)}</a>"
+                f'<a class="fix" href="/wiki/{place.kind}/{place.slug}/edit">'
+                f"move</a>{note}</li>"
+            )
+
+        loose = [p for p in everything if not p.within]
+        guessed = sum(1 for p in everything if p.data.get("within_inferred"))
+        body = f"""
+<div class="kind">Places</div>
+<h1>Where everything is</h1>
+<p class="summary">{len(everything)} places. {guessed} of these parents were
+worked out from the tags and links that were already there, rather than said
+by a person, so check the ones marked as guesses.</p>
+<p class="hint">{len(loose)} sit at the top level, which is either right or
+means nobody has said where they are yet. Either way, "move" is how you
+change one.</p>
+<ul class="shape">{"".join(rows)}</ul>
+"""
+        return render("Where everything is", body, user=user)
+
     # -- editing --------------------------------------------------------
 
     def form_values(entity: Entity | None, viewer: access_mod.Viewer) -> dict:
         if entity is None:
             return {"name": "", "summary": "", "appearance": "", "body": "",
-                    "tags": "", "links": "", "kind": "place", "source": ""}
+                    "tags": "", "links": "", "kind": "place", "source": "",
+                    "within": ""}
         return {
             "name": entity.name,
             "summary": entity.summary,
@@ -328,7 +381,28 @@ def build(cfg, library: Library, registry: people_mod.People,
             "tags": ", ".join(entity.tags),
             "links": ", ".join(entity.links),
             "kind": entity.kind,
+            "within": entity.within,
         }
+
+    def place_options(current: str, exclude: str = "") -> str:
+        """A dropdown of places to sit inside, indented to show the shape.
+
+        Anything inside `exclude` is left out, along with `exclude` itself, so
+        the form cannot offer a choice that would make a loop. Refusing after
+        the fact would be a worse way to learn the same thing.
+        """
+        places = list(library.all(hierarchy_mod.KIND))
+        by_ref = hierarchy_mod.index(places)
+        out = ['<option value="">Nowhere, it is a top level place</option>']
+        for depth, place in hierarchy_mod.tree(places):
+            if exclude and (place.ref == exclude
+                            or hierarchy_mod.would_cycle(exclude, place.ref, by_ref)):
+                continue
+            sel = " selected" if place.ref == current else ""
+            pad = "&nbsp;" * (depth * 4)
+            out.append(f'<option value="{html.escape(place.ref)}"{sel}>'
+                       f"{pad}{html.escape(place.name)}</option>")
+        return "".join(out)
 
     async def edit(request):
         redirect = require_login(request)
@@ -348,7 +422,10 @@ def build(cfg, library: Library, registry: people_mod.People,
                 f"Editing {entity.name}",
                 _edit_form(form_values(entity, viewer), registry, schema.kinds,
                            withheld=withheld,
-                           action=f"/wiki/{kind}/{slug}/edit"),
+                           action=f"/wiki/{kind}/{slug}/edit",
+                           within_options=(
+                               place_options(entity.within, exclude=entity.ref)
+                               if kind == hierarchy_mod.KIND else "")),
                 user=user,
             )
 
@@ -361,6 +438,16 @@ def build(cfg, library: Library, registry: people_mod.People,
             l.strip() for l in str(form.get("links", "")).split(",")
             if l.strip() and "/" in l
         ]
+        if entity.kind == hierarchy_mod.KIND and "within" in form:
+            chosen = str(form.get("within", "")).strip()
+            places = list(library.all(hierarchy_mod.KIND))
+            # The dropdown already leaves out anything that would loop. This is
+            # for a hand-made POST, which is cheap to defend against and
+            # otherwise writes a file nothing can render.
+            if not chosen or not hierarchy_mod.would_cycle(
+                    entity.ref, chosen, hierarchy_mod.index(places)):
+                entity.within = chosen
+                entity.data.pop("within_inferred", None)
 
         body = str(form.get("body", ""))
         secret_text = str(form.get("secret_text", "")).strip()
@@ -453,6 +540,7 @@ def build(cfg, library: Library, registry: people_mod.People,
         Route("/wiki/guide", guide),
         Route("/wiki/connect", connect),
         Route("/wiki/changelog", changelog),
+        Route("/wiki/places", places),
         Route("/wiki/", index),
         Route("/wiki/index.html", index),
         Route("/wiki/tooltips.js", tooltips_js),
@@ -465,7 +553,8 @@ def build(cfg, library: Library, registry: people_mod.People,
 # -- forms -------------------------------------------------------------
 
 def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
-               action: str, creating: bool = False, error: str = "") -> str:
+               action: str, creating: bool = False, error: str = "",
+               within_options: str = "") -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""
     title = "New page" if creating else f"Editing {v['name']}"
 
@@ -500,6 +589,16 @@ def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
             f"page after you save.</div>"
         )
 
+    # Only places nest, and only on a form that was given the options. Anything
+    # that would make a loop is already missing from the list.
+    within_field = (
+        '  <label for="w">Inside <span class="hint">the larger place this one '
+        'sits in. A shop goes inside its city, a district inside its '
+        'realm.</span></label>\n'
+        f'  <select id="w" name="within">{within_options}</select>\n'
+        if within_options else ""
+    )
+
     boxes = "".join(
         f'<label class="cb"><input type="checkbox" name="audience" '
         f'value="{html.escape(p.key)}"> {html.escape(p.name)}'
@@ -529,6 +628,7 @@ def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
   <label for="b">Body <span class="hint">markdown is fine</span></label>
   <textarea id="b" name="body" rows="16">{html.escape(v['body'])}</textarea>
 
+{within_field}
   <label for="t">Tags <span class="hint">comma separated</span></label>
   <input id="t" name="tags" value="{html.escape(v['tags'])}">
 

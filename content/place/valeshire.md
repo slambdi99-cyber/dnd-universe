@@ -4,14 +4,11 @@ kind: place
 summary: An established city with access to the single remaining river in the region.
 appearance: walled river city on an island, stone bridges, tiled roofs, green water
   meadows
+within: place/copper-vale
 tags:
 - settlement
 - city
 - from-lore
-- primary-location
-links:
-- place/copper-vale
-- place/the-last-run
 sources:
 - discord:dnd-campaign:2025-11-22-region-writeup
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
@@ -22,6 +19,7 @@ art:
 - place/valeshire/default-e590f84c
 data:
   map_type: settlement
+  within_inferred: link
 ---
 
 Built across islands in the Last Run, the only river still running in Copper Vale. Bridges connect the districts; the Enchanter's Guild keeps its own island to the west.

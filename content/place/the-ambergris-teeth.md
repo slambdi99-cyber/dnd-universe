@@ -10,7 +10,6 @@ tags:
 - mountains
 - from-map
 - needs-detail
-- primary-location
 links:
 - place/lorithal
 sources:

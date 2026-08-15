@@ -7,7 +7,6 @@ appearance: hidden upstairs bar, low beams, coloured glass lamps, crowded booths
 tags:
 - site
 - from-session-log
-- sub-location
 links:
 - place/pincushion-haberdashery
 - place/enchanters-guild

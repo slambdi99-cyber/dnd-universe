@@ -5,20 +5,21 @@ summary: The monastery where Harvest Abbey's fieldworkers meditate, its massive 
   ringing across Lorithal in symphony.
 appearance: impressive domed monastery on a squat drum with arched openings, massive
   bells beneath the dome, standing apart on open ground
+within: place/the-broadheights
 tags:
 - lorithal
 - landmark
 - monastic
 - from-map
 - needs-detail
-- sub-location
 links:
 - place/lorithal
-- place/the-broadheights
 - place/harvest-abbey
 sources:
 - map:lorithal-city-map
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
+data:
+  within_inferred: link
 ---

@@ -4,11 +4,11 @@ kind: place
 summary: An esoteric artifact worshipped by the Hollow Root Covenant. Functions by
   Wish magic.
 appearance: buried radiance under dark earth, cracked ground bleeding pale starlight
+within: place/everpool
 tags:
 - artifact
 - plot-critical
 - from-wiki
-- primary-location
 links:
 - faction/hollow-root-covenant
 - archive/kept
@@ -24,6 +24,7 @@ art:
 - place/buried-star/default-fb018ac9
 data:
   map_type: artifact
+  within_inferred: link
 ---
 
 Rumoured to function via Wish magic. Those who commune with it are somehow psychically connected to its intrinsic powers, and those it favours have their desires made manifest.

@@ -540,6 +540,96 @@ check("renders", conn.status_code == 200)
 check("shows his name", "Wren" in conn.text)
 check("offers a token", "Bearer" in conn.text)
 
+print("\n== places inside places ==")
+lib.save(Entity(kind="place", slug="copper-vale", name="Copper Vale",
+                summary="A low-lying region.", appearance="a region"))
+lib.save(Entity(kind="place", slug="valeshire", name="Valeshire",
+                summary="A city on the river.", appearance="a city",
+                within="place/copper-vale"))
+lib.save(Entity(kind="place", slug="the-tavern", name="The Tavern",
+                summary="Where everyone drinks.", appearance="a tavern",
+                within="place/valeshire"))
+# A hidden region with a visible room in it. The room stays readable; the
+# trail above it must not appear, because a place name is usually the spoiler.
+lib.save(Entity(kind="place", slug="hidden-vault", name="The Hidden Vault",
+                summary="Secret.", appearance="a vault",
+                within="place/copper-vale", data={"visible_to": ["dm"]}))
+lib.save(Entity(kind="place", slug="the-antechamber", name="The Antechamber",
+                summary="A room off the vault.", appearance="a room",
+                within="place/hidden-vault"))
+
+page = wren.get("/wiki/place/the-tavern.html")
+check("a nested place renders", page.status_code == 200)
+check("with a trail showing where it is", 'class="trail"' in page.text)
+check("naming the region", "Copper Vale" in page.text)
+check("and the city", "Valeshire" in page.text)
+
+parent = wren.get("/wiki/place/valeshire.html")
+check("a parent lists what is inside it", "Inside Valeshire" in parent.text)
+check("naming the child", "The Tavern" in parent.text)
+check("with its summary, so a list of names is a list of places",
+      "Where everyone drinks" in parent.text)
+
+region = wren.get("/wiki/place/copper-vale.html")
+check("a region lists its city", "Valeshire" in region.text)
+check("but not its grandchildren",
+      "The Tavern" not in region.text.split("Inside Copper Vale")[-1][:400],
+      "the city lists its own pubs; a region repeating them indexes nothing")
+
+print("\n== a trail stops at a secret ==")
+# The rule that fails silently, checked through the actual site rather than
+# the module, because this is the path that renders for a player.
+room = wren.get("/wiki/place/the-antechamber.html")
+check("the room itself is readable", room.status_code == 200)
+check("no trail at all for a player", 'class="trail"' not in room.text,
+      "showing Copper Vale alone would say something is hidden in between")
+check("and the hidden name is nowhere on it", "Hidden Vault" not in room.text)
+
+dm_room = dm.get("/wiki/place/the-antechamber.html")
+check("the DM sees the whole trail", 'class="trail"' in dm_room.text)
+check("including the secret one", "Hidden Vault" in dm_room.text)
+check("a hidden parent does not hide the room from anyone",
+      wren.get("/wiki/place/the-antechamber.html").status_code == 200)
+
+print("\n== moving a place ==")
+form = wren.get("/wiki/place/the-tavern/edit")
+check("the edit form offers somewhere to put it", 'name="within"' in form.text)
+check("with its current parent selected",
+      'value="place/valeshire" selected' in form.text)
+check("it is not offered as its own parent",
+      'value="place/the-tavern"' not in form.text)
+# The vault holds the antechamber, so offering the antechamber as the vault's
+# own parent would let the form build a loop it then has to refuse.
+vault_form = dm.get("/wiki/place/hidden-vault/edit")
+check("nor is anything already inside it",
+      'value="place/the-antechamber"' not in vault_form.text,
+      "the form must not offer a choice it would then reject")
+check("but an unrelated place still is",
+      'value="place/valeshire"' in vault_form.text)
+
+moved = wren.post("/wiki/place/the-tavern/edit",
+                  data={"name": "The Tavern", "summary": "Where everyone drinks.",
+                        "appearance": "a tavern", "body": "", "tags": "",
+                        "links": "", "within": "place/copper-vale"})
+check("saving a move redirects", moved.status_code == 303)
+check("and it moved", lib.load("place", "the-tavern").within == "place/copper-vale")
+
+# A hand-made POST, bypassing the dropdown that already excludes loops.
+wren.post("/wiki/place/copper-vale/edit",
+          data={"name": "Copper Vale", "summary": "A low-lying region.",
+                "appearance": "a region", "body": "", "tags": "", "links": "",
+                "within": "place/the-tavern"})
+check("a loop is refused even when posted directly",
+      lib.load("place", "copper-vale").within != "place/the-tavern",
+      "a region inside a pub inside that region renders forever")
+
+print("\n== the review page ==")
+shape = wren.get("/wiki/places")
+check("renders", shape.status_code == 200)
+check("lists every place a viewer may see", "Valeshire" in shape.text)
+check("and not the ones they may not", "Hidden Vault" not in shape.text)
+check("the DM sees the hidden one", "Hidden Vault" in dm.get("/wiki/places").text)
+
 print("\n== asking for art where there is no graphics card ==")
 # The site now runs on a free server with no GPU. Pressing Art there has to do
 # something other than fail, or the feature silently disappears for everyone

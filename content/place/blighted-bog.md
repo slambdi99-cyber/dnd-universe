@@ -6,7 +6,6 @@ appearance: sickly wetland, black standing water, dead pale trees, creeping root
 tags:
 - wilderness
 - from-lore
-- primary-location
 links:
 - place/brindlewood
 - place/underground-chamber

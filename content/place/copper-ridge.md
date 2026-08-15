@@ -7,7 +7,6 @@ appearance: scarred mining mountains, open sulfide seams, spoil heaps, acid-stai
 tags:
 - mountains
 - from-lore
-- primary-location
 links:
 - place/copper-vale
 - place/verdigris-teeth

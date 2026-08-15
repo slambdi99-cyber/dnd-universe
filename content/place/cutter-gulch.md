@@ -6,7 +6,6 @@ appearance: dry cracked riverbed, dust, bleached stones, sparse dead scrub
 tags:
 - landmark
 - from-lore
-- primary-location
 links:
 - place/copper-vale
 - archive/cutter-creek

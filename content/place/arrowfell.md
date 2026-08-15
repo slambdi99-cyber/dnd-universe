@@ -7,7 +7,6 @@ tags:
 - from-lore
 - off-map
 - needs-appearance
-- primary-location
 links:
 - place/copper-vale
 - place/the-lowlands

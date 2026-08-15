@@ -6,7 +6,6 @@ summary: Dawnmere is an Enchanters' Exchange chapter north of the Copper Hills, 
 appearance: quiet northern scholarly town, pale morning light on orderly halls and
   still courtyards
 tags:
-- primary-location
 - enchanters-exchange
 - magic
 - from-dm-chat

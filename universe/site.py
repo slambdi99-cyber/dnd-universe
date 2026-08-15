@@ -15,6 +15,7 @@ from collections import defaultdict
 import markdown as md
 
 from . import access as access_mod
+from . import hierarchy as hierarchy_mod
 from . import secrets as secrets_mod
 from . import tooltips as tooltips_mod
 from pathlib import Path
@@ -289,6 +290,31 @@ details > summary::before { content: "\\25B8 "; display: inline-block;
 details[open] > summary::before { transform: rotate(90deg); }
 details > summary:hover { color: var(--ink); }
 details h2 { font-size: 1rem; margin-top: 1.6rem; }
+
+/* Where you are: Copper Vale > Valeshire > the tavern. Above the title and
+   quieter than it, because it is orientation rather than the subject.
+   No real page names in here: this stylesheet is embedded in every response
+   including the sign-in page, and one of the pub names is also the passphrase. */
+.trail { font-size: .85rem; color: var(--muted); margin: 0 0 .3rem; }
+.trail a { color: var(--muted); text-decoration: none; }
+.trail a:hover { color: var(--accent); text-decoration: underline; }
+
+/* What a place contains. Summaries inline, because a list of fifteen shop
+   names tells you much less than a list of fifteen shops. */
+ul.within { list-style: none; padding: 0; margin: .4rem 0 0; }
+ul.within li { padding: .35rem 0; border-bottom: 1px solid var(--line); }
+ul.within li:last-child { border-bottom: none; }
+ul.within .hint { display: block; margin-top: .1rem; }
+
+/* The review page: the whole world as a shape, with the guesses marked. */
+ul.shape { list-style: none; padding: 0; margin: 1rem 0; }
+ul.shape li { padding: .2rem 0; font-size: .9rem; }
+ul.shape .fix { margin-left: .6rem; font-size: .75rem; color: var(--muted);
+  text-decoration: none; opacity: 0; }
+ul.shape li:hover .fix { opacity: 1; }
+ul.shape .fix:hover { color: var(--accent); text-decoration: underline; }
+ul.shape .guess { margin-left: .6rem; font-size: .7rem; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 3px; padding: 0 .3rem; }
 """
 
 SEARCH_JS = """
@@ -422,8 +448,26 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
     parts = [
         f'<div class="kind">{html.escape(schema.label(entity.kind))}'
         f"{edit_link}</div>",
-        f"<h1>{html.escape(entity.name)}</h1>",
     ]
+
+    # Where you are, for someone who arrived from a search or a link and has
+    # no idea whether this pub is in Valeshire or three hundred miles away.
+    #
+    # The trail is cut at the first ancestor this viewer may not read, and
+    # shows nothing above it. Half a trail would announce that something is
+    # hidden in between, and a place name is usually the whole spoiler.
+    # Scanned by the page's own kind rather than a hardcoded "place", so that
+    # renaming the kind does not quietly stop the hierarchy working.
+    siblings = list(library.all(entity.kind))
+    trail = hierarchy_mod.trail_for(entity, hierarchy_mod.index(siblings), viewer)
+    if trail:
+        crumbs = " &rsaquo; ".join(
+            f'<a href="{base}{page_url(p.ref)}">{html.escape(p.name)}</a>'
+            for p in trail
+        )
+        parts.append(f'<nav class="trail">{crumbs}</nav>')
+
+    parts.append(f"<h1>{html.escape(entity.name)}</h1>")
     if entity.summary:
         parts.append(f'<p class="summary">{html.escape(entity.summary)}</p>')
     if entity.ref in images:
@@ -477,6 +521,25 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
             )
         parts.append("<h2>Files</h2>")
         parts.append(f'<ul class="filelist">{"".join(rows)}</ul>')
+
+    # What is inside this place, before Related, because a city's own districts
+    # are the page rather than navigation away from it. Direct children only:
+    # the districts list their own buildings, and a region showing every shop
+    # in every town is not an index of anything.
+    rows = []
+    for child in hierarchy_mod.children(entity.ref, siblings):
+        if child.ref not in allowed:
+            continue
+        rows.append(
+            f'<li><a href="{base}{page_url(child.ref)}">'
+            f"{html.escape(child.name)}</a>"
+            + (f' <span class="hint">{html.escape(child.summary)}</span>'
+               if child.summary else "")
+            + "</li>"
+        )
+    if rows:
+        parts.append(f"<h2>Inside {html.escape(entity.name)}</h2>")
+        parts.append(f'<ul class="within">{"".join(rows)}</ul>')
 
     link_list(entity.links, "Related")
     link_list(

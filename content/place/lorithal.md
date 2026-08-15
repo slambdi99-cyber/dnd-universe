@@ -8,17 +8,12 @@ tags:
 - realm
 - from-session-log
 - needs-detail
-- primary-location
 links:
 - character/wren
 - archive/the-fallen-heir
 - faction/the-dissenters
 - character/aelan-viremont
-- place/the-ashbright-stretch
-- place/the-broadheights
-- place/the-grand-endurance
 - lore/the-kindling
-- faction/the-dissenters
 sources:
 - dm:wiki:2026-08-13
 - written by The DM
