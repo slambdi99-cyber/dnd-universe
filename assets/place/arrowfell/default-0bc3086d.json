@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "arrowfell",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, unknown territory beyond the map edge, parched golden grassland, cracked dry earth, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 315119330,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/arrowfell/default-0bc3086d",
+  "created_at": "2026-08-13T00:24:04.919861+00:00",
+  "entity_name": "Arrowfell"
+}

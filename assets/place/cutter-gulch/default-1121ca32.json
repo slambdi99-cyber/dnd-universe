@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "cutter-gulch",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, dry cracked riverbed, dust, bleached stones, sparse dead scrub, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 983206011,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/cutter-gulch/default-1121ca32",
+  "created_at": "2026-08-13T00:25:35.691614+00:00",
+  "entity_name": "Cutter Gulch"
+}

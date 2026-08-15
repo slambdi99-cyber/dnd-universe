@@ -1,0 +1,30 @@
+# What the server needs, which is everything except drawing.
+#
+# The wiki, the MCP server and the Discord sync all run on a free ARM VM with
+# no graphics card. torch and diffusers are the two big ones, roughly 3GB
+# between them, and neither is imported unless something asks for a picture.
+# Nothing on the server ever does: art requests are queued into the repo and
+# drawn at home.
+#
+#   python3 -m venv .venv
+#   .venv/bin/pip install -r deploy/requirements-server.txt
+
+PyYAML>=6.0
+
+# MCP over HTTP, and the wiki that shares its port.
+mcp>=2.0
+uvicorn>=0.30
+starlette>=0.37
+markdown>=3.5
+itsdangerous>=2.2
+python-multipart>=0.0.9
+
+# Thumbnails. Not generation: this resizes pictures that already exist, which
+# is why it is here and diffusers is not.
+Pillow>=10.0
+
+# Reading the campaign's Discord channels. No [voice] extra: recording happens
+# at home, if it ever happens at all, and the extra drags in libsodium for
+# nothing. Pinned to match dnd-scribe, where the reason for the pin is written
+# out in full.
+py-cord==2.8.1

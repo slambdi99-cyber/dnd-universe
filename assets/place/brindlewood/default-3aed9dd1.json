@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "brindlewood",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, small crossroads township, timber buildings and tents, dry scrub, foothills behind, parched golden grassland, cracked dry earth, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 104255886,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/brindlewood/default-3aed9dd1",
+  "created_at": "2026-08-13T00:24:21.830426+00:00",
+  "entity_name": "Brindlewood"
+}

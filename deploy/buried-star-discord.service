@@ -1,0 +1,10 @@
+[Unit]
+Description=Read the campaign's Discord channels into the wiki inbox
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/dnd-scribe
+ExecStart=/home/ubuntu/dnd-universe/.venv/bin/python -m scribe.sync
+TimeoutStartSec=600

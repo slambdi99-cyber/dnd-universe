@@ -1,0 +1,15 @@
+{
+  "kind": "character",
+  "slug": "tobias-goreguts",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, character portrait, head and shoulders, facing viewer, neutral background, huge half-orc warrior, green skin with darker green markings, jutting lower tusks, heavy brow, dark topknot, bare muscular arms, enormous greatsword, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1046626866,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "character/tobias-goreguts/default-81dcae2b",
+  "created_at": "2026-08-13T01:38:54.666623+00:00",
+  "entity_name": "Tobias Goreguts"
+}

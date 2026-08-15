@@ -1,0 +1,15 @@
+{
+  "kind": "item",
+  "slug": "rootbound-dagger",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, single object study, centered, dark neutral background, museum lighting, short dagger bound in living root, dark iron blade, knotted wooden grip, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 95002036,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "item/rootbound-dagger/default-3ecf41c9",
+  "created_at": "2026-08-13T00:23:25.250520+00:00",
+  "entity_name": "Rootbound Dagger"
+}

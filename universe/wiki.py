@@ -202,10 +202,15 @@ class Wiki:
         """Commit before reshaping anything, so it can be undone."""
         return history_mod.snapshot(Path(self.cfg.root), what, who)
 
-    def record(self, what: str, who: str) -> bool:
+    def record(self, what: str, who: str,
+               paths: tuple[str, ...] = history_mod.PAGES) -> bool:
         """Commit a finished page edit, with the editor as the git author.
 
         Called after a save rather than before it, so the changelog can say who
         changed which page instead of naming whoever ran the sync.
+
+        `paths` widens it past `content/` for the few things that are a person's
+        edit but do not live there, such as an art request. It stays narrow by
+        default so one person's save cannot sweep in another's.
         """
-        return history_mod.record(Path(self.cfg.root), what, who)
+        return history_mod.record(Path(self.cfg.root), what, who, paths=paths)

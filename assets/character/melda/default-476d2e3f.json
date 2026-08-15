@@ -1,0 +1,15 @@
+{
+  "kind": "character",
+  "slug": "melda",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, character portrait, head and shoulders, facing viewer, neutral background, smith in a leather apron, soot-marked, watchful, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 2128957844,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "character/melda/default-476d2e3f",
+  "created_at": "2026-08-13T01:50:02.972273+00:00",
+  "entity_name": "Melda"
+}

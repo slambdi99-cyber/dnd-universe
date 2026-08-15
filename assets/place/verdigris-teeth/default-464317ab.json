@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "verdigris-teeth",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, jagged red rock cliffs streaked with vivid green patina, sharp peaks, thin cold lakes, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 487550634,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/verdigris-teeth/default-464317ab",
+  "created_at": "2026-08-13T00:30:14.217772+00:00",
+  "entity_name": "Verdigris Teeth"
+}

@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "copper-vale",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, parched golden grassland, cracked dry earth, bare ruddy mountains, wide pale sky, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1895013419,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/copper-vale/default-ba62944e",
+  "created_at": "2026-08-13T00:16:56.903217+00:00",
+  "entity_name": "Copper Vale"
+}

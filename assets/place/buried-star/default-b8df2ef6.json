@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "buried-star",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, buried radiance under dark earth, cracked ground bleeding pale light, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1763329252,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/buried-star/default-b8df2ef6",
+  "created_at": "2026-08-13T01:40:18.998289+00:00",
+  "entity_name": "The Buried Star"
+}

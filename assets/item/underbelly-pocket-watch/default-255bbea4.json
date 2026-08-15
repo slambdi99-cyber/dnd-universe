@@ -1,0 +1,15 @@
+{
+  "kind": "item",
+  "slug": "underbelly-pocket-watch",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, single object study, centered, dark neutral background, museum lighting, worn brass pocket watch, engraved lettering, fine chain, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 309878575,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "item/underbelly-pocket-watch/default-255bbea4",
+  "created_at": "2026-08-13T01:52:30.897451+00:00",
+  "entity_name": "Underbelly Pocket Watch"
+}

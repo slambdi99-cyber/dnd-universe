@@ -2,9 +2,19 @@
 __pycache__/
 *.pyc
 
-# Generated art. Regenerable from content plus config, and large. Keep it out
-# of the repo unless you decide you want the history.
-assets/
+# Generated art was ignored while the site ran on the machine that drew it: the
+# pictures were already sitting next to the server, and they are regenerable, so
+# the history was not worth the size.
+#
+# The site now runs on a host with no graphics card. The pictures are drawn at
+# home and there is no other way for them to reach the server, so they travel
+# the way everything else does. Roughly 50MB, growing by a few hundred KB per
+# picture that somebody keeps.
+# assets/
+
+# Thumbnails, though, stay out. Those genuinely are rebuilt on demand, and there
+# are several per picture.
+assets/**/.thumbs/
 
 # content/ is deliberately NOT ignored. It is the campaign itself, it is only
 # ~100KB, and it is the one thing here that cannot be regenerated. Five people
@@ -44,8 +54,6 @@ data/srd.json
 # The shared passphrase, stored as a scrypt hash. Never commit it.
 .wiki-passphrase
 
-# Generated thumbnails. Rebuilt on demand from the originals.
-assets/**/.thumbs/
 
 # Which process is serving. Written at startup, meaningless elsewhere.
 .server-pid

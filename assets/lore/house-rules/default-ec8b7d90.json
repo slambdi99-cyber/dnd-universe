@@ -1,0 +1,15 @@
+{
+  "kind": "lore",
+  "slug": "house-rules",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, illustration, centered composition, worn notebook page of handwritten table rules, ink, coffee ring, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1623300254,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "lore/house-rules/default-ec8b7d90",
+  "created_at": "2026-08-13T09:04:07.166718+00:00",
+  "entity_name": "House Rules"
+}

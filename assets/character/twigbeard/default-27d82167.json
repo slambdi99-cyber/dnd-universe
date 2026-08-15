@@ -1,0 +1,15 @@
+{
+  "kind": "character",
+  "slug": "twigbeard",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, character portrait, head and shoulders, facing viewer, neutral background, mossy bearded dwarf druid, twigs and leaves in a long beard, kindly weathered face, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 228254720,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "character/twigbeard/default-27d82167",
+  "created_at": "2026-08-13T02:08:54.042811+00:00",
+  "entity_name": "Twigbeard"
+}

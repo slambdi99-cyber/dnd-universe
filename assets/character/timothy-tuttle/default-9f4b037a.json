@@ -1,0 +1,15 @@
+{
+  "kind": "character",
+  "slug": "timothy-tuttle",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, character portrait, head and shoulders, facing viewer, neutral background, green scaled turtle-folk druid, domed shell on his back, round brass spectacles, antler circlet, brown leather tunic, circular wooden medallion, tall wooden staff, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1474203834,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "character/timothy-tuttle/default-9f4b037a",
+  "created_at": "2026-08-13T01:26:56.237038+00:00",
+  "entity_name": "Timothy Tuttle"
+}

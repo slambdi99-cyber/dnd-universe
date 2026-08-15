@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "rumbleshot-quarry",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, stepped stone quarry, blasting rubble, cut faces, dust haze, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 601915959,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/rumbleshot-quarry/default-b22abcb2",
+  "created_at": "2026-08-13T00:26:55.203425+00:00",
+  "entity_name": "Rumbleshot Quarry"
+}

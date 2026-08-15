@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "valeshire-cathedral",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, stone cathedral with steep blue roof, tall windows, riverside close, old trees, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 858015785,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/valeshire-cathedral/default-c997d0be",
+  "created_at": "2026-08-13T00:28:41.156784+00:00",
+  "entity_name": "Valeshire Cathedral"
+}

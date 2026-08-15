@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "bogwatchers-sanctum-temple",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, hidden temple among mists and moss, low mossy stone halls, still pools, drooping trees, parched golden grassland, cracked dry earth, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 2107380490,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/bogwatchers-sanctum-temple/default-052192e4",
+  "created_at": "2026-08-13T01:55:38.020215+00:00",
+  "entity_name": "Bogwatchers' Sanctum"
+}

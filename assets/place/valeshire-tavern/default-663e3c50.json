@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "valeshire-tavern",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, busy stone-and-timber tavern, lantern light, benches outside, worn cobbles, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1789936429,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/valeshire-tavern/default-663e3c50",
+  "created_at": "2026-08-13T00:29:43.998565+00:00",
+  "entity_name": "The Valeshire Tavern"
+}

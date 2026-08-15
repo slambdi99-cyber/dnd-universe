@@ -39,6 +39,17 @@ class Config:
         return self.raw.get("art", {})
 
     @property
+    def draws_here(self) -> bool:
+        """Whether this machine can draw, or only ask for drawings.
+
+        The wiki runs on a free host with no GPU. Everything else works there;
+        art does not, and never will. So the site queues a request in the repo
+        and the machine at home drains it. Default true, because the machine at
+        home is also the one running every test and script.
+        """
+        return bool(self.art.get("draws_here", True))
+
+    @property
     def house_style(self) -> str:
         return self.art.get("house_style", "")
 

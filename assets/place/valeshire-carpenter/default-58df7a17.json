@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "valeshire-carpenter",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, carpenter's workshop, sawn planks stacked outside, shavings, timber frames, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 931296026,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/valeshire-carpenter/default-58df7a17",
+  "created_at": "2026-08-13T00:28:24.620227+00:00",
+  "entity_name": "Valeshire Carpenter"
+}

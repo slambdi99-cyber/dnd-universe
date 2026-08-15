@@ -1,0 +1,15 @@
+{
+  "kind": "deity",
+  "slug": "selune",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, divine holy symbol, iconographic, centered, radiant, stained-glass feel, moon goddess icon, silver crescent above a circle of seven stars, deep blue and silver, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1927325411,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "deity/selune/default-8edbfafd",
+  "created_at": "2026-08-13T01:27:25.504420+00:00",
+  "entity_name": "Selune"
+}

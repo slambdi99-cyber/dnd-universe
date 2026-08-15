@@ -1,0 +1,10 @@
+[Unit]
+Description=Keep The Buried Star repo in step with GitHub
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/dnd-universe
+ExecStart=/home/ubuntu/dnd-universe/deploy/repo-sync.sh
+TimeoutStartSec=180

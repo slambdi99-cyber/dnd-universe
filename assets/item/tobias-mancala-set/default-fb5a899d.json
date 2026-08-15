@@ -1,0 +1,15 @@
+{
+  "kind": "item",
+  "slug": "tobias-mancala-set",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, single object study, centered, dark neutral background, museum lighting, worn wooden mancala board, mismatched stones and trinkets in the pits, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1143612884,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "item/tobias-mancala-set/default-fb5a899d",
+  "created_at": "2026-08-13T01:52:19.351617+00:00",
+  "entity_name": "Tobias's Mancala Set"
+}

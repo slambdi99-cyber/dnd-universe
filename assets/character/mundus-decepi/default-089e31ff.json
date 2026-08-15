@@ -1,0 +1,15 @@
+{
+  "kind": "character",
+  "slug": "mundus-decepi",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, character portrait, head and shoulders, facing viewer, neutral background, lean figure in dark leathers, hood up, twin daggers, light crossbow on the back, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1024867497,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "character/mundus-decepi/default-089e31ff",
+  "created_at": "2026-08-13T01:37:58.322036+00:00",
+  "entity_name": "Mundus Decepi"
+}

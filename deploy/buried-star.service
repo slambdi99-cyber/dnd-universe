@@ -1,0 +1,32 @@
+[Unit]
+Description=The Buried Star wiki and MCP server
+# Tailscale carries the funnel. Starting before it is not fatal, but the
+# --allowed-host flag comes from asking Tailscale its own name, and without
+# that every request through the tunnel is rejected with a 421.
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/dnd-universe
+ExecStart=/home/ubuntu/dnd-universe/deploy/run-wiki.sh
+Restart=always
+RestartSec=5
+
+# The thing this replaces was a PowerShell window somebody had to leave open,
+# and the site went down whenever the machine slept. Restarting forever is the
+# entire point.
+StartLimitIntervalSec=0
+
+# Read-write only where it needs to be. The wiki writes pages, uploads,
+# thumbnails, the passphrase hash and the inbox cursor, all under its own
+# folder, and has no business anywhere else on the box.
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/ubuntu/dnd-universe
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

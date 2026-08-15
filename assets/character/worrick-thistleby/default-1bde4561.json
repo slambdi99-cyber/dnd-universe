@@ -1,0 +1,15 @@
+{
+  "kind": "character",
+  "slug": "worrick-thistleby",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, character portrait, head and shoulders, facing viewer, neutral background, halfling businessman, well-tailored waistcoat, sharp eyes, neat side-whiskers, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1974678175,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "character/worrick-thistleby/default-1bde4561",
+  "created_at": "2026-08-13T02:09:05.599733+00:00",
+  "entity_name": "Worrick Thistleby"
+}

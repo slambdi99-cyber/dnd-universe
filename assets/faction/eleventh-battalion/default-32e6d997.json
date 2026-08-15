@@ -1,0 +1,15 @@
+{
+  "kind": "faction",
+  "slug": "eleventh-battalion",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, heraldic emblem, symmetrical, banner and sigil, flat graphic, military banner, bone-white wall device on dark ground, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 2020597279,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "faction/eleventh-battalion/default-32e6d997",
+  "created_at": "2026-08-13T01:51:10.335530+00:00",
+  "entity_name": "The 11th Battalion"
+}

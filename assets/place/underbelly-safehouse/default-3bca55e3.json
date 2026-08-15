@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "underbelly-safehouse",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, cramped hidden cellar room, crates and hanging lanterns, maps pinned to stone walls, low beams, parched golden grassland, cracked dry earth, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1249327285,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/underbelly-safehouse/default-3bca55e3",
+  "created_at": "2026-08-13T01:27:54.881826+00:00",
+  "entity_name": "Underbelly Safehouse"
+}

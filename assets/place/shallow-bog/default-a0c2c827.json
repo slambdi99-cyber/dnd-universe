@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "shallow-bog",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, stagnant shallow wetland, drowned scrub willows, still brown water, reed banks, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 223525141,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/shallow-bog/default-a0c2c827",
+  "created_at": "2026-08-13T00:27:12.562221+00:00",
+  "entity_name": "Shallow Bog"
+}

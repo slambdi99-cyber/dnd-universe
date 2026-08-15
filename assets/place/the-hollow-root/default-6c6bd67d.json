@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "the-hollow-root",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, vast hollow root cavity, walls of dead pale wood, deep dark hollow, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1080801191,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/the-hollow-root/default-6c6bd67d",
+  "created_at": "2026-08-13T01:56:01.287460+00:00",
+  "entity_name": "The Hollow Root"
+}

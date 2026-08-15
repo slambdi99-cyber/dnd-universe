@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "valeshire-lumber-mill",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, riverside lumber mill, log booms in the water, stacked timber, waterwheel, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1592678181,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/valeshire-lumber-mill/default-4546e428",
+  "created_at": "2026-08-13T00:29:13.297498+00:00",
+  "entity_name": "Valeshire Lumber Mill"
+}

@@ -1,0 +1,15 @@
+{
+  "kind": "character",
+  "slug": "tavin",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, character portrait, head and shoulders, facing viewer, neutral background, halfling in a fine waistcoat, long pipe, sour supercilious expression, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 705227577,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "character/tavin/default-c06ca894",
+  "created_at": "2026-08-13T02:08:42.365774+00:00",
+  "entity_name": "Tavin"
+}

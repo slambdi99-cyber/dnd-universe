@@ -1,0 +1,13 @@
+[Unit]
+Description=Sync the repo every couple of minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+# Every server on the internet firing its cron job on the minute is how you get
+# a thundering herd. Nothing here is time-critical to the second.
+RandomizedDelaySec=30
+Persistent=true
+
+[Install]
+WantedBy=timers.target

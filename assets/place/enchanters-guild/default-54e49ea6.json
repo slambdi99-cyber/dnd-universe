@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "enchanters-guild",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, arcane guild hall on a river island, purple domed roofs, walled garden, standing stones, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 740400581,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/enchanters-guild/default-54e49ea6",
+  "created_at": "2026-08-13T00:26:17.796791+00:00",
+  "entity_name": "Enchanter's Guild"
+}

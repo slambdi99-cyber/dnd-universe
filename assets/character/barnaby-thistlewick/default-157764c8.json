@@ -1,0 +1,15 @@
+{
+  "kind": "character",
+  "slug": "barnaby-thistlewick",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, character portrait, head and shoulders, facing viewer, neutral background, fussy scholarly figure, spectacles, ink-stained fingers, travelling coat, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1544308737,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "character/barnaby-thistlewick/default-157764c8",
+  "created_at": "2026-08-13T01:54:52.001202+00:00",
+  "entity_name": "Barnaby Thistlewick"
+}

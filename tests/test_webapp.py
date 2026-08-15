@@ -540,6 +540,42 @@ check("renders", conn.status_code == 200)
 check("shows his name", "Wren" in conn.text)
 check("offers a token", "Bearer" in conn.text)
 
+print("\n== asking for art where there is no graphics card ==")
+# The site now runs on a free server with no GPU. Pressing Art there has to do
+# something other than fail, or the feature silently disappears for everyone
+# and only the DM, sitting at the machine that draws, ever notices.
+from universe import artqueue  # noqa: E402
+
+cfg.raw.setdefault("art", {})["draws_here"] = False
+art_before = list((lib.load("character", "wren") or Entity("", "", "")).art)
+asked = wren.post("/wiki/character/wren/art",
+                  data={"prompt": "an elf in a salt-stained coat"})
+check("the page answers rather than erroring", asked.status_code == 200)
+check("it says the request is queued", "Queued" in asked.text)
+check("and does not claim it failed", "Couldn't generate" not in asked.text)
+queued = artqueue.pending(sandbox, "character", "wren")
+check("the request is on disk for the other machine", len(queued) == 1,
+      str(queued))
+check("it carries the prompt",
+      bool(queued) and queued[0].prompt == "an elf in a salt-stained coat")
+check("and who asked", bool(queued) and queued[0].who == "Wren")
+
+# The important half: nothing was drawn, and nothing was attached. A queued
+# request must not look like a finished picture. Wren already has an uploaded
+# portrait from further up this file, so the claim is that asking added
+# nothing, not that the page is bare.
+check("the page's art is unchanged",
+      list((lib.load("character", "wren") or Entity("", "", "")).art) == art_before,
+      "a request that is still in a queue must not appear as a picture")
+
+again = wren.get("/wiki/character/wren/art")
+check("the wait is visible on the page", "Waiting for the machine at home" in again.text)
+check("the button asks rather than promises", "Ask for three" in again.text)
+
+cfg.raw["art"]["draws_here"] = True
+back = wren.get("/wiki/character/wren/art")
+check("at home the button generates", "Generate three" in back.text)
+
 print("\n== sign out ==")
 check("logout redirects", wren.get("/wiki/logout").status_code == 303)
 check("session cleared", wren.get("/wiki/").status_code == 303)

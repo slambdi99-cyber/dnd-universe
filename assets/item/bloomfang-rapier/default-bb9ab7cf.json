@@ -1,0 +1,15 @@
+{
+  "kind": "item",
+  "slug": "bloomfang-rapier",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, single object study, centered, dark neutral background, museum lighting, slender rapier, blossom-etched guard, thorn-wound hilt, pale steel, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 2007557476,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "item/bloomfang-rapier/default-bb9ab7cf",
+  "created_at": "2026-08-13T00:23:07.161302+00:00",
+  "entity_name": "Bloomfang Rapier"
+}

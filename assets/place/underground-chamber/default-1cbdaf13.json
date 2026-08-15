@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "underground-chamber",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, chamber packed with thick gnarled roots, stone ritual altar, racks of ancient weapons, a throne, stagnant shallow wetland, drowned scrub willows, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1861336055,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/underground-chamber/default-1cbdaf13",
+  "created_at": "2026-08-13T01:56:12.461271+00:00",
+  "entity_name": "Underground Chamber"
+}

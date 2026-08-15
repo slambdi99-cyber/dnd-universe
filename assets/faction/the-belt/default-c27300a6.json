@@ -1,0 +1,15 @@
+{
+  "kind": "faction",
+  "slug": "the-belt",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, heraldic emblem, symmetrical, banner and sigil, flat graphic, discreet badge, a plain leather belt buckle sigil, muted browns, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1404186889,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "faction/the-belt/default-c27300a6",
+  "created_at": "2026-08-13T01:51:32.768870+00:00",
+  "entity_name": "The Belt"
+}

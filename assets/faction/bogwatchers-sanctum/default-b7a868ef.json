@@ -1,0 +1,15 @@
+{
+  "kind": "faction",
+  "slug": "bogwatchers-sanctum",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, heraldic emblem, symmetrical, banner and sigil, flat graphic, moss and water motifs, still pond sigil, muted green and grey heraldry, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1822526188,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "faction/bogwatchers-sanctum/default-b7a868ef",
+  "created_at": "2026-08-13T00:22:30.845955+00:00",
+  "entity_name": "Bogwatchers Sanctum"
+}

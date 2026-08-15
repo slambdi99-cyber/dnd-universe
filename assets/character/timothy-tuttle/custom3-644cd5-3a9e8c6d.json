@@ -1,0 +1,16 @@
+{
+  "kind": "character",
+  "slug": "timothy-tuttle",
+  "variant": "custom3-644cd5",
+  "prompt": "green scaled turtle-folk druid seated on a mossy stone, domed shell, round brass spectacles, antler circlet, brown leather tunic, tall wooden staff, autumn forest, low evening light",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 797063555,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "character/timothy-tuttle/custom3-644cd5-3a9e8c6d",
+  "created_at": "2026-08-13T17:14:40.604729+00:00",
+  "entity_name": "Timothy Tuttle",
+  "custom_prompt": true
+}

@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "sourstout-brewery",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, riverside brewery, barrels and vats in the yard, blue slate roof, hop fields behind, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 2041929952,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/sourstout-brewery/default-d87c19ac",
+  "created_at": "2026-08-13T00:27:31.931903+00:00",
+  "entity_name": "Sourstout Brewery"
+}

@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "underground-chamber",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, root-choked underground chamber, wet stone, pale hanging tendrils, still black water, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1861336055,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/underground-chamber/default-a52b6913",
+  "created_at": "2026-08-13T01:40:33.304841+00:00",
+  "entity_name": "Underground Chamber"
+}

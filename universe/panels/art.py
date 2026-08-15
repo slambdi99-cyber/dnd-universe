@@ -19,6 +19,7 @@ from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse, HTMLResponse, RedirectResponse
 from starlette.routing import Route
 
+from .. import artqueue
 from .. import thumbs as thumbs_mod
 from ..assetref import ArtName, AssetRef
 from .. import uploads as uploads_mod
@@ -81,6 +82,20 @@ async def art_panel(request, wiki):
             prompt = str(form.get("prompt", "")).strip()
             if not prompt:
                 error = "Describe the picture you want."
+            elif not wiki.cfg.draws_here:
+                # No GPU on this host. The request goes in the repo and the
+                # machine at home picks it up, which is a wait rather than a
+                # failure, so say so instead of showing an error.
+                queued = artqueue.request(Path(wiki.cfg.root), kind, slug,
+                                          prompt, who=user or "", count=3)
+                if queued is None:
+                    error = "Describe the picture you want."
+                else:
+                    wiki.record(f"art request: {kind}/{slug}", user or "someone",
+                                paths=(artqueue.FOLDER,))
+                    message = ("Queued. The machine at home draws it when it's "
+                               "next on, and the pictures appear here.")
+                    prompt = ""
             else:
                 try:
                     # Off the event loop: generation takes tens of seconds
@@ -94,9 +109,11 @@ async def art_panel(request, wiki):
 
     entity = wiki.library.load(kind, slug) or entity
     existing = [a for a in entity.art]
+    waiting = artqueue.pending(Path(wiki.cfg.root), kind, slug)
     return wiki.render(f"Art for {entity.name}",
                   _art_form(entity, existing, candidates, prompt, error,
-                            message),
+                            message, waiting=waiting,
+                            draws_here=wiki.cfg.draws_here),
                   user=user)
 
 
@@ -164,7 +181,8 @@ async def art(request, wiki):
 
 
 def _art_form(entity, existing: list[str], candidates: list[str],
-              prompt: str, error: str, message: str = "") -> str:
+              prompt: str, error: str, message: str = "", *,
+              waiting: list | None = None, draws_here: bool = True) -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""
     note = f'<div class="notice">{html.escape(message)}</div>' if message else ""
     current = entity.data.get("active_art")
@@ -204,6 +222,26 @@ def _art_form(entity, existing: list[str], candidates: list[str],
                 + (f'<p class="hint">{note}</p>' if note else "")
                 + f'<div class="artgrid">{"".join(cards)}</div>')
 
+    if draws_here:
+        slow = ("This runs on the GPU at home and takes roughly a minute for "
+                "three pictures. Leave the tab open.")
+    else:
+        slow = ("The card that draws these lives on a machine at home, not on "
+                "the server. Asking puts it in the queue, and the pictures turn "
+                "up here once that machine is next on. Nothing to wait for.")
+
+    queued = ""
+    if waiting:
+        rows = "".join(
+            f"<li>{html.escape(item.prompt)}"
+            + (f' <span class="hint">asked by {html.escape(item.who)}</span>'
+               if item.who else "")
+            + "</li>"
+            for item in waiting
+        )
+        queued = (f'<div class="notice"><p>Waiting for the machine at home:</p>'
+                  f"<ul>{rows}</ul></div>")
+
     picker = ""
     if candidates or existing:
         picker = (
@@ -227,10 +265,10 @@ def _art_form(entity, existing: list[str], candidates: list[str],
     not what it means. The house style is added for you.</span></label>
   <textarea id="p" name="prompt" rows="3"
             placeholder="{html.escape(entity.appearance or 'a low timber tavern at dusk, lantern light, wet cobbles')}">{html.escape(prompt)}</textarea>
-  <button type="submit">Generate three</button>
+  <button type="submit">{"Generate three" if draws_here else "Ask for three"}</button>
 </form>
-<div class="slow">This runs on the GPU at home and takes roughly a minute for
-three pictures. Leave the tab open.</div>
+<div class="slow">{slow}</div>
+{queued}
 
 <h2>Or upload one</h2>
 <p class="hint">A picture you drew, commissioned or found. It goes straight on

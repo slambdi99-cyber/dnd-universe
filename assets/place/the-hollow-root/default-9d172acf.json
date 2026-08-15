@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "the-hollow-root",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, vast hollow root cavity beneath the mountain, dwellings built into pale dead wood, warm lamplight, scarred mining mountains, open sulfide seams, spoil heaps, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1080801191,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/the-hollow-root/default-9d172acf",
+  "created_at": "2026-08-13T02:10:13.137128+00:00",
+  "entity_name": "The Hollow Root"
+}

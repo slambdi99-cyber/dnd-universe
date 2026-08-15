@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "dire-foothills",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, dense pine foothills, blasted rock faces, fallen timber, low grey mist, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 661698031,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/dire-foothills/default-beb0feb2",
+  "created_at": "2026-08-13T00:25:57.257805+00:00",
+  "entity_name": "Dire Foothills"
+}

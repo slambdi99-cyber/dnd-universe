@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "the-last-run",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, wide slow river between green banks, the only living water in a dry land, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1277063664,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/the-last-run/default-184ee6e7",
+  "created_at": "2026-08-13T00:27:51.430382+00:00",
+  "entity_name": "The Last Run"
+}

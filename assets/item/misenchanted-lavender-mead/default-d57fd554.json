@@ -1,0 +1,15 @@
+{
+  "kind": "item",
+  "slug": "misenchanted-lavender-mead",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, single object study, centered, dark neutral background, museum lighting, tall glass of pale lavender mead, faint shimmer, sprig of dried flower, tavern lamplight, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1192635075,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "item/misenchanted-lavender-mead/default-d57fd554",
+  "created_at": "2026-08-13T01:55:15.111230+00:00",
+  "entity_name": "Misenchanted Lavender Mead"
+}

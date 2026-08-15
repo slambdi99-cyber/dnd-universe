@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "valeshire-blacksmith",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, open-fronted smithy, forge glow, anvil and racked tools, charcoal piles, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 350063568,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/valeshire-blacksmith/default-bdf22a2f",
+  "created_at": "2026-08-13T00:28:09.473853+00:00",
+  "entity_name": "Valeshire Blacksmith"
+}

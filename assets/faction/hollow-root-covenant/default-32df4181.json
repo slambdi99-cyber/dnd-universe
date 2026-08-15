@@ -1,0 +1,15 @@
+{
+  "kind": "faction",
+  "slug": "hollow-root-covenant",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, heraldic emblem, symmetrical, banner and sigil, flat graphic, hollow twisted root sigil, black and sickly green heraldry, ring of thorns, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1812595687,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "faction/hollow-root-covenant/default-32df4181",
+  "created_at": "2026-08-13T01:39:36.414662+00:00",
+  "entity_name": "Hollow Root Covenant"
+}

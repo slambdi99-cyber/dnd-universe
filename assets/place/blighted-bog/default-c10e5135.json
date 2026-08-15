@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "blighted-bog",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, sickly wetland, black standing water, dead pale trees, creeping root mats, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 618906084,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/blighted-bog/default-c10e5135",
+  "created_at": "2026-08-13T01:40:04.789730+00:00",
+  "entity_name": "Blighted Bog"
+}

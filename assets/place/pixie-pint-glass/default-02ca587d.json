@@ -1,0 +1,15 @@
+{
+  "kind": "place",
+  "slug": "pixie-pint-glass",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, hidden upstairs bar, low beams, coloured glass lamps, crowded booths, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 880094008,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/pixie-pint-glass/default-02ca587d",
+  "created_at": "2026-08-13T01:53:16.742103+00:00",
+  "entity_name": "The Pixie Pint Glass"
+}

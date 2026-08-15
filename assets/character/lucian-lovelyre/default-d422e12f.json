@@ -1,0 +1,15 @@
+{
+  "kind": "character",
+  "slug": "lucian-lovelyre",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, character portrait, head and shoulders, facing viewer, neutral background, handsome half-elf man, tousled dark hair, pointed ears, glowing violet eyes, scarred cheek, warm ochre patterned tunic, lute, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1395155056,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "character/lucian-lovelyre/default-d422e12f",
+  "created_at": "2026-08-13T01:26:27.486857+00:00",
+  "entity_name": "Lucian Lovelyre"
+}
