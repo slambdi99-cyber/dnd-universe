@@ -25,6 +25,8 @@ sys.path.insert(0, str(ROOT))
 from mcp import ClientSession  # noqa: E402
 from mcp.client.stdio import StdioServerParameters, stdio_client  # noqa: E402
 
+from universe import access as access_mod  # noqa: E402
+
 FAIL: list[str] = []
 
 
@@ -320,10 +322,60 @@ def check_http_auth() -> None:
             proc.kill()
 
 
+def check_instructions_match_the_tools() -> None:
+    """Every tool the instructions name must actually exist.
+
+    The instructions are the first thing an assistant reads and the last thing
+    anyone remembers to update. A tool named there that has since been renamed
+    sends every connected assistant to call something that is not there, and
+    nothing else in this project would notice: the server starts fine, the
+    tools work fine, and only the advice is wrong.
+    """
+    import re
+
+    import mcp_server
+
+    named = set(re.findall(r"`([a-z_]{4,})`", mcp_server.INSTRUCTIONS))
+    # Backticks also wrap field names, which are not tools.
+    fields = {"appearance", "summary", "secret_audience", "source", "within",
+              "inside_of", "contains"}
+    named -= fields
+
+    print("\n== the instructions describe tools that exist ==")
+    real = {n for n, _ in _tool_names()}
+    missing = sorted(named - real)
+    check("no tool is named that does not exist", not missing, str(missing))
+    check("and the instructions name a useful number of them",
+          len(named & real) >= 8, f"{len(named & real)} of {len(real)}")
+
+    # The hierarchy is invisible unless an assistant is told to set it: a new
+    # shop with no `within` lands at the top level beside the continents, which
+    # is wrong in a way that reads as a decision rather than an omission.
+    check("the hierarchy is explained", "within" in mcp_server.INSTRUCTIONS,
+          "a place written without it lands beside the continents")
+
+
+def _tool_names() -> list[tuple[str, str]]:
+    """(name, description) for every tool the server actually registers."""
+    import mcp_server
+    from universe import config as config_mod
+    from universe import people as people_mod
+    from universe.entities import Library
+
+    cfg = config_mod.load(ROOT)
+    server = mcp_server.build_server(
+        cfg, Library(cfg.content_dir), people_mod.load(ROOT), False,
+        access_mod.Viewer.local(), "test",
+    )
+    tools = asyncio.run(server.list_tools())
+    return [(t.name, t.description or "") for t in tools]
+
+
 if __name__ == "__main__":
     asyncio.run(run())
     check_http_refuses_without_token()
     check_http_auth()
+    check_instructions_match_the_tools()
     print()
     if FAIL:
         print(f"{len(FAIL)} FAILURE(S): {FAIL}")

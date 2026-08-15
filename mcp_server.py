@@ -57,6 +57,7 @@ from mcp.server.mcpserver import Context, MCPServer  # noqa: E402
 
 from universe import config as config_mod  # noqa: E402
 from universe import access as access_mod  # noqa: E402
+from universe import hierarchy as hierarchy_mod  # noqa: E402
 from universe import history as history_mod  # noqa: E402
 from universe import inbox as inbox_mod  # noqa: E402
 from universe import people as people_mod  # noqa: E402
@@ -84,6 +85,18 @@ When writing, prefer `update_page` over `create_page` for anything that might
 already exist; search first. Keep `appearance` visual and concrete since it
 feeds the art pipeline, and keep `summary` to one sentence.
 
+Places sit inside other places: a shop inside its city, a district inside its
+realm, nesting as deep as it needs to. Set `within` whenever you write a place
+that is part of a larger one, or it lands at the top level beside the regions
+and continents, which is almost never right. `get_page` on a place tells you
+what it is `inside_of` and what it `contains`. Do not also add the parent or
+the children as links: the page shows them already, and two records of one
+fact drift apart. Ordinary links are for everything else, and `link_pages`
+connects two pages both ways at once.
+
+`open_questions` lists what the world knows it is missing. It is a good place
+to start when nobody has asked you for anything in particular.
+
 Some pages carry secrets addressed to particular people. You are shown only
 what the person holding this connection may see, so if something reads as
 incomplete, assume there is more you are not entitled to rather than filling
@@ -102,6 +115,13 @@ keeping, write it up with create_page or update_page and pass the message's
 `source` value through. That both credits it and clears it from the queue.
 Judge what belongs: most chat is banter, and a wiki full of confidently
 recorded jokes is worse than a thin one. `mark_filed` dismisses the rest.
+
+There are also tools that reshape the wiki itself rather than its contents:
+adding or renaming a kind, rebuilding the front page, moving a page from one
+kind to another. They affect what everyone at the table sees, and a rename
+touches every file, so treat them as things the person asks for by name rather
+than tidying you decide to do. Every change is a git commit and can be undone,
+which is a reason to be unafraid, not a reason to be casual.
 """
 
 
@@ -198,12 +218,55 @@ def build_server(
                 ],
             }
         )
+
+        # Where a place sits, and what it holds. Without these an assistant
+        # writing up a shop has no way to know it belongs in a city, and files
+        # it at the top level next to the continents.
+        if entity.within or entity.kind == hierarchy_mod.KIND:
+            places = list(library.all(entity.kind))
+            trail = hierarchy_mod.trail_for(
+                entity, hierarchy_mod.index(places), ids)
+            out["within"] = entity.within if entity.within in allowed else ""
+            out["inside_of"] = [p.ref for p in trail]
+            out["contains"] = [
+                c.ref for c in hierarchy_mod.children(entity.ref, places)
+                if c.ref in allowed
+            ]
+
         if access_mod.withheld_from(entity.body, ids):
             out["note"] = (
                 "This page contains secret sections you are not shown. "
                 "Do not speculate about their contents."
             )
         return out
+
+    def check_within(kind: str, ref: str, within: str | None) -> tuple[str, str]:
+        """Validate a proposed parent. Returns (value to store, error or "").
+
+        Refuses a loop rather than writing one. A place inside itself, directly
+        or round a chain, hangs anything that walks the hierarchy, and the file
+        it produces looks perfectly reasonable.
+        """
+        if not within:
+            return "", ""
+        # A page nests inside another of its own kind. Expressed that way
+        # rather than against the literal "place" so that renaming the kind
+        # does not turn the rule off.
+        nests = schema.has(hierarchy_mod.KIND) and kind == hierarchy_mod.KIND
+        if not nests and kind != hierarchy_mod.KIND:
+            return "", (f"Only places sit inside other places, and this is a "
+                        f"{kind}. Use links instead.")
+        parent = within if "/" in within else f"{kind}/{within}"
+        if parent.split("/", 1)[0] != kind:
+            return "", (f"A {kind} sits inside another {kind}, not a "
+                        f"{parent.split('/', 1)[0]}.")
+        if not library.exists(*parent.split("/", 1)):
+            return "", f"No place at {parent!r}. Check the slug with list_pages."
+        places = list(library.all(kind))
+        if hierarchy_mod.would_cycle(ref, parent, hierarchy_mod.index(places)):
+            return "", (f"{parent} is already inside {ref}, so that would make "
+                        f"a loop.")
+        return parent, ""
 
     def haystack(entity: Entity, ids: access_mod.Viewer) -> str:
         """Searchable text, secrets excluded unless this viewer may read them.
@@ -662,6 +725,12 @@ def build_server(
             list[str] | None,
             "Hide the whole page from everyone except these person keys.",
         ] = None,
+        within: Annotated[
+            str,
+            "For a place: the larger place it sits inside, as 'place/slug' or "
+            "just the slug. A shop goes inside its city, a district inside its "
+            "realm. Leave empty for somewhere top level like a region.",
+        ] = "",
     ) -> dict:
         ids, who = viewer(ctx)
         schema.reload_if_changed()
@@ -672,12 +741,17 @@ def build_server(
         if library.exists(kind, slug):
             return {"error": f"{kind}/{slug} already exists. Use update_page instead."}
 
+        ok, problem = check_within(kind, f"{kind}/{slug}", within)
+        if problem:
+            return {"error": problem}
+
         entity = Entity(
             kind=kind, slug=slug, name=name, summary=summary, appearance=appearance,
             body=secret_block(body, secret_audience),
             tags=list(tags or []), links=list(links or []),
             sources=[source] if source else [],
             visible_to=[v.lower() for v in visible_to] if visible_to else [],
+            within=ok,
         )
         entity.sources.append(f"written by {who}")
         library.save(entity)
@@ -702,12 +776,25 @@ def build_server(
             list[str] | None,
             "If set, the appended text becomes a secret only these people can read.",
         ] = None,
+        within: Annotated[
+            str | None,
+            "For a place: move it inside another place, as 'place/slug' or "
+            "just the slug. Pass an empty string to move it to the top level.",
+        ] = None,
     ) -> dict:
         ids, who = viewer(ctx)
         entity = find(ref, ids)
         if entity is None:
             return {"error": f"Nothing found for {ref!r}."}
 
+        if within is not None:
+            ok, problem = check_within(entity.kind, entity.ref, within)
+            if problem:
+                return {"error": problem}
+            entity.within = ok
+            # The inference note described a guess. Somebody has now said so
+            # deliberately, and leaving it would keep flagging it for review.
+            entity.data.pop("within_inferred", None)
         if summary is not None:
             entity.summary = summary
         if appearance is not None:
