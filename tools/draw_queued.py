@@ -65,12 +65,15 @@ def main() -> int:
     art = ArtService(cfg, library, AssetStore(cfg.assets_dir))
 
     drawn = 0
+    stale = 0
+    failed = 0
     for item in waiting:
         entity = library.load(item.kind, item.slug)
         if entity is None:
             # The page was deleted or renamed after the request was made.
             print(f"  skipped {item.page}: no such page any more")
             artqueue.done(item)
+            stale += 1
             continue
         print(f"  drawing {item.page} ...", flush=True)
         try:
@@ -80,13 +83,25 @@ def main() -> int:
             # being busy, and the next run should try again rather than
             # silently dropping something somebody asked for.
             print(f"  failed: {exc}")
+            failed += 1
             continue
         artqueue.done(item)
         drawn += 1
 
     if not drawn:
-        print("Nothing drawn.")
-        return 1
+        # Clearing out requests for pages that no longer exist is the queue
+        # working, not the queue failing, and this runs on a schedule where a
+        # non-zero exit shows up as a red job somebody has to look at.
+        print("Nothing to draw." if stale and not failed else "Nothing drawn.")
+        if stale and not failed:
+            # The requests are gone, so the repo changed even though no picture
+            # was made. Push that, or the next run rediscovers them.
+            git("add", "--", artqueue.FOLDER)
+            git("commit", "-q", "-m",
+                f"art: dropped {stale} request(s) for pages that no longer exist",
+                "--", artqueue.FOLDER)
+            git("push", "--quiet")
+        return 1 if failed else 0
 
     git("add", "--", "assets", artqueue.FOLDER)
     git("commit", "-q", "-m", f"art: drew {drawn} queued request(s)",
