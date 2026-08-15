@@ -43,7 +43,13 @@ function Say($text, $colour = "Gray") {
 # Content the table writes, as opposed to code we write. Only these are
 # committed automatically; a change to Python is somebody's work in progress
 # and gets committed by a person who can write the message.
-$contentPaths = @("content", "files", "structure.yaml", "people.yaml")
+#
+# assets is here now that the site runs somewhere else. Pictures are drawn on
+# this machine and there is no other route from here to the server, so art left
+# uncommitted is art nobody but this machine ever sees. art-queue is the other
+# direction: requests made here, drained by tools\draw_queued.py.
+$contentPaths = @("content", "files", "structure.yaml", "people.yaml",
+                  "assets", "art-queue")
 
 # --- 1. commit what the site wrote ---------------------------------------
 
