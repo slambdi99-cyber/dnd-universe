@@ -58,13 +58,17 @@ if srd:
 else:
     print("  SKIP  no data/srd.json yet; run tools/fetch_srd.py")
 
-print("\n== ordinary English words need a capital ==")
+print("\n== single words need a capital ==")
 for word in ("light", "shield", "command", "fly", "web", "sleep"):
     entry = by_term.get(word)
     if entry:
         check(f"'{word}' is capitalisation-gated", entry["c"] == 1, str(entry))
-check("distinctive names are not gated",
-      by_term.get("fireball", {}).get("c", 0) == 0 if "fireball" in by_term else True)
+# Every single word, not a hand-kept list of spell names. A page name is as
+# likely to be an ordinary word as a spell is, and the gate used to skip them:
+# a page called "The" matched lowercase and linked every "the" on the site.
+check("single-word page names are gated too",
+      all(e["c"] == 1 for e in index if " " not in e["t"]),
+      str([e["t"] for e in index if " " not in e["t"] and e["c"] != 1][:5]))
 check("multi-word names are never gated",
       all(e["c"] == 0 for e in index if " " in e["t"]))
 

@@ -19,6 +19,15 @@ So single-word terms only match when capitalised in the text, which is how
 people actually write them ("cast Fireball", "hit with Bane"). Multi-word
 terms match case-insensitively, because "eldritch blast" is unambiguous.
 
+That rule covers page names too, and used to not. It was applied only to a
+hand-kept list of SRD spell words, so a page could be called "The" or "Kept"
+and match lowercase, linking every occurrence in every body on the site. A
+page name is exactly as likely to be an ordinary word as a spell is.
+
+Where terms overlap, the longest wins: in "the Hollow Root Covenant", the
+faction matches before `The Hollow Root` can claim the first three words and
+strand "Covenant".
+
 Wiki entries respect visibility: a page you can't see never appears in your
 index, or the tooltip would leak its existence.
 """
@@ -33,31 +42,6 @@ from urllib.parse import quote_plus
 from . import secrets as secrets_mod
 from . import access as access_mod
 from .entities import Entity
-
-# Single words common enough in prose that matching them unconditionally would
-# be worse than useless. These need a capital letter to count.
-AMBIGUOUS = {
-    "aid", "alarm", "bane", "barkskin", "bless", "blur", "branding", "clone",
-    "cloudkill", "command", "compulsion", "confusion", "counterspell",
-    "darkness", "daylight", "disintegrate", "dream", "druidcraft", "earthquake",
-    "enlarge", "entangle", "eyebite", "fabricate", "fear", "feather", "fly",
-    "forbiddance", "foresight", "freedom", "friends", "geas", "glibness",
-    "goodberry", "grease", "guidance", "haste", "heal", "heat", "hex", "guards",
-    "identify", "imprisonment", "invisibility", "jump", "knock", "levitate",
-    "light", "longstrider", "mending", "message", "mislead", "misty", "move",
-    "nondetection", "passwall", "prayer", "prestidigitation", "reincarnate",
-    "resistance", "resurrection", "revivify", "sanctuary", "seeming", "shatter",
-    "shield", "shillelagh", "silence", "sleep", "slow", "spare", "stoneskin",
-    "suggestion", "sunbeam", "sunburst", "telekinesis", "teleport", "thaumaturgy",
-    "thunderwave", "tongues", "transport", "trap", "true", "web", "wish",
-    "blade", "blight", "chill", "control", "creation", "dominate", "feign",
-    "gaseous", "gate", "glyph", "guardian", "harm", "hold", "hunter", "maze",
-    "mirror", "planar", "plane", "poison", "power", "produce", "protection",
-    "purify", "raise", "ray", "regenerate", "remove", "rope", "scrying", "seek",
-    "sending", "sequester", "shape", "simulacrum", "speak", "spike", "storm",
-    "symbol", "time", "tiny", "vampiric", "wall", "warding", "water", "wind",
-    "word", "zone",
-}
 
 
 def load_srd(root: Path) -> list[dict]:
@@ -126,8 +110,13 @@ def build(entities: list[Entity], viewer: frozenset[str], root: Path,
             "m": entry.get("meta", ""),
             "d": entry.get("text", ""),
             "u": url,
-            # 1 = needs a capital letter to match.
-            "c": 1 if (" " not in term and term.lower() in AMBIGUOUS) else 0,
+            # 1 = needs a capital letter to match. Every single-word term,
+            # not only the SRD ones in AMBIGUOUS: a page name is as likely to
+            # be an ordinary word as a spell is. A page called "The" or "Kept"
+            # was matching case-insensitively and linking every occurrence in
+            # every body. Multi-word terms stay loose, because "eldritch
+            # blast" cannot turn up by accident.
+            "c": 1 if " " not in term else 0,
         })
     return json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
 
