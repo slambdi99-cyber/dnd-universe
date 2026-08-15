@@ -275,6 +275,20 @@ a.sheetlink:hover { text-decoration: none; opacity: .9; }
 .copyblock button { position: absolute; top: .5rem; right: .5rem;
   padding: .25rem .6rem; font-size: .75rem; border: 1px solid var(--line);
   border-radius: 4px; background: var(--bg); color: var(--ink); cursor: pointer; }
+
+/* The connect page is one block to copy, with the per-client recipes folded
+   underneath. The fold has to look pressable: a summary that reads as a
+   heading gets treated as one, and nobody finds what is under it. */
+details { margin: 2rem 0 1rem; border-top: 1px solid var(--line);
+  padding-top: 1rem; }
+details > summary { cursor: pointer; font-size: .9rem; color: var(--muted);
+  list-style: none; user-select: none; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before { content: "\\25B8 "; display: inline-block;
+  width: 1em; transition: transform .15s; }
+details[open] > summary::before { transform: rotate(90deg); }
+details > summary:hover { color: var(--ink); }
+details h2 { font-size: 1rem; margin-top: 1.6rem; }
 """
 
 SEARCH_JS = """

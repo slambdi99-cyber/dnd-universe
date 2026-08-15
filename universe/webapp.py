@@ -551,13 +551,32 @@ def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
 
 
 def _connect_page(name: str, url: str, token: str) -> str:
-    """Connection details for any MCP client, not one vendor's.
+    """One thing to copy, and everything else folded away behind it.
 
-    MCP is an open protocol with a lot of implementations, and the table
-    shouldn't all have to run the same assistant to use the wiki. So the page
-    leads with the three facts every client needs (endpoint, transport, header)
-    and treats the per-client recipes as convenience rather than the way in.
+    This page used to open with five blocks: the raw facts, a prompt, a CLI
+    line, a config file and a curl check. All correct, and all asking the
+    reader to first work out which of the five was theirs. Most of the table
+    does not know what transport their assistant uses and should not have to.
+
+    So there is one block now. Assistants are good at configuring themselves
+    given the details, and the details are in it. The per-client recipes are
+    still here for anything that cannot, but they are folded away, because a
+    page that opens with a decision is a page people close.
     """
+    prompt = (
+        "Connect me to my D&D campaign wiki. It's an MCP server.\n"
+        "\n"
+        f"  Name:       buried-star\n"
+        f"  Transport:  streamable HTTP (not SSE, not stdio)\n"
+        f"  URL:        {url}\n"
+        f"  Header:     Authorization: Bearer {token}\n"
+        "\n"
+        "Add it however this client does that. If you can't do it yourself, "
+        "tell me exactly which buttons to press.\n"
+        "\n"
+        "Then check it worked by calling the whoami tool. It should come back "
+        f"with my name, {name}. If it says guest, the header didn't go through."
+    )
     facts = (
         f"Name:      buried-star\n"
         f"Transport: HTTP (streamable HTTP, not SSE, not stdio)\n"
@@ -576,17 +595,6 @@ def _connect_page(name: str, url: str, token: str) -> str:
         '    }\n'
         '  }\n'
         '}'
-    )
-    prompt = (
-        "Please connect me to an MCP server.\n\n"
-        f"  Name:      buried-star\n"
-        f"  Transport: HTTP (streamable HTTP, not SSE, not stdio)\n"
-        f"  URL:       {url}\n"
-        f"  Auth:      an Authorization header with the value\n"
-        f"             Bearer {token}\n\n"
-        "Work out how MCP servers are added in whichever client you're running "
-        "in, do it if you can, and tell me if there's a step I have to take "
-        "myself. Then verify by calling whoami: it should come back with my name."
     )
     cli = (
         f"claude mcp add --transport http buried-star {url} "
@@ -608,23 +616,30 @@ def _connect_page(name: str, url: str, token: str) -> str:
 
     return f"""
 <h1>Connect an assistant</h1>
-<p class="summary">Signed in as {html.escape(name)}. Everything below already
-has your own details in it.</p>
+<p class="summary">Copy this and paste it to Claude, ChatGPT, or whatever you
+use. It already has your own details in it.</p>
 
-<p>This wiki speaks <a href="https://modelcontextprotocol.io">MCP</a>, which is
-an open protocol rather than one company's feature. Anything that speaks it can
-read this world and write to it: Claude, ChatGPT, Cursor, VS Code, Zed, Goose,
-Cline, or something you wrote yourself. What you can see is tied to you, so use
-your own details and don't pass them around.</p>
+{block(1, prompt)}
+
+<p class="hint">That's the whole thing. Assistants know how to add an MCP server
+to themselves, and this tells them everything they need. If yours can't, it will
+tell you which buttons to press.</p>
+
+<p class="hint"><strong>Treat it like a password.</strong> It can write to the
+campaign, and it decides whose secrets you get shown, so it is yours and not the
+table's. If it leaks, tell your DM and it can be replaced.</p>
+
+<details>
+<summary>If your client wants it spelled out</summary>
+
+<p>This wiki speaks <a href="https://modelcontextprotocol.io">MCP</a>, an open
+protocol rather than one company's feature, so anything that speaks it can read
+this world and write to it.</p>
 
 <h2>The details, for any client</h2>
 {block(0, facts)}
-<p class="hint">Most clients ask for exactly these three things somewhere in
-their settings, under MCP, Connectors, or Tools.</p>
-
-<h2>Easiest: paste this into whatever you use</h2>
-<p class="hint">Assistants are generally good at configuring themselves.</p>
-{block(1, prompt)}
+<p class="hint">Most clients ask for exactly these somewhere in their settings,
+under MCP, Connectors, or Tools.</p>
 
 <h2>Claude Code, and other CLIs that copied its syntax</h2>
 {block(2, cli)}
@@ -635,16 +650,10 @@ this shape, in their own settings file. Some spell the top-level key
 <code>servers</code> or <code>mcp.servers</code>; the inside is the same.</p>
 {block(3, config)}
 
-<h2>Check it worked</h2>
-<p>Ask your assistant: <em>call whoami on buried-star</em>. It should come back
-with your name. If it says <em>guest</em>, the header didn't take.</p>
-
-<p class="hint">Or without an assistant at all, to prove the endpoint is up:</p>
+<h2>Proving the endpoint is up, without an assistant at all</h2>
 {block(4, curl)}
 
-<p class="hint">Treat this like a password: it can write to the campaign, and
-it decides whose secrets you're shown. If it leaks, tell your DM and it can be
-replaced.</p>
+</details>
 
 <script>
 function cp(id, btn) {{
