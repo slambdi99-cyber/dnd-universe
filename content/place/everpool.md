@@ -4,6 +4,7 @@ kind: place
 summary: The water Goluub inhabits. Named in Lucian's posthumous dream-song alongside
   the Buried Star.
 appearance: vast still black underground water, faint pale light far below the surface
+within: place/copper-vale
 tags:
 - site
 - from-wiki

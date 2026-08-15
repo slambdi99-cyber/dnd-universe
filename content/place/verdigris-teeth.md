@@ -4,12 +4,12 @@ kind: place
 summary: Ruddy cliffs streaked vivid green by acidic runoff.
 appearance: jagged red rock cliffs streaked with vivid green patina, sharp peaks,
   thin cold lakes
+within: place/copper-vale
 tags:
 - mountains
 - landmark
 - from-lore
 links:
-- place/copper-vale
 - place/copper-ridge
 sources:
 - discord:dnd-campaign:2025-11-22-region-writeup

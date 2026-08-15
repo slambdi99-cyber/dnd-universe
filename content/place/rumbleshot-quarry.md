@@ -4,12 +4,12 @@ kind: place
 summary: Copper mine west of the vale, run by Foreman Rumbleshot. Attacked by goblins
   and kobolds serving Gollub.
 appearance: stepped stone quarry, blasting rubble, cut faces, dust haze
+within: place/copper-vale
 tags:
 - landmark
 - from-lore
 - from-session-log
 links:
-- place/copper-vale
 - character/foreman-rumbleshot
 - creature/goluub
 - archive/the-drowned-amphitheater

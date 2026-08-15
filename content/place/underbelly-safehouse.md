@@ -4,12 +4,11 @@ kind: place
 summary: The safehouse where the party found the map of Copper Vale.
 appearance: cramped hidden cellar room, crates and hanging lanterns, maps pinned to
   stone walls, low beams
+within: place/copper-vale
 tags:
 - site
 - from-lore
 - needs-appearance
-links:
-- place/copper-vale
 sources:
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
 - 'DM site organization: sub-locations index'

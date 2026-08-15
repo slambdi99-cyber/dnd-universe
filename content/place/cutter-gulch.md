@@ -3,11 +3,11 @@ name: Cutter Gulch
 kind: place
 summary: The dusty scar left where Cutter Creek used to run.
 appearance: dry cracked riverbed, dust, bleached stones, sparse dead scrub
+within: place/copper-vale
 tags:
 - landmark
 - from-lore
 links:
-- place/copper-vale
 - archive/cutter-creek
 sources:
 - discord:dnd-campaign:2025-11-22-region-writeup

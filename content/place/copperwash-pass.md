@@ -3,11 +3,11 @@ name: Copperwash Pass
 kind: place
 summary: The pass through the northern mountains.
 appearance: high narrow mountain pass, bare switchback trail, wind-scoured stone
+within: place/copper-vale
 tags:
 - landmark
 - from-lore
 links:
-- place/copper-vale
 - place/copper-ridge
 sources:
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg

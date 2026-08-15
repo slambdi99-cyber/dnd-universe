@@ -4,12 +4,12 @@ kind: place
 summary: A small crossroads township on the outskirts of the foothills.
 appearance: small crossroads township, timber buildings and tents, dry scrub, foothills
   behind
+within: place/copper-vale
 tags:
 - settlement
 - town
 - from-lore
 links:
-- place/copper-vale
 - place/dire-foothills
 - place/shallow-bog
 sources:

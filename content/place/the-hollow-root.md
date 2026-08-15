@@ -5,12 +5,12 @@ summary: The Hollow Root Covenant's home, nestled beneath Copper Ridge. The part
   fled it through Elaric's portal.
 appearance: vast hollow root cavity beneath the mountain, dwellings built into pale
   dead wood, warm lamplight
+within: place/copper-ridge
 tags:
 - site
 - from-wiki
 links:
 - faction/hollow-root-covenant
-- place/copper-ridge
 - place/underground-chamber
 - faction/six-wolves
 - character/elaric-the-blightwarden

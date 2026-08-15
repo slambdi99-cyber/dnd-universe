@@ -3,6 +3,7 @@ name: Blighted Bog
 kind: place
 summary: Bog linked to Brindlewood, the Underground Chamber and the Rooted One.
 appearance: sickly wetland, black standing water, dead pale trees, creeping root mats
+within: place/copper-vale
 tags:
 - wilderness
 - from-lore

@@ -5,12 +5,12 @@ summary: Chamber beneath the Shallow Bog holding a ritual altar and a hoard of a
   weapons. It led the party to the Hollow Root.
 appearance: chamber packed with thick gnarled roots, stone ritual altar, racks of
   ancient weapons, a throne
+within: place/shallow-bog
 tags:
 - site
 - plot-critical
 - from-wiki
 links:
-- place/shallow-bog
 - place/the-hollow-root
 - lore/rooted-one
 - character/elaric-the-blightwarden

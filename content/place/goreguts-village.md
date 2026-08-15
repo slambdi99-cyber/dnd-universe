@@ -4,12 +4,12 @@ kind: place
 summary: Tobias's home village, on Cutter Creek before it ran dry.
 appearance: abandoned riverside village, dry channel where the water was, empty timber
   houses, dust
+within: place/copper-vale
 tags:
 - settlement
 - from-wiki
 - needs-detail
 links:
-- place/copper-vale
 - archive/cutter-creek
 - character/tobias-goreguts
 sources:

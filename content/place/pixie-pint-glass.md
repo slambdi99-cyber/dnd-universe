@@ -4,11 +4,11 @@ kind: place
 summary: A secret bar upstairs at the Pincushion Haberdashery, next door to the Enchanter's
   Guild.
 appearance: hidden upstairs bar, low beams, coloured glass lamps, crowded booths
+within: place/pincushion-haberdashery
 tags:
 - site
 - from-session-log
 links:
-- place/pincushion-haberdashery
 - place/enchanters-guild
 - faction/underbelly-mercantile
 sources:

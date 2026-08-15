@@ -8,12 +8,6 @@ appearance: parched golden grassland, cracked dry earth, bare ruddy mountains, w
 tags:
 - region
 - from-lore
-links:
-- place/brindlewood
-- place/shallow-bog
-- place/cutter-gulch
-- place/copper-ridge
-- place/dire-foothills
 sources:
 - discord:dnd-campaign:2025-11-22-region-writeup
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg

@@ -4,13 +4,12 @@ kind: place
 summary: Stagnant wetland formed as the lowlands stopped draining.
 appearance: stagnant shallow wetland, drowned scrub willows, still brown water, reed
   banks
+within: place/copper-vale
 tags:
 - wilderness
 - from-lore
 links:
-- place/copper-vale
 - place/brindlewood
-- place/underground-chamber
 sources:
 - discord:dnd-campaign:2025-11-22-region-writeup
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg

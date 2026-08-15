@@ -4,11 +4,11 @@ kind: place
 summary: The mining range whose torn-open seams started the region's collapse.
 appearance: scarred mining mountains, open sulfide seams, spoil heaps, acid-stained
   rock
+within: place/copper-vale
 tags:
 - mountains
 - from-lore
 links:
-- place/copper-vale
 - place/verdigris-teeth
 sources:
 - discord:dnd-campaign:2025-11-22-region-writeup
