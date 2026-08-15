@@ -57,3 +57,8 @@ data/srd.json
 
 # Which process is serving. Written at startup, meaningless elsewhere.
 .server-pid
+
+# Marks a machine with no graphics card, so the art panel queues requests
+# rather than offering a button that cannot work. Per-machine by definition:
+# the server has one of these and the machine at home must never get it.
+.no-gpu

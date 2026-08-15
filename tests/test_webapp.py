@@ -546,7 +546,9 @@ print("\n== asking for art where there is no graphics card ==")
 # and only the DM, sitting at the machine that draws, ever notices.
 from universe import artqueue  # noqa: E402
 
-cfg.raw.setdefault("art", {})["draws_here"] = False
+no_gpu = sandbox / ".no-gpu"
+no_gpu.write_text("no card here", encoding="utf-8")
+check("the marker file is what decides", cfg.draws_here is False)
 art_before = list((lib.load("character", "wren") or Entity("", "", "")).art)
 asked = wren.post("/wiki/character/wren/art",
                   data={"prompt": "an elf in a salt-stained coat"})
@@ -572,7 +574,8 @@ again = wren.get("/wiki/character/wren/art")
 check("the wait is visible on the page", "Waiting for the machine at home" in again.text)
 check("the button asks rather than promises", "Ask for three" in again.text)
 
-cfg.raw["art"]["draws_here"] = True
+no_gpu.unlink()
+check("removing the marker restores drawing", cfg.draws_here is True)
 back = wren.get("/wiki/character/wren/art")
 check("at home the button generates", "Generate three" in back.text)
 

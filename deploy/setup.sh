@@ -107,33 +107,23 @@ fi
 echo "   installed"
 
 say "art is drawn elsewhere"
-# The site must not offer a button that cannot work. With this false the art
-# panel queues a request into the repo instead, and says so.
-if grep -q "draws_here:" config.yaml; then
-    skip "config.yaml says where art is drawn"
+# The site must not offer a button that cannot work. With this marker present
+# the art panel queues a request into the repo instead, and says so.
+#
+# A file rather than a config key, because config.yaml is tracked: writing it
+# there would travel to the machine at home on the next pull and switch off the
+# graphics card the whole arrangement depends on.
+if [ -f "$ROOT/.no-gpu" ]; then
+    skip "marked as having no graphics card"
 else
-    "$ROOT/.venv/bin/python" - <<'PY'
-from pathlib import Path
+    cat > "$ROOT/.no-gpu" <<'EOF'
+No graphics card on this machine. The art panel queues requests into
+art-queue/ instead of drawing them, and tools/draw_queued.py drains that
+queue on the machine at home.
 
-path = Path("config.yaml")
-text = path.read_text(encoding="utf-8")
-note = (
-    "  # No graphics card on this machine. Art requests are written into the\n"
-    "  # repo and drawn at home. tools/draw_queued.py is the other half.\n"
-    "  draws_here: false\n"
-)
-if "art:" in text:
-    out = []
-    for line in text.splitlines(keepends=True):
-        out.append(line)
-        if line.rstrip() == "art:":
-            out.append(note)
-    text = "".join(out)
-else:
-    text = text.rstrip() + "\n\nart:\n" + note
-path.write_text(text, encoding="utf-8")
-print("   config.yaml: draws_here false")
-PY
+Delete this file only on a machine that can actually draw.
+EOF
+    echo "   marked: art requests get queued, not drawn"
 fi
 
 say "tailscale"

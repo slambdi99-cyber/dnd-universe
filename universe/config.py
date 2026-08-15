@@ -44,10 +44,17 @@ class Config:
 
         The wiki runs on a free host with no GPU. Everything else works there;
         art does not, and never will. So the site queues a request in the repo
-        and the machine at home drains it. Default true, because the machine at
-        home is also the one running every test and script.
+        and the machine at home drains it.
+
+        This is a property of the machine, not of the campaign, so it is a
+        marker file rather than a config key. config.yaml is tracked and shared:
+        setting it there would have travelled to the machine at home on the next
+        pull and switched off the graphics card it exists to use.
+
+        Absent means yes, because every machine that runs the tests or the CLI
+        can draw, and the server is the one exception.
         """
-        return bool(self.art.get("draws_here", True))
+        return not (self.root / ".no-gpu").exists()
 
     @property
     def house_style(self) -> str:
