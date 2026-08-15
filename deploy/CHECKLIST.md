@@ -40,15 +40,23 @@ and bill you past it.
    rather than being dialled into.
 7. Create it, and write down the public IP address once it appears.
 
-Downloaded keys live in `%USERPROFILE%\.ssh\`, locked so only you can read
-them. If you generate a pair on each create attempt, which is easy to do while
-fighting for capacity, keep them all and try each: the wrong key fails with
-"Permission denied (publickey)" and costs you nothing.
+Oracle offers that key once, while the instance is being created, and never
+again. Download it before you leave the page.
 
-Then connect from PowerShell:
+Then, on your PC, with the instance's IP address:
 
 ```bash
-ssh -i $env:USERPROFILE\.ssh\oracle-key ubuntu@YOUR-IP
+powershell -ExecutionPolicy Bypass -File .\deploy\install-server-key.ps1 -Ip YOUR-IP
+```
+
+That takes the key out of Downloads, puts it where ssh looks, strips the
+inherited permissions that make ssh refuse it, and writes a config entry. If an
+earlier key is already installed it is kept, renamed, not overwritten.
+
+After that every command below is just:
+
+```bash
+ssh buried-star
 ```
 
 ### When it says "out of capacity"
@@ -73,12 +81,10 @@ that small.
 Retrying at intervals does eventually work if you would rather hold out for the
 ARM. There is no trick to it beyond patience.
 
-If ssh ever refuses a key as too open, it means the file inherited permissions
-from the folder it was downloaded into. Strip them:
-
-```bash
-icacls $env:USERPROFILE\.ssh\oracle-key /inheritance:r /grant:r "${env:USERNAME}:(R)"
-```
+Every attempt that reaches the key step gives you another key, and the ones for
+instances that never got made are dead weight. `install-server-key.ps1` takes
+the newest and tells you which it took, so download them all and let it sort
+them out.
 
 ---
 
@@ -134,10 +140,10 @@ gitignored, which is why they did not arrive with the clone, and they have to
 travel by hand.
 
 I have not touched any of them and will not. Run these yourself, from
-PowerShell on your PC, replacing `YOUR-IP`:
+PowerShell on your PC:
 
 ```bash
-scp -i $env:USERPROFILE\.ssh\oracle-key C:\Claude\dnd-universe\.wiki-passphrase C:\Claude\dnd-universe\.people-tokens.json C:\Claude\dnd-universe\.session-secret C:\Claude\dnd-universe\.accounts.json ubuntu@YOUR-IP:~/dnd-universe/
+scp C:\Claude\dnd-universe\.wiki-passphrase C:\Claude\dnd-universe\.people-tokens.json C:\Claude\dnd-universe\.session-secret C:\Claude\dnd-universe\.accounts.json buried-star:~/dnd-universe/
 ```
 
 What each one is, so you know what you are moving:
@@ -154,7 +160,7 @@ treats every message it has ever seen as new, and the inbox arrives with
 several hundred things in it:
 
 ```bash
-scp -i $env:USERPROFILE\.ssh\oracle-key C:\Claude\dnd-universe\.inbox.json ubuntu@YOUR-IP:~/dnd-universe/
+scp C:\Claude\dnd-universe\.inbox.json buried-star:~/dnd-universe/
 ```
 
 ---
@@ -191,8 +197,8 @@ git clone git@github-dnd-scribe:slambdi99-cyber/dnd-scribe.git ~/dnd-scribe
 Then send the bot token across, from your PC:
 
 ```bash
-scp -i $env:USERPROFILE\.ssh\oracle-key C:\Claude\dnd-scribe\.discord-token ubuntu@YOUR-IP:~/dnd-scribe/
-scp -i $env:USERPROFILE\.ssh\oracle-key C:\Claude\dnd-scribe\.sync-state.json ubuntu@YOUR-IP:~/dnd-scribe/
+scp C:\Claude\dnd-scribe\.discord-token buried-star:~/dnd-scribe/
+scp C:\Claude\dnd-scribe\.sync-state.json buried-star:~/dnd-scribe/
 ```
 
 And turn the reader on:
