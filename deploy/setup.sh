@@ -173,8 +173,14 @@ if [ "$DISCORD" = yes ]; then
 fi
 
 say "did it come up"
-sleep 3
-if curl -fsS -o /dev/null "http://127.0.0.1:8787/wiki"; then
+# The service restarts every few seconds while a secret is missing, so a single
+# early probe reports a failure that is really a race. Give it a fair chance.
+UP=no
+for _ in $(seq 1 15); do
+    if curl -fsS -o /dev/null "http://127.0.0.1:8787/wiki"; then UP=yes; break; fi
+    sleep 2
+done
+if [ "$UP" = yes ]; then
     echo "   the wiki is answering on 127.0.0.1:8787"
 else
     echo "   it is NOT answering. What went wrong:"
@@ -182,20 +188,40 @@ else
     exit 1
 fi
 
-cat <<EOF
+say "what is still missing"
+# Checked rather than assumed. This used to print the same list of unfinished
+# business every time, including on a fully working server, which teaches you
+# to stop reading it.
+TODO=0
+note() { echo "   [ ] $*"; TODO=$((TODO + 1)); }
+done_() { echo "   [x] $*"; }
 
-Done, as far as this can go on its own.
+if [ -f "$ROOT/.people-tokens.json" ]; then done_ "personal tokens"
+else note "personal tokens: copy .people-tokens.json across, or nothing can connect"; fi
 
-The site runs, and this machine can see it. Nobody else can. There is no
-passphrase on it, it cannot push anything anyone writes, and it is not reading
-Discord. Those all need your hands:
+if [ -f "$ROOT/.wiki-passphrase" ]; then done_ "passphrase"
+else note "passphrase: copy .wiki-passphrase across, or the site has no front door"; fi
 
-  $ROOT/deploy/CHECKLIST.md
+if git -C "$ROOT" push --dry-run --quiet >/dev/null 2>&1; then done_ "can push to GitHub"
+else note "cannot push: run deploy/setup-keys.sh and tick write access on dnd-universe"; fi
 
-Read that next. Start with:
+if tailscale status --json 2>/dev/null | grep -q '"Online": *true'; then done_ "on the tailnet"
+else note "not on the tailnet: sudo tailscale up"; fi
 
-  $ROOT/deploy/setup-keys.sh
+if tailscale funnel status 2>/dev/null | grep -q "http://127.0.0.1:8787"; then
+    done_ "reachable from the internet"
+else
+    note "not published: sudo tailscale funnel --bg 8787"
+fi
 
-because until the server can push, everything written on the site stays on
-this one machine.
-EOF
+if [ "$DISCORD" = yes ]; then done_ "reading Discord"
+else note "not reading Discord: clone dnd-scribe, then run this again"; fi
+
+echo
+if [ "$TODO" -eq 0 ]; then
+    echo "Nothing outstanding. The site is up."
+    tailscale funnel status 2>/dev/null | grep -o "https://[^ ]*" | head -1 | sed 's/^/  /'
+else
+    echo "$TODO thing(s) left, each needing a login or a secret."
+    echo "  $ROOT/deploy/CHECKLIST.md"
+fi
