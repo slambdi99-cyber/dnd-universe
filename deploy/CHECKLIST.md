@@ -193,7 +193,7 @@ What each one is, so you know what you are moving:
 
 | File | What it is | If you skip it |
 |---|---|---|
-| `.wiki-passphrase` | The scrypt hash of `PeaPodDungeon`. Not the passphrase itself. | The site has no front door at all. Anyone with the URL walks in. |
+| `.wiki-passphrase` | A scrypt hash of the table's shared passphrase, not the passphrase itself. | The site has no front door at all. Anyone with the URL walks in. |
 | `.people-tokens.json` | One MCP token per person. | Nobody's assistant can connect, and everyone needs a new token. |
 | `.session-secret` | Signs the login cookies. | Everyone is logged out, once. Harmless, but they all have to sign in again. |
 | `.accounts.json` | Who is signed up. | People have to make their accounts again. |
