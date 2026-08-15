@@ -34,10 +34,11 @@ fi
 
 say "system packages"
 sudo apt-get update -qq
-# git for the repo, python3-venv because Ubuntu ships python without it,
-# libjpeg and zlib because Pillow builds its thumbnail support against them.
-sudo apt-get install -y -qq git python3-venv python3-dev build-essential \
-    libjpeg-dev zlib1g-dev libwebp-dev curl
+# git for the repo, python3-venv because Ubuntu ships python without it.
+# No build toolchain and no image headers: Pillow ships manylinux wheels for
+# both architectures this runs on, and a 1GB machine compiling it from source
+# is a long wait for the same result.
+sudo apt-get install -y -qq git python3-venv curl ca-certificates
 
 say "swap, if this is a small machine"
 # Oracle's free ARM capacity is a lottery, and the fallback everyone ends up on
@@ -70,10 +71,13 @@ fi
 cd "$ROOT"
 
 say "python environment"
+# Not necessarily the system python3. On Ubuntu 20.04 that is 3.8, and every
+# package below needs 3.10 or newer.
+PYTHON="$("$ROOT/deploy/bootstrap-python.sh")"
 if [ -x "$ROOT/.venv/bin/python" ]; then
     skip ".venv"
 else
-    python3 -m venv "$ROOT/.venv"
+    "$PYTHON" -m venv "$ROOT/.venv"
 fi
 "$ROOT/.venv/bin/pip" install --quiet --upgrade pip
 "$ROOT/.venv/bin/pip" install --quiet -r deploy/requirements-server.txt
