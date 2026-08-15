@@ -26,6 +26,7 @@ sources:
 art:
 - character/tobias-goreguts/default-81dcae2b
 - character/tobias-goreguts/upload-4184399b3554366a
+- character/tobias-goreguts/upload-ac92e669a101014e
 data:
   class: Barbarian
   race: Half-Orc
@@ -34,6 +35,7 @@ data:
   status: active
   dndbeyond_sheet: https://www.dndbeyond.com/characters/151161161
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676
+  active_art: character/tobias-goreguts/upload-ac92e669a101014e
 ---
 
 A mercenary in the army before all this, scarred, with tough rough skin. His unit was the 11th Battalion, nicknamed the Bonewall. His mentor was Dante IronBlood.
