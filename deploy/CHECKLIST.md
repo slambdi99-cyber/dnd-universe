@@ -30,9 +30,18 @@ and bill you past it.
    and stick with it, because you cannot change it later.
 2. When the account is ready, go to **Compute** then **Instances** then
    **Create instance**.
-3. Change the image to **Canonical Ubuntu 24.04**. Not 20.04: it ships Python
-   3.8, and every package here needs 3.10 or newer, so setup dies at the pip
-   step.
+3. Change the image to **Canonical Ubuntu 24.04**.
+
+   In the **Image and shape** panel, press **Change image**, tick **Canonical
+   Ubuntu**, and then check the version in the list. It offers 20.04, 22.04
+   and 24.04, and the one it lands on by default is not always the newest.
+
+   The version is not cosmetic and cannot be changed afterwards. 20.04 ships
+   Python 3.8, every package here needs 3.10 or newer, and there is no way
+   back: deadsnakes dropped 20.04 when it went end of life, so its package
+   list for that release is now empty. The only remaining route would be
+   compiling Python from source on a 1GB machine. Recreating takes three
+   minutes; that does not.
 4. Change the shape to **Ampere**, **VM.Standard.A1.Flex**, and set it to
    **1 OCPU and 6GB**.
 
