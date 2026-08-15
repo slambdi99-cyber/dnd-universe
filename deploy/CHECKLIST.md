@@ -30,18 +30,35 @@ and bill you past it.
    and stick with it, because you cannot change it later.
 2. When the account is ready, go to **Compute** then **Instances** then
    **Create instance**.
-3. Change the image to **Canonical Ubuntu 24.04**.
+3. Change the image to **Canonical Ubuntu 24.04**. Not 20.04: it ships Python
+   3.8, and every package here needs 3.10 or newer, so setup dies at the pip
+   step.
 4. Change the shape to **Ampere**, **VM.Standard.A1.Flex**, and set it to
-   **1 OCPU and 6GB**. See the note below before reaching for more.
-5. Under **Add SSH keys**, choose **Generate a key pair** and download the
-   private key.
+   **1 OCPU and 6GB**.
+
+   **Check the shape says "Always Free-eligible" before you create it.** Only
+   two shapes are: `VM.Standard.A1.Flex` and `VM.Standard.E2.1.Micro`. During
+   the first 30 days the console will happily let you build something else on
+   trial credits, and `E5.Flex` in particular looks like an ordinary small
+   server. Those get reclaimed or billed when the trial converts.
+5. Under **Add SSH keys**, paste the public key you already have rather than
+   generating another. Print it with:
+
+   ```bash
+   type $env:USERPROFILE\.ssh\oracle-key.pub
+   ```
+
+   Reusing it means no new download, no second private key to keep track of,
+   and the same `ssh buried-star` afterwards. Generating a fresh pair works
+   too, it is just more to carry.
 6. Leave the networking defaults alone. Nothing needs to be open to the
    internet: traffic reaches this machine through Tailscale, which dials out
    rather than being dialled into.
 7. Create it, and write down the public IP address once it appears.
 
-Oracle offers that key once, while the instance is being created, and never
-again. Download it before you leave the page.
+If you did generate a new pair, Oracle offers that private key once, while the
+instance is being created, and never again. Download it before you leave the
+page.
 
 Then, on your PC, with the instance's IP address:
 
@@ -49,9 +66,16 @@ Then, on your PC, with the instance's IP address:
 powershell -ExecutionPolicy Bypass -File .\deploy\install-server-key.ps1 -Ip YOUR-IP
 ```
 
-That takes the key out of Downloads, puts it where ssh looks, strips the
-inherited permissions that make ssh refuse it, and writes a config entry. If an
-earlier key is already installed it is kept, renamed, not overwritten.
+That takes a newly downloaded key out of Downloads, puts it where ssh looks,
+strips the inherited permissions that make ssh refuse it, and writes a config
+entry. If there is nothing new in Downloads, it keeps the key you already have
+and only updates the address, which is what you want after a rebuild. An
+existing key is never overwritten, only renamed, because Oracle will not issue
+a replacement.
+
+It also forgets the old server's host key. Without that, connecting to a
+rebuilt machine prints a warning about a possible man-in-the-middle attack and
+refuses, which is correct behaviour for a real attack and pure noise here.
 
 After that every command below is just:
 
@@ -77,6 +101,11 @@ If that fails too, take the AMD instead: shape **VM.Standard.E2.1.Micro**,
 always available because nobody is competing for it. Everything here works the
 same on it. 1GB is tight, so the setup script adds swap when it sees a machine
 that small.
+
+What not to do is take whatever the console offers next. Anything outside those
+two shapes is a paid instance running on trial credits, and it disappears or
+starts billing at the end of the first month. `us-sanjose-1` is a hard region
+for ARM capacity, so `E2.1.Micro` is the realistic fallback there.
 
 Retrying at intervals does eventually work if you would rather hold out for the
 ARM. There is no trick to it beyond patience.

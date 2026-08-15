@@ -40,6 +40,9 @@ if (-not (Test-Path $sshDir)) {
 
 # --- find the key ---------------------------------------------------------
 
+$dest = Join-Path $sshDir $Name
+$key = $null
+
 if ($Path) {
     if (-not (Test-Path $Path)) { Fail "No file at $Path" }
     $key = Get-Item $Path
@@ -48,48 +51,59 @@ if ($Path) {
     $found = Get-ChildItem $downloads -File -ErrorAction SilentlyContinue |
         Where-Object { $_.Name -match '^ssh-key.*\.key$|\.pem$' -and $_.Name -notlike "*.pub" } |
         Sort-Object LastWriteTime -Descending
-    if (-not $found) {
+
+    if ($found) {
+        $key = $found[0]
+        if ($found.Count -gt 1) {
+            Write-Host ""
+            Write-Host "  $($found.Count) keys in Downloads. Taking the newest:" -ForegroundColor Yellow
+            foreach ($f in $found) {
+                $mark = "   "
+                if ($f.FullName -eq $key.FullName) { $mark = " > " }
+                Write-Host "$mark$($f.Name)   $($f.LastWriteTime)"
+            }
+        }
+    } elseif ((Test-Path $dest) -and $Ip) {
+        # Rebuilding a server is the common case, and the sane way to do it is
+        # to paste the public key you already have into the create form rather
+        # than generate a new pair. Then there is no download, and the only
+        # thing that changed is the address.
+        Write-Host ""
+        Write-Host "  No new key in Downloads. Keeping the installed one and" -ForegroundColor Cyan
+        Write-Host "  just pointing $Alias at $Ip." -ForegroundColor Cyan
+    } else {
         Fail ("Nothing that looks like a downloaded key in $downloads`n" +
               "  Oracle names them ssh-key-YYYY-MM-DD.key, and only offers the`n" +
               "  download once, while the instance is being created.`n" +
               "  If you have it elsewhere, pass -Path to it.")
     }
-    $key = $found[0]
-    if ($found.Count -gt 1) {
-        Write-Host ""
-        Write-Host "  $($found.Count) keys in Downloads. Taking the newest:" -ForegroundColor Yellow
-        foreach ($f in $found) {
-            $mark = "   "
-            if ($f.FullName -eq $key.FullName) { $mark = " > " }
-            Write-Host "$mark$($f.Name)   $($f.LastWriteTime)"
-        }
-    }
 }
 
 # --- move it into place ---------------------------------------------------
 
-$dest = Join-Path $sshDir $Name
+if ($key) {
+    if (Test-Path $dest) {
+        # Never quietly replace a key. The one already there may be the only
+        # copy of the way into a running server, and Oracle will not hand it
+        # out again.
+        $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $backup = "$dest.replaced-$stamp"
+        icacls $dest /grant "$($env:USERNAME):(F)" | Out-Null
+        Move-Item $dest $backup
+        if (Test-Path "$dest.pub") { Move-Item "$dest.pub" "$backup.pub" }
+        Write-Host "  moved the existing key aside as $(Split-Path $backup -Leaf)" -ForegroundColor Yellow
+    }
 
-if (Test-Path $dest) {
-    # Never quietly replace a key. The one already there may be the only copy
-    # of the way into a running server, and Oracle will not hand it out again.
-    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $backup = "$dest.replaced-$stamp"
-    icacls $dest /grant "$($env:USERNAME):(F)" | Out-Null
-    Move-Item $dest $backup
-    if (Test-Path "$dest.pub") { Move-Item "$dest.pub" "$backup.pub" }
-    Write-Host "  moved the existing key aside as $(Split-Path $backup -Leaf)" -ForegroundColor Yellow
-}
+    Move-Item $key.FullName $dest
 
-Move-Item $key.FullName $dest
-
-# The public half is optional. Oracle offers it as a separate download that is
-# easy to miss, and it can be derived from the private key anyway.
-$pubSource = "$($key.FullName).pub"
-if (Test-Path $pubSource) {
-    Move-Item $pubSource "$dest.pub"
-} else {
-    & ssh-keygen -y -f $dest | Set-Content "$dest.pub" -Encoding ascii
+    # The public half is optional. Oracle offers it as a separate download that
+    # is easy to miss, and it can be derived from the private key anyway.
+    $pubSource = "$($key.FullName).pub"
+    if (Test-Path $pubSource) {
+        Move-Item $pubSource "$dest.pub"
+    } else {
+        & ssh-keygen -y -f $dest | Set-Content "$dest.pub" -Encoding ascii
+    }
 }
 
 # --- lock it down ---------------------------------------------------------
@@ -108,8 +122,8 @@ if ($LASTEXITCODE -ne 0) {
 $fingerprint = & ssh-keygen -l -f "$dest.pub"
 
 Write-Host ""
-Write-Host "  Installed: $dest" -ForegroundColor Green
-Write-Host "  Was:       $($key.Name)"
+Write-Host "  Key:       $dest" -ForegroundColor Green
+if ($key) { Write-Host "  Was:       $($key.Name)" }
 Write-Host "  $fingerprint"
 
 # --- ssh config -----------------------------------------------------------
@@ -123,6 +137,41 @@ if ($Ip) {
         "    IdentityFile ~/.ssh/$Name",
         "    IdentitiesOnly yes"
     )
+
+    # A rebuilt instance has a new host key. If the address is reused, or if an
+    # old address is still remembered, ssh refuses to connect and prints a
+    # block about a possible man-in-the-middle attack, which is alarming and,
+    # here, wrong. Forget the old entry so the first connection is a clean
+    # first connection.
+    $known = Join-Path $sshDir "known_hosts"
+    if (Test-Path $known) {
+        $before = (Get-Content $known | Measure-Object -Line).Lines
+
+        $targets = @($Ip)
+        if (Test-Path $configPath) {
+            $m = Select-String -Path $configPath -Pattern '^\s*HostName\s+(\S+)' |
+                 Select-Object -Last 1
+            if ($m) { $targets += $m.Matches[0].Groups[1].Value }
+        }
+
+        # ssh-keygen -R writes "Host not found" to stderr, which is the normal
+        # case and not an error. Under ErrorActionPreference Stop, PowerShell
+        # 5.1 turns any native stderr into a terminating error and would abort
+        # the rest of this script.
+        $prev = $ErrorActionPreference
+        $ErrorActionPreference = "Continue"
+        foreach ($t in ($targets | Select-Object -Unique)) {
+            & ssh-keygen -R $t -f $known 2>$null | Out-Null
+        }
+        $ErrorActionPreference = $prev
+
+        $after = (Get-Content $known -ErrorAction SilentlyContinue | Measure-Object -Line).Lines
+        if ($after -lt $before) {
+            Write-Host "  forgot $($before - $after) stale host key(s)" -ForegroundColor DarkGray
+        }
+        # ssh-keygen -R leaves a .old backup holding the entry just removed.
+        if (Test-Path "$known.old") { Remove-Item "$known.old" -Force }
+    }
 
     $kept = @()
     if (Test-Path $configPath) {
