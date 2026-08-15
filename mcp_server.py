@@ -354,6 +354,16 @@ def build_server(
         """
         return history_mod.snapshot(Path(cfg.root), what, who)
 
+    def record(what: str, who: str) -> bool:
+        """Commit a finished page write, crediting the person who made it.
+
+        An assistant writing over MCP is acting for whoever's token it holds,
+        so that person is the author. Without this every write reached git
+        under whoever later ran the sync, and the changelog credited them for
+        the whole table's work.
+        """
+        return history_mod.record(Path(cfg.root), what, who)
+
     @server.tool(
         description="The shape of the world: what kinds of page exist, how the "
         "front page is laid out, and what the site is called. Read this before "
@@ -671,6 +681,7 @@ def build_server(
         )
         entity.sources.append(f"written by {who}")
         library.save(entity)
+        record(f"{entity.ref}: created over MCP", who)
         return {"created": entity.ref, "page": render(entity, ids)}
 
     @server.tool(
@@ -713,6 +724,7 @@ def build_server(
                 entity.sources.append(note)
 
         library.save(entity)
+        record(f"{entity.ref}: updated over MCP", who)
         return {"updated": entity.ref, "page": render(entity, ids)}
 
     @server.tool(

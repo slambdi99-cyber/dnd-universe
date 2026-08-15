@@ -18,6 +18,7 @@ so.
 
 from __future__ import annotations
 
+import re
 import subprocess
 from pathlib import Path
 
@@ -26,7 +27,18 @@ from pathlib import Path
 # adding someone rewrites it.
 SUBJECT = ("content", "structure.yaml", "people.yaml")
 
+# Where a page edit lands. Narrower than SUBJECT on purpose: recording who
+# wrote a page must not sweep up a structure change someone else is midway
+# through.
+PAGES = ("content",)
+
 TIMEOUT = 30
+
+# Authors need an address or git rejects the commit. Nobody here has one --
+# people are identified by the name they picked -- so the domain is a marker
+# that this is a wiki identity rather than a mailbox.
+AUTHOR_DOMAIN = "wiki.local"
+_NOT_NAME = re.compile(r"[^a-z0-9]+")
 
 
 def _git(root: Path, *args: str) -> subprocess.CompletedProcess | None:
@@ -66,4 +78,49 @@ def snapshot(root: Path, what: str, who: str = "",
     # sitting in the index must not be swallowed by someone else's rename.
     message = f"before: {what}" + (f" ({who})" if who else "")
     result = _git(root, "commit", "-q", "-m", message, "--", *present)
+    return bool(result and result.returncode == 0)
+
+
+def author_for(who: str) -> str:
+    """`Name <handle@wiki.local>`, stable for the same person.
+
+    The changelog groups by this string, so it has to come out identical every
+    time or one person becomes several rows.
+    """
+    handle = _NOT_NAME.sub("-", who.strip().lower()).strip("-") or "someone"
+    return f"{who.strip()} <{handle}@{AUTHOR_DOMAIN}>"
+
+
+def record(root: Path, what: str, who: str,
+           paths: tuple[str, ...] = PAGES) -> bool:
+    """Commit a finished page edit, crediting the person who made it.
+
+    The mirror of `snapshot`: that one commits the state *before* a change so
+    it can be undone, this one commits the change *after* so it is attributed.
+
+    Attribution is the point. `changelog.py` builds its "By User" section from
+    the git author, and until now every edit made through the site or over MCP
+    was committed later, in a batch, by whichever machine ran the sync. So the
+    log said one person wrote everything. Passing `--author` here puts the
+    actual editor in the commit; the committer stays the server, which is a
+    truthful description of what happened.
+
+    Returns False when there was nothing to commit or no repo, both fine.
+    """
+    root = Path(root)
+    present = [p for p in paths if (root / p).exists()]
+    if not present or not is_repo(root):
+        return False
+
+    _git(root, "add", "--", *present)
+    result = _git(
+        root,
+        # The server may have no git identity of its own -- a fresh container
+        # usually doesn't -- and without a committer git refuses the commit
+        # even though --author is set. These only apply to this one command.
+        "-c", f"user.name={AUTHOR_DOMAIN}",
+        "-c", f"user.email=server@{AUTHOR_DOMAIN}",
+        "commit", "-q", "-m", what, f"--author={author_for(who)}",
+        "--", *present,
+    )
     return bool(result and result.returncode == 0)

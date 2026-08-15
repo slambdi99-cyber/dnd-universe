@@ -201,3 +201,11 @@ class Wiki:
     def snapshot(self, what: str, who: str) -> bool:
         """Commit before reshaping anything, so it can be undone."""
         return history_mod.snapshot(Path(self.cfg.root), what, who)
+
+    def record(self, what: str, who: str) -> bool:
+        """Commit a finished page edit, with the editor as the git author.
+
+        Called after a save rather than before it, so the changelog can say who
+        changed which page instead of naming whoever ran the sync.
+        """
+        return history_mod.record(Path(self.cfg.root), what, who)

@@ -107,6 +107,31 @@ check("returns False rather than raising",
       history.snapshot(plain, "something", "Wren") is False,
       "no version control is a reason to skip the net, not to refuse the change")
 
+print("\n== a page edit is credited to whoever made it ==")
+# changelog.py builds its "By User" section from the git author. Edits used to
+# be committed later, in a batch, by whichever machine ran the sync, so the log
+# said one person wrote everything.
+(repo / "content" / "wren.md").write_text("Edited.", encoding="utf-8")
+check("commits the edit", history.record(repo, "character/wren: edited", "Wren"))
+check("author is the editor", git(repo, "log", "-1", "--pretty=%an") == "Wren")
+check("address is stable", git(repo, "log", "-1", "--pretty=%ae") == "wren@wiki.local")
+check("message survives",
+      git(repo, "log", "-1", "--pretty=%s") == "character/wren: edited")
+
+(repo / "content" / "wren.md").write_text("Edited again.", encoding="utf-8")
+history.record(repo, "character/wren: edited", "The DM")
+check("a second person is a second author",
+      git(repo, "log", "-1", "--pretty=%an") == "The DM")
+check("and gets their own address",
+      git(repo, "log", "-1", "--pretty=%ae") == "the-dm@wiki.local")
+
+check("nothing to commit is not a failure",
+      history.record(repo, "character/wren: edited", "Wren") is False)
+check("no repo is not a failure",
+      history.record(plain, "x: edited", "Wren") is False)
+check("a name with no letters still yields an address",
+      history.author_for("!!!") == "!!! <someone@wiki.local>")
+
 print("\n== paths that do not exist are skipped ==")
 check("no crash when nothing matches",
       history.snapshot(repo, "x", "y", paths=("nothing-here",)) is False)

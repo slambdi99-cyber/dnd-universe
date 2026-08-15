@@ -374,6 +374,10 @@ def build(cfg, library: Library, registry: people_mod.People,
         if note not in entity.sources:
             entity.sources.append(note)
         library.save(entity)
+        # `sources` says a person touched this page at some point; it is
+        # deduped, so a second edit adds nothing. The commit is what carries
+        # when, and how often, and is what the changelog counts.
+        wiki.record(f"{entity.kind}/{entity.slug}: edited on the wiki", user)
         return RedirectResponse(f"/wiki/{kind}/{slug}.html", status_code=303)
 
     async def new_page(request):
@@ -434,6 +438,7 @@ def build(cfg, library: Library, registry: people_mod.People,
             sources=([source] if source else []) + [f"created by {user} on the wiki"],
         )
         library.save(entity)
+        wiki.record(f"{kind}/{slug}: created on the wiki", user)
         # A page citing a Discord message is the message being dealt with, so
         # the inbox drops it without anyone pressing a second button.
         return RedirectResponse(f"/wiki/{kind}/{slug}.html", status_code=303)
