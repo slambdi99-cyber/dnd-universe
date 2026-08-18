@@ -494,6 +494,13 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
   font-variant: small-caps; letter-spacing: .04em; }
 #results .hit { padding: .5rem .4rem; border-bottom: 1px solid var(--line); }
 #results .hit.sel { background: var(--accent-soft); border-radius: 4px; }
+#results .hit.sel::after { content: "↵"; float: right;
+  color: var(--muted); font-size: .8rem; margin-left: .5rem; }
+#results .kbdhints { float: right; font-weight: normal; font-size: .7rem;
+  color: var(--muted); }
+#results kbd { font-family: inherit; font-size: .66rem;
+  border: 1px solid var(--line); border-radius: 4px; padding: .02rem .3rem;
+  background: var(--panel); margin: 0 .1rem; }
 #results .hit p { margin: .1rem 0 0; font-size: .85rem; color: var(--muted); }
 .empty { color: var(--muted); font-style: italic; }
 table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .9rem; }
@@ -724,10 +731,13 @@ if (q) {
     results.hidden = false;
     if (page) page.hidden = true;
     results.innerHTML = hits.length
-      ? '<h2>' + hits.length + ' result' + (hits.length===1?'':'s') + '</h2>' +
+      ? '<h2>' + hits.length + ' result' + (hits.length===1?'':'s') +
+        '<span class="kbdhints"><kbd>&#8595;</kbd><kbd>&#8593;</kbd> move' +
+        ' &middot; <kbd>&#8629;</kbd> open</span></h2>' +
         hits.map(e => '<div class="hit"><a href="' + BASE + e.u + '">' + e.n +
           '</a> <span class="kind">' + e.k + '</span><p>' + e.s + '</p></div>').join('')
       : '<p class="empty">Nothing matches that.</p>';
+    if (hits.length) { sel = 0; paint(); }
   };
   const qclear = document.getElementById('qclear');
   const syncClear = () => {
@@ -1335,7 +1345,7 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
                 f"</span>{_markdown(segment.text)}</div>"
             )
 
-    def link_list(refs, heading):
+    def link_list(refs, heading, addable=False):
         # Cards, not pills: a related page with a face is recognised faster
         # than its name, and the grid is the same one the indexes use, so
         # the whole site turns pages over the same way.
@@ -1346,9 +1356,16 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
             target = library.load(*ref.split("/", 1))
             if target:
                 targets.append(target)
-        if targets:
-            main_parts.append(f"<h2>{heading}</h2>")
-            main_parts.append(_cards(targets, images, base, small=True))
+        # "+ Add related" births a page that already links back here: the
+        # new-page form arrives with this page in its links field. Shown
+        # even over an empty section, because the first related page is
+        # exactly when the button earns its keep.
+        button = (f' <a class="edit" href="{base}new?links={entity.ref}">'
+                  f'+ Add related</a>' if addable and editable else "")
+        if targets or button:
+            main_parts.append(f"<h2>{heading}{button}</h2>")
+            if targets:
+                main_parts.append(_cards(targets, images, base, small=True))
 
     # Attachments, before the cross-links: a handout or a battle map is part of
     # the page, where Related is navigation away from it. Only shown live; the
@@ -1394,7 +1411,7 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
         main_parts.append(f"<h2>Inside {html.escape(entity.name)}</h2>")
         main_parts.append(_cards(contained, images, base))
 
-    link_list(entity.links, "Related")
+    link_list(entity.links, "Related", addable=True)
     link_list(
         [e.ref for e in library.backlinks(entity.ref) if e.ref not in entity.links],
         "Mentioned by",

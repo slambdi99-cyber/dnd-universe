@@ -496,7 +496,8 @@ change one.</p>
             # Discord message straight into the form: the text is already
             # there and you write over it rather than retyping it.
             values = form_values(None, viewer)
-            for field in ("name", "summary", "body", "kind", "source", "within"):
+            for field in ("name", "summary", "body", "kind", "source",
+                          "within", "links"):
                 supplied = request.query_params.get(field, "").strip()
                 if supplied and (field != "kind" or schema.has(supplied)):
                     values[field] = supplied
