@@ -519,9 +519,24 @@ form.auth label { display: block; margin: .9rem 0 .2rem; font-size: .85rem;
   color: var(--muted); }
 form.auth input, form.auth select { width: 100%; padding: .5rem .6rem; border: 1px solid var(--line);
   border-radius: 4px; background: var(--panel); color: var(--ink); font: inherit; }
+/* The submit is the star's teal; the pills opt out below, because the
+   generic form-button gold was swallowing them into a row of shouting
+   chips. */
 form.auth button { margin-top: 1.2rem; padding: .55rem 1.2rem; border: 0;
-  border-radius: 4px; background: var(--accent); color: #fff; font: inherit;
-  cursor: pointer; }
+  border-radius: 4px; background: var(--star); color: #10262a; font: inherit;
+  font-weight: bold; cursor: pointer; }
+form.auth button.pill { margin-top: 0; padding: .15rem .6rem;
+  font-weight: normal; font-size: .78rem;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: var(--panel); color: var(--muted); }
+form.auth button.pill.on { border-color: var(--accent); color: var(--accent);
+  background: var(--accent-soft); }
+form.danger { margin-top: 2.5rem; border-top: 1px solid var(--line);
+  padding-top: 1rem; }
+.dangerbtn { font: inherit; font-size: .85rem; cursor: pointer;
+  color: #ffb4ab; background: #3b1512; border: 1px solid #5c221d;
+  border-radius: 4px; padding: .35rem .8rem; }
+.dangerbtn:hover { border-color: #ffb4ab; }
 .error { color: #ffb4ab; background: #3b1512; border: 1px solid #5c221d;
   padding: .6rem .8rem; border-radius: 4px; margin: 1rem 0; font-size: .9rem; }
 .hint { color: var(--muted); font-size: .85rem; }
@@ -859,6 +874,14 @@ document.addEventListener('click',function(e){
 });
 
 window.addEventListener('popstate',function(){ go(location.href,false); });
+
+/* Forms marked dangerous ask before they act. */
+document.addEventListener('submit',function(e){
+  var f=e.target;
+  if(f.classList&&f.classList.contains('danger')&&
+     !window.confirm(f.getAttribute('data-confirm')||'Are you sure?'))
+    e.preventDefault();
+});
 
 /* Warm the browser cache for the pictures that will be on screen when the
    next page arrives, so the swap-in reads as one arrival rather than "page,

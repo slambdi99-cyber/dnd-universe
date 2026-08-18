@@ -485,6 +485,43 @@ change one.</p>
         wiki.record(f"{entity.kind}/{entity.slug}: edited on the wiki", user)
         return RedirectResponse(f"/wiki/{kind}/{slug}.html", status_code=303)
 
+    async def delete_page(request):
+        """Delete a page outright. Git history is the undo button.
+
+        POST only, and the form that posts here confirms first. The page's
+        art and files stay on disk: they are tracked, harmless orphaned, and
+        deleting them here would leave the server's working tree carrying
+        removals that repo-sync does not stage. Inbound links are stripped
+        -- a click on a ghost helps nobody -- and anything nested inside a
+        deleted place floats to the top level rather than hanging from
+        nothing.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        kind, slug = request.path_params["kind"], request.path_params["slug"]
+        ref = f"{kind}/{slug}"
+        _, allowed = entities_for(viewer)
+        if ref not in allowed:
+            return HTMLResponse("Not found", status_code=404)
+
+        path = library.path_for(kind, slug)
+        if path.exists():
+            path.unlink()
+        for other in list(library.all()):
+            touched = False
+            if ref in other.links:
+                other.links = [l for l in other.links if l != ref]
+                touched = True
+            if other.within == ref:
+                other.within = ""
+                touched = True
+            if touched:
+                library.save(other)
+        wiki.record(f"{ref}: deleted on the wiki", user or "someone")
+        return RedirectResponse(f"/wiki/{kind}/index.html", status_code=303)
+
     async def new_page(request):
         redirect = require_login(request)
         if redirect:
@@ -574,6 +611,7 @@ change one.</p>
     return panels.routes(wiki) + [
         Route("/wiki/new", new_page, methods=["GET", "POST"]),
         Route("/wiki/{kind}/{slug}/edit", edit, methods=["GET", "POST"]),
+        Route("/wiki/{kind}/{slug}/delete", delete_page, methods=["POST"]),
         Route("/wiki/enter", enter, methods=["GET", "POST"]),
         Route("/wiki/login", login, methods=["GET", "POST"]),
         Route("/wiki/people/new", add_person, methods=["GET", "POST"]),
@@ -599,6 +637,16 @@ def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
                tag_pills: dict[str, list[str]] | None = None) -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""
     title = "New page" if creating else f"Editing {v['name']}"
+
+    # Delete, behind a confirm (wired in the shell script): a separate form,
+    # because a button inside the edit form would submit the edit.
+    delete_form = "" if creating else f"""
+<form class="danger" method="post" action="{action[:-len('/edit')]}/delete"
+      data-confirm="Delete {html.escape(v['name'])}? Git history keeps a copy,
+but the page comes off the site now.">
+  <button type="submit" class="dangerbtn">Delete this page</button>
+</form>
+"""
 
     kinds = "".join(
         f'<option value="{html.escape(k.key)}"'
@@ -751,6 +799,7 @@ def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
 
   <button type="submit">{"Create" if creating else "Save"}</button>
 </form>
+{delete_form}
 {pills_script}
 """
 
