@@ -10,7 +10,7 @@ tags:
 - from-wiki
 - needs-detail
 links:
-- archive/cutter-creek
+- place/cutter-creek
 - character/tobias-goreguts
 sources:
 - dm-wiki

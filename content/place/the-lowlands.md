@@ -10,7 +10,7 @@ tags:
 - needs-detail
 links:
 - place/lorithal
-- place/cutter-gulch
+- place/cutter-creek
 - place/copper-vale
 - place/arrowfell
 sources:
