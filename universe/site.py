@@ -331,6 +331,7 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
    inside keep their own hover treatments on top. */
 .card:hover { border-color: var(--star);
   box-shadow: 0 .4em 1.4em color-mix(in srgb, var(--star) 22%, transparent); }
+.card:hover .body > a { color: var(--star); }
 .card { cursor: pointer; }
 /* `height: auto` is load-bearing. The markup states width and height so the
    grid can lay out before the pictures arrive, and those attributes land as
@@ -1119,10 +1120,12 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
     # the wiki rather than the world, and sat in the same row they made the
     # nav read as nine equal destinations when it is really five and change.
     changelog = f'<a href="{base}changelog">Changelog</a>' if live else ""
-    site_links = f'{extra}{changelog}<a href="{guide_href}">Guide</a>'
+    guide_link = "" if live else f'<a href="{guide_href}">Guide</a>'
+    site_links = f'{extra}{changelog}{guide_link}'
     dropdown = (f'<div class="menu"><button type="button" class="menubtn" '
                 f'aria-haspopup="true" aria-expanded="false">Site &#9662;</button>'
-                f'<div class="menupanel" hidden>{site_links}</div></div>')
+                f'<div class="menupanel" hidden>{site_links}</div></div>'
+                if site_links else "")
     nav = "".join(
         f'<a href="{base}{k.key}/index.html">{html.escape(k.label)}</a>'
         for k in schema.nav
