@@ -10,8 +10,10 @@ links:
 - character/tobias-goreguts
 sources:
 - session-log:the-buried-star-tobias-log.txt
+- edited by The DM on the wiki
 art:
 - item/tobias-mancala-set/default-fb5a899d
 ---
 
-He picked up a small stone for it after nearly drowning Mundus, then saving him.
+- He picked up a small stone for it after nearly drowning Mundus, then saving him.
+- He was given a shiny obsidian pebble by Kasbor.

@@ -17,6 +17,8 @@ sources:
 - updated by The DM
 art:
 - faction/bogwatchers-sanctum/default-b7a868ef
+data:
+  active_art: ''
 ---
 
 They keep a hidden temple amid mists and moss, and teach that every drop of water, every root and every whisper of wind carries a lesson.

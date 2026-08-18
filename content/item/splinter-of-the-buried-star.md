@@ -15,6 +15,8 @@ sources:
 - discord:lore-drop:2026-08-13
 art:
 - item/splinter-of-the-buried-star/default-d3f7186a
+data:
+  active_art: ''
 ---
 
 The Buried Star grants the desires of those it favours, through psychic wish magic. Wren holds a piece of it.

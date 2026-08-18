@@ -18,6 +18,8 @@ sources:
 - edited by The DM on the wiki
 art:
 - faction/mossborn-tribe/default-4ce4aa1a
+data:
+  active_art: ''
 ---
 
 Korran believed his tribe lost. Thog Mossborn turning up imprisoned beneath the quarry suggests otherwise.

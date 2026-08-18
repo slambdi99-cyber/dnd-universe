@@ -20,6 +20,8 @@ sources:
 - edited by The DM on the wiki
 art:
 - faction/six-wolves/default-023dcebe
+data:
+  active_art: ''
 ---
 
 They crossed paths with the party in the foothills soon after the adventurers used Elaric's portal to flee the Hollow Root. Tension sparked a short confrontation, but necessity forced a temporary alliance before they separated again.
