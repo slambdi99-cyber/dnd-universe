@@ -19,10 +19,6 @@ links:
 - place/copper-ridge
 - faction/house-vaelorith
 - character/wren
-- place/gulthias-tree
-- place/gulthias-tree
-- place/gulthias-tree
-- creature/goluub
 - place/dawnmere
 - place/ashcroft
 - place/ironfeld
@@ -31,6 +27,7 @@ sources:
 - written by The DM
 - Codex MCP link cleanup requested by Sam, 2026-08-14.
 - updated by The DM
+- edited by The DM on the wiki
 ---
 
 The Enchanters' Exchange brings several guild chapters together for instruction, demonstration, and rivalry.
