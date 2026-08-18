@@ -6,7 +6,6 @@ summary: Criminal trading concern operating across Copper Vale. Funds Maera's pu
 appearance: merchant guild mark, crossed keys over a coin, worn brass and deep red
 tags:
 - faction
-- antagonist
 - from-wiki
 - primary-faction
 links:
@@ -24,6 +23,7 @@ sources:
 - discord:lore-drop:2026-08-13
 - Codex MCP faction index cleanup requested by Sam, 2026-08-14.
 - updated by The DM
+- edited by The DM on the wiki
 art:
 - faction/underbelly-mercantile/default-431be774
 ---
