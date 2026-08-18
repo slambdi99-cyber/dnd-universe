@@ -122,7 +122,8 @@ def build(entities: list[Entity], viewer: frozenset[str], root: Path,
 
 
 TOOLTIP_CSS = """
-.tt { border-bottom: 1px dotted var(--accent); cursor: help; }
+.tt { border-bottom: 1px dotted var(--muted); cursor: help; }
+.tt:hover { border-bottom-color: var(--ink); }
 .tt-wiki { border-bottom-style: solid; }
 #tip {
   position: absolute; z-index: 50; max-width: 22rem; padding: .7rem .9rem;
@@ -155,6 +156,11 @@ TOOLTIP_JS = r"""
                         'INPUT', 'SELECT', 'H1', 'H2', 'H3', 'BUTTON']);
 
   function walk(root) {
+    // One link per term per page. A name that appears nine times wrapped
+    // nine times reads as decoration, not navigation; the first mention
+    // carries the link and the rest stay prose, the way wikis have always
+    // done it.
+    const seen = new Set();
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode(n) {
         if (!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
@@ -172,10 +178,16 @@ TOOLTIP_JS = r"""
       const html = node.nodeValue.replace(re, (match) => {
         const e = byKey.get(match.toLowerCase());
         if (!e) return match;
+        // A page's own name in its own prose is not a link anywhere: leave
+        // it as text rather than offering a click that goes nowhere.
+        if (e.u && e.u === location.pathname) return match;
+        const seenKey = e.t.toLowerCase();
+        if (seen.has(seenKey)) return match;
         // Ambiguous single words only count when capitalised.
         if (e.c && match[0] !== match[0].toUpperCase()) return match;
         const cls = e.k === 'wiki' ? 'tt tt-wiki' : 'tt';
         const key = e.t.toLowerCase().replace(/"/g, '&quot;');
+        seen.add(seenKey);
         if (e.u) {
           const target = e.k === 'wiki' ? '' : ' target="_blank" rel="noopener"';
           return '<a class="' + cls + '" data-t="' + key + '" href="' +
@@ -204,7 +216,6 @@ TOOLTIP_JS = r"""
       '<p>' + (e.d || 'No description.') + '</p>' +
       (e.u ? '<a href="' + e.u + '"' +
              (e.k === 'wiki' ? '' : ' target="_blank" rel="noopener"') + '>' +
-             (e.k === 'wiki' ? 'Open page' : 'Full entry on D&amp;D Beyond') +
              '</a>' : '');
     tip.style.display = 'block';
     const r = el.getBoundingClientRect();
@@ -217,6 +228,11 @@ TOOLTIP_JS = r"""
     tip.style.top = top + 'px';
   }
   function hide() { tip.style.display = 'none'; }
+  /* The router hides tooltips before a swap (a hover the reader is
+     leaving must not linger over the next page) and re-walks the
+     incoming content (a swapped-in `#page` has no `.tt` spans yet). */
+  window.__tipsHide = hide;
+  window.__tipsWalk = walk;
 
   document.addEventListener('mouseover', e => {
     const el = e.target.closest('.tt');
