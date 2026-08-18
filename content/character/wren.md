@@ -48,19 +48,6 @@ She is from Lorithal and has been secretive about it. She noticed an aunt at Wor
 The log records that Wren has a lot of information on the Hollow Root Covenant. When a gemstone touched a root in the Covenant's chamber, a voice spoke in the back of her head.
 
 
-
-## A discrepancy worth resolving
-
-
-
-Her sheet says Fighter (Battle Master), which has no spellcasting. But the DM posted art captioned 'Wren casting Speak With Dead', and the session log has her hearing a voice when a gemstone touched a root in the Covenant's chamber.
-
-
-
-The most likely explanation is an item rather than a class feature: she holds the Gnarled Staff of the Rooted One and a Splinter of the Buried Star, either of which could carry the spell. Worth asking her player rather than assuming the sheet or the fiction is wrong.
-
-
-
 ## Age
 
 
