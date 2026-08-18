@@ -14,10 +14,12 @@ from functools import partial
 import html
 from pathlib import Path
 
+from starlette.concurrency import run_in_threadpool
 from starlette.responses import FileResponse, HTMLResponse
 from starlette.routing import Route
 
 from ..assetref import AssetRef
+from .. import thumbs as thumbs_mod
 from .. import uploads as uploads_mod
 
 async def files_panel(request, wiki):
@@ -90,6 +92,22 @@ async def file_download(request, wiki):
     entity = wiki.library.load(ref.kind, ref.slug)
     name = next((f.get("name") for f in uploads_mod.attachments_of(entity)
                  if f.get("id") == str(ref)), path.name) if entity else path.name
+
+    # ?size=card / ?size=page for the inline previews, exactly like the art
+    # route. Only when the shrink actually produced a thumbnail: `make` hands
+    # back the original for anything it cannot read, and serving a PDF or a
+    # zip inline because someone typed ?size= would reopen the hole the
+    # attachment disposition exists to close. A generated WEBP cannot carry
+    # scripts, so it alone may render in the page.
+    size = request.query_params.get("size", "")
+    if size in thumbs_mod.SIZES:
+        shrunk = await run_in_threadpool(thumbs_mod.make, path, size)
+        if shrunk is not None and shrunk != path:
+            return FileResponse(shrunk, headers={
+                "X-Content-Type-Options": "nosniff",
+                "Cache-Control": "private, max-age=604800",
+            })
+
     return FileResponse(
         path,
         media_type=uploads_mod.media_type_for(path),

@@ -214,8 +214,11 @@ def _art_form(entity, existing: list[str], candidates: list[str],
                 )
             cards.append(
                 f'<figure class="{"current" if is_current else ""}">'
+                # The span is what carries the skeleton while the picture
+                # loads; the image fades in over it.
+                f'<span class="thumb">'
                 f'<img src="/wiki/art/id/{html.escape(asset_id)}.png?size=card" '
-                f'alt="" loading="lazy">'
+                f'alt="" loading="lazy"></span>'
                 f'<form method="post" action="/wiki/{entity.kind}/{entity.slug}/art">'
                 f'<input type="hidden" name="asset" value="{html.escape(asset_id)}">'
                 + buttons
