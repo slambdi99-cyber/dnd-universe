@@ -23,6 +23,8 @@ sources:
 art:
 - character/elaric-the-blightwarden/default-0edde42c
 - character/elaric-the-blightwarden/default-fbab3070
+data:
+  active_art: ''
 ---
 
 Killed Lucian Lovelyre in front of Myra around 2025-11-19, and was later cornered against a wall in a fight at the fake Denny's.

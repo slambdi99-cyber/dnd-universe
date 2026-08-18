@@ -16,4 +16,6 @@ sources:
 - updated by The DM
 art:
 - character/dante-ironblood/default-b05d1a52
+data:
+  active_art: ''
 ---

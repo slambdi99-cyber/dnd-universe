@@ -26,6 +26,8 @@ sources:
 - edited by The DM on the wiki
 art:
 - faction/underbelly-mercantile/default-431be774
+data:
+  active_art: ''
 ---
 
 ## Copper Vale hierarchy

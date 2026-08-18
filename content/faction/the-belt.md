@@ -5,10 +5,9 @@ summary: A fake policing group. The party are "members", keeping tabs on the Und
   Mercantile.
 appearance: discreet badge, a plain leather belt buckle sigil, muted browns
 tags:
-- faction
 - from-session-log
 - needs-detail
-- non-primary-faction
+- lore
 links:
 - faction/underbelly-mercantile
 - character/buster
@@ -19,4 +18,6 @@ sources:
 - updated by The DM
 art:
 - faction/the-belt/default-c27300a6
+data:
+  active_art: ''
 ---

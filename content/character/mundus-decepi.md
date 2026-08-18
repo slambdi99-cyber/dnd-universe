@@ -31,6 +31,7 @@ data:
   race: Halfling
   level: 3
   status: departed
+  active_art: ''
 ---
 
 A member of the party, formerly of the Hollow Root Covenant, mentored there by Elaric the Blightwarden.

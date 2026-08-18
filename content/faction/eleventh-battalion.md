@@ -17,4 +17,6 @@ sources:
 - edited by The DM on the wiki
 art:
 - faction/eleventh-battalion/default-32e6d997
+data:
+  active_art: ''
 ---

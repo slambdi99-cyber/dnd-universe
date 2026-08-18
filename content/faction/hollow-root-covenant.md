@@ -27,6 +27,8 @@ sources:
 - updated by The DM
 art:
 - faction/hollow-root-covenant/default-32df4181
+data:
+  active_art: ''
 ---
 
 Living in their own insular society within the Hollow Root, nestled beneath Copper Ridge, this cult-like culture can only be described as secretive.

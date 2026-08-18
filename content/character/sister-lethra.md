@@ -16,4 +16,6 @@ sources:
 - updated by The DM
 art:
 - character/sister-lethra/default-b81e5d09
+data:
+  active_art: ''
 ---
