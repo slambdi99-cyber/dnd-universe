@@ -353,10 +353,10 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
 .card a.thumb.noart { display: flex; align-items: center;
   justify-content: center; aspect-ratio: 1 / 1;
   background: linear-gradient(135deg, var(--accent-soft), var(--panel) 75%); }
-.card a.thumb.noart span { font-size: 3rem; font-weight: bold;
+.card a.thumb.noart svg { width: 42%; height: 42%;
   color: var(--accent); opacity: .45; }
 .card.small a.thumb.noart { aspect-ratio: auto; }
-.card.small a.thumb.noart span { font-size: 1.5rem; }
+.card.small a.thumb.noart svg { width: 1.7rem; height: 1.7rem; }
 /* The small variant: thumbnail beside the text, a reference rather than a
    presentation. Same element, same tilt and glow, half the weight. */
 .grid.smallgrid { grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
@@ -1438,6 +1438,41 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
 # `thumbs.SQUARE` crops it that way and the CSS below shows it that way.
 THUMB_PX = thumbs.SIZES["card"]
 
+# Placeholder icons for pages without art, one per kind, plain line drawings
+# in the accent color. Inline SVG so the export stays self-contained; a kind
+# these have not heard of gets the framed-picture fallback.
+_ICON_ATTRS = ('viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+               'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"')
+_KIND_ICONS = {
+    "place": ('<path d="M3 18 L9 8 L13 13.5 L16 9.5 L21 18 Z"/>'
+              '<circle cx="18.2" cy="5.8" r="1.4"/>'),
+    "character": ('<circle cx="12" cy="8" r="3.4"/>'
+                  '<path d="M5.2 19.2 c0-4 3-6.2 6.8-6.2 s6.8 2.2 6.8 6.2"/>'),
+    "faction": '<path d="M6.5 4.5 h11 v14.5 l-5.5-3.8 -5.5 3.8 Z"/>',
+    "item": ('<path d="M12 3.2 V13"/><path d="M8.6 13 H15.4"/>'
+             '<path d="M12 13 V17"/><circle cx="12" cy="18.6" r="1.2"/>'),
+    "creature": ('<circle cx="8.3" cy="9" r="1.35"/>'
+                 '<circle cx="12" cy="7.4" r="1.35"/>'
+                 '<circle cx="15.7" cy="9" r="1.35"/>'
+                 '<path d="M12 11.2 c2.6 0 4.2 1.8 4.2 3.6 0 1.9-1.9 3-4.2 3'
+                 ' s-4.2-1.1-4.2-3 c0-1.8 1.6-3.6 4.2-3.6 Z"/>'),
+    "deity": ('<circle cx="12" cy="12" r="3"/>'
+              '<path d="M12 4.5 V6.8 M12 17.2 V19.5 M4.5 12 H6.8 M17.2 12 '
+              'H19.5 M6.7 6.7 L8.3 8.3 M15.7 15.7 L17.3 17.3 M17.3 6.7 '
+              'L15.7 8.3 M8.3 15.7 L6.7 17.3"/>'),
+    "lore": ('<path d="M4 6.2 c3-1.5 5-1.5 8 0 c3-1.5 5-1.5 8 0 V18.8 '
+             'c-3-1.5-5-1.5-8 0 c-3 1.5-5 1.5-8 0 Z"/>'
+             '<path d="M12 6.2 V18.8"/>'),
+}
+_ICON_FALLBACK = ('<rect x="4" y="5" width="16" height="14" rx="2"/>'
+                  '<circle cx="9" cy="10" r="1.5"/>'
+                  '<path d="M4 16.5 l4.5-4.5 4 4 2.5-2.5 5 5"/>')
+
+
+def _kind_icon(kind: str) -> str:
+    return (f'<svg {_ICON_ATTRS} aria-hidden="true">'
+            f'{_KIND_ICONS.get(kind, _ICON_FALLBACK)}</svg>')
+
 
 def art_url(base: str, name: str, size: str) -> str:
     """The URL for one entity's picture at one size.
@@ -1504,13 +1539,12 @@ def _cards(items: list[Entity], images: dict[str, str], base: str,
                    ' loading="lazy" decoding="async">'
                    "</a>")
         else:
-            # No art yet: a monogram on parchment holds the space, so a
-            # card without a picture keeps the same shape as its neighbours
-            # instead of collapsing to a caption. The initial is decoration
-            # -- the title below carries the name for everyone.
-            initial = next((c for c in e.name if c.isalnum()), "?").upper()
+            # No art yet: the kind's icon on parchment holds the space, so
+            # a card without a picture keeps the same shape as its
+            # neighbours instead of collapsing to a caption -- and says at
+            # a glance what sort of thing it is.
             img = (f'<a class="thumb noart" href="{href}" tabindex="-1" '
-                   f'aria-hidden="true"><span>{html.escape(initial)}</span></a>')
+                   f'aria-hidden="true">{_kind_icon(e.kind)}</a>')
         card_cls = "card small" if small else "card"
         out.append(
             f'<div class="{card_cls}">{img}<div class="body">'
