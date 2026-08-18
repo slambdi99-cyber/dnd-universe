@@ -1,8 +1,8 @@
 ---
 name: Peapod Public House
 kind: place
-summary: The public house in Brindlewood where Korran Mossborn tends bar, and where
-  the Misenchanted Lavender Mead was served.
+summary: The public house in Brindlewood where Korran Mossborn used to tend bar, and
+  where the Misenchanted Lavender Mead was served.
 appearance: low timber roadside pub, painted sign, lantern light in small windows,
   benches and a hitching rail outside
 within: place/brindlewood
@@ -20,6 +20,7 @@ sources:
 - dm-wiki
 - 'DM site organization: sub-locations index'
 - updated by The DM
+- edited by The DM on the wiki
 art:
 - place/peapod-pub/default-01607bb8
 - place/peapod-pub/upload-92f6f70682116aae
@@ -28,7 +29,6 @@ data:
   aka:
   - Peapod Pub
   - PPP
-  within_inferred: link
 ---
 
 Marked 'PPP' on the regional map, beside the military encampment on Brindlewood's eastern edge. Where secrets flow as freely as ale.
