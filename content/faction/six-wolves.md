@@ -1,5 +1,5 @@
 ---
-name: The 6 Wolves
+name: 6 Wolves
 kind: faction
 summary: A pack of lycanthropes the party met in the foothills after fleeing the Hollow
   Root.
@@ -17,6 +17,7 @@ sources:
 - discord:lore-drop:2026-08-13
 - Codex MCP faction index cleanup requested by Sam, 2026-08-14.
 - updated by The DM
+- edited by The DM on the wiki
 art:
 - faction/six-wolves/default-023dcebe
 ---
