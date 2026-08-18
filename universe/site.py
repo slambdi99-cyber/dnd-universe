@@ -332,6 +332,11 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
 .card:hover { border-color: var(--star);
   box-shadow: 0 .4em 1.4em color-mix(in srgb, var(--star) 22%, transparent); }
 .card:hover .body > a { color: var(--star); }
+/* Unless the pointer is on a nested link inside the card -- a tooltip term
+   in the summary -- in which case that link alone is teal and the title
+   stays gold: two glowing destinations at once would lie about where the
+   click goes. */
+.card:hover:has(p a:hover) .body > a { color: var(--accent); }
 .card { cursor: pointer; }
 /* `height: auto` is load-bearing. The markup states width and height so the
    grid can lay out before the pictures arrive, and those attributes land as
