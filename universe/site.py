@@ -155,8 +155,8 @@ a { color: var(--accent); text-decoration: none; }
 p a, .within a { color: inherit; text-decoration: none !important;
   border-bottom: 1px solid var(--muted) !important; }
 p a:hover, .within a:hover { text-decoration: none !important;
-  color: var(--ink) !important;
-  border-bottom-color: var(--ink) !important; }
+  color: var(--star) !important;
+  border-bottom-color: var(--star) !important; }
 /* No underline anywhere on hover: the border-bottom treatment below is the
    underline of this site, and the two stacked read as a strikeout gone wrong.
    Instead the star answers: a wide, faint teal glow blooms slowly behind a
@@ -165,9 +165,9 @@ p a:hover, .within a:hover { text-decoration: none !important;
    state's governs the fade-in. */
 a { text-shadow: 0 0 1.1em color-mix(in srgb, var(--star) 0%, transparent);
   transition: text-shadow .3s ease; }
-a:hover { text-decoration: none !important;
+a:hover { text-decoration: none !important; color: var(--star);
   text-shadow: 0 0 1.1em color-mix(in srgb, var(--star) 38%, transparent);
-  transition: text-shadow 1.6s ease; }
+  transition: text-shadow 1.6s ease, color .25s ease; }
 a.act, .menubtn, .tag {
   box-shadow: 0 0 1em color-mix(in srgb, var(--star) 0%, transparent);
   transition: box-shadow .3s ease; }
@@ -331,6 +331,7 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
    inside keep their own hover treatments on top. */
 .card:hover { border-color: var(--star);
   box-shadow: 0 .4em 1.4em color-mix(in srgb, var(--star) 22%, transparent); }
+.card { cursor: pointer; }
 /* `height: auto` is load-bearing. The markup states width and height so the
    grid can lay out before the pictures arrive, and those attributes land as
    presentational hints; nothing here set `height`, so the hint stood, an
@@ -1006,6 +1007,22 @@ document.addEventListener('pointerout',function(e){
 },{passive:true});
 })();
 
+/* The whole card is the link, not just its title: a card with no art is
+   otherwise mostly dead surface, and the tilt and glow already promise the
+   click. Nested links -- tooltip terms in the summary -- keep their own
+   destinations; only a click on the card's inert parts follows the title. */
+(function(){
+document.addEventListener('click',function(e){
+  if(e.defaultPrevented||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+  if(e.button!==0)return;
+  if(e.target.closest&&e.target.closest('a,button'))return;
+  var card=e.target.closest?e.target.closest('.card'):null;
+  if(!card)return;
+  var title=card.querySelector('.body > a');
+  if(title)title.click();
+});
+})();
+
 /* Image attachments open full screen instead of downloading: the click is
    a look, and the download still exists for anyone without scripts or via
    the browser's save-image. Non-image files keep their download click.
@@ -1117,6 +1134,7 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
         account = (
             f'<span class="who">{html.escape(user)} &middot; '
             f'<a href="{base}login">not you?</a> &middot; '
+            f'<a href="{guide_href}">guide</a> &middot; '
             f'<a href="{base}connect">connect an assistant</a> &middot; '
             f'<a href="{base}logout">sign out</a></span>'
             if user else f'<span class="who"><a href="{base}login">sign in</a></span>'
