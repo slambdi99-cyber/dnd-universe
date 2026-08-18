@@ -1261,6 +1261,7 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(full)}</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns%3D'http://www.w3.org/2000/svg' viewBox%3D'0 0 64 64'%3E%3Crect width%3D'64' height%3D'64' rx%3D'12' fill%3D'#1b1712'/%3E%3Cpath d%3D'M32 8 L37.5 26.5 L56 32 L37.5 37.5 L32 56 L26.5 37.5 L8 32 L26.5 26.5 Z' fill%3D'#3fa9b5'/%3E%3Ccircle cx%3D'32' cy%3D'32' r%3D'3.4' fill%3D'#e5dcc9'/%3E%3C/svg%3E">
 <style>{CSS}{tooltips_mod.TOOLTIP_CSS if tips else ""}</style>
 <script>document.documentElement.classList.add("imgfade")</script>
 </head><body>
