@@ -27,7 +27,53 @@ cd "$ROOT"
 
 WATCH='universe/ mcp_server.py cli.py requirements-server.txt deploy/'
 
+# Set when a pull brings new code, cleared once that code is actually running.
+# A file rather than a variable because the verdict it waits on usually is not
+# ready within the run that pulled.
+PENDING="$ROOT/.needs-restart"
+GIVE_UP_AFTER=5
+
 say() { echo "[repo-sync] $*"; }
+
+ci_verdict() {
+    # "success", "failure", "pending", or "unknown" for one commit.
+    #
+    # Unauthenticated, which the public repo allows and which keeps a token off
+    # this box. Called only while a restart is owed, so it is a handful of
+    # requests per deploy rather than one every two minutes.
+    local sha="$1" slug py
+    slug="$(git config --get remote.origin.url \
+            | sed -E 's#^.*github\.com[:/]##; s#\.git$##')"
+    [ -n "$slug" ] || { echo unknown; return; }
+
+    py="$ROOT/.venv/bin/python"
+    [ -x "$py" ] || py="$(command -v python3 || true)"
+    [ -n "$py" ] || { echo unknown; return; }
+
+    # Captured before parsing rather than piped straight in: under `pipefail` a
+    # 404 makes the whole pipeline fail after the parser has already printed,
+    # so the fallback fires too and the function answers twice.
+    local body
+    body="$(curl -sf --max-time 20 \
+        "https://api.github.com/repos/$slug/commits/$sha/check-runs" 2>/dev/null)" \
+        || { echo unknown; return; }
+    [ -n "$body" ] || { echo unknown; return; }
+
+    printf '%s' "$body" | "$py" -c '
+import json, sys
+try:
+    runs = json.load(sys.stdin).get("check_runs") or []
+except Exception:
+    print("unknown"); raise SystemExit
+if not runs:
+    # No check has reported yet. Not the same as nothing being wrong.
+    print("pending"); raise SystemExit
+if any(r.get("status") != "completed" for r in runs):
+    print("pending"); raise SystemExit
+bad = {"failure", "cancelled", "timed_out", "action_required", "stale"}
+print("failure" if any(r.get("conclusion") in bad for r in runs) else "success")
+' 2>/dev/null || echo unknown
+}
 
 if ! git rev-parse --git-dir >/dev/null 2>&1; then
     say "not a git repo, nothing to do"
@@ -95,9 +141,54 @@ if [ "$BEFORE" != "$AFTER" ]; then
 
     for path in $WATCH; do
         if git diff --name-only "$BEFORE" "$AFTER" | grep -q "^${path%/}"; then
-            say "code changed, restarting the wiki"
-            sudo systemctl restart buried-star.service
+            say "code changed, restart pending"
+            echo 0 > "$PENDING"
             break
         fi
     done
+fi
+
+# Restarting into whatever just landed was a race the server always lost. A
+# push reaches here inside two minutes; the tests that say whether it works
+# take about forty seconds and report back to GitHub, not to this machine. So
+# the old order was: pull, restart, and find out afterwards. A broken commit
+# was already being served by the time the red X appeared.
+#
+# Now the restart waits for a verdict. The marker file outlives a single run
+# because the answer usually is not ready yet, and without it the next run --
+# which pulls nothing, so BEFORE equals AFTER -- would forget a restart was
+# owed and leave the new code sitting on disk unserved.
+#
+# A failing verdict holds indefinitely and on purpose: the last good process
+# keeps serving, and the fix that follows flips this to success on its own. An
+# unreachable API is different, because "GitHub is down" must not mean "this
+# server never updates again", so that one gives up after a few tries and
+# restarts anyway, loudly.
+if [ -f "$PENDING" ]; then
+    TRIES="$(cat "$PENDING" 2>/dev/null || echo 0)"
+    case "$(ci_verdict "$(git rev-parse HEAD)")" in
+        success)
+            say "tests passed, restarting the wiki"
+            rm -f "$PENDING"
+            sudo systemctl restart buried-star.service
+            ;;
+        failure)
+            say "tests FAILED for $(git rev-parse --short HEAD). Not restarting."
+            say "the running wiki is the last version that worked. Push a fix."
+            ;;
+        pending)
+            say "tests still running; restart waits for the next check"
+            echo $((TRIES + 1)) > "$PENDING"
+            ;;
+        *)
+            if [ "$TRIES" -ge "$GIVE_UP_AFTER" ]; then
+                say "no verdict from GitHub after $TRIES tries. Restarting anyway."
+                rm -f "$PENDING"
+                sudo systemctl restart buried-star.service
+            else
+                say "could not reach GitHub for a verdict ($((TRIES + 1))/$GIVE_UP_AFTER)"
+                echo $((TRIES + 1)) > "$PENDING"
+            fi
+            ;;
+    esac
 fi

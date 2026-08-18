@@ -27,6 +27,10 @@ files/**/.thumbs/
 # genuinely shared under .claude/ can still be committed.
 .claude/launch.json
 
+# Set by repo-sync when a pull brings code the running process does not have
+# yet, cleared once that code is serving. Purely local state about one machine.
+.needs-restart
+
 # Shared secret for the MCP server. Never commit this.
 .mcp-token
 
