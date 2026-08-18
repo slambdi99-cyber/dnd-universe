@@ -193,11 +193,13 @@ TOOLTIP_JS = r"""
                         'INPUT', 'SELECT', 'H1', 'H2', 'H3', 'BUTTON']);
 
   function walk(root) {
-    // One link per term per page. A name that appears nine times wrapped
-    // nine times reads as decoration, not navigation; the first mention
-    // carries the link and the rest stay prose, the way wikis have always
-    // done it.
+    // One link per term per page -- a name wrapped nine times reads as
+    // decoration, not navigation. Except inside cards: a card is its own
+    // little page, and a term the prose already linked still deserves its
+    // link in each card that mentions it. So one bucket for the prose, and
+    // one per card.
     const seen = new Set();
+    const perCard = new Map();
     const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
       acceptNode(n) {
         if (!n.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
@@ -219,6 +221,8 @@ TOOLTIP_JS = r"""
         ? (card.querySelector('.body > a') || {getAttribute: () => ''})
             .getAttribute('href')
         : '';
+      if (card && !perCard.has(card)) perCard.set(card, new Set());
+      const bucket = card ? perCard.get(card) : seen;
       const html = node.nodeValue.replace(re, (match) => {
         const e = byKey.get(match.toLowerCase());
         if (!e) return match;
@@ -227,12 +231,12 @@ TOOLTIP_JS = r"""
         if (e.u && e.u === location.pathname) return match;
         if (e.u && ownHref && e.u === ownHref) return match;
         const seenKey = e.t.toLowerCase();
-        if (seen.has(seenKey)) return match;
+        if (bucket.has(seenKey)) return match;
         // Ambiguous single words only count when capitalised.
         if (e.c && match[0] !== match[0].toUpperCase()) return match;
         const cls = e.k === 'wiki' ? 'tt tt-wiki' : 'tt';
         const key = e.t.toLowerCase().replace(/"/g, '&quot;');
-        seen.add(seenKey);
+        bucket.add(seenKey);
         if (e.u) {
           const target = e.k === 'wiki' ? '' : ' target="_blank" rel="noopener"';
           return '<a class="' + cls + '" data-t="' + key + '" href="' +
