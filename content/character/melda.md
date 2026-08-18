@@ -22,7 +22,6 @@ links:
 - character/aelan-viremont
 - place/valeshire
 - faction/hollow-root-covenant
-- archive/the-fallen-heir
 - faction/the-dissenters
 sources:
 - session-log:the-buried-star-tobias-log.txt

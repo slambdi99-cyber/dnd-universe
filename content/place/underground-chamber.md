@@ -16,8 +16,6 @@ links:
 - character/elaric-the-blightwarden
 - character/barnaby-thistlewick
 - item/bloodroot-greatsword
-- archive/bloomfang-rapier
-- archive/rootbound-dagger
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - dm-wiki

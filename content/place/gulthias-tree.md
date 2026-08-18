@@ -30,7 +30,8 @@ Under the kobold caves, a captive said the roots there lead to a Gulthias Tree, 
 
 ## Renamed
 
-This page was created to correct the spelling of `place/goltheas-tree`, which is retained under `archive/goltheas-tree` because the wiki has no delete tool.
+This page was created to correct the spelling of `place/goltheas-tree`. The
+misspelled page has since been deleted; git history keeps it.
 
 ## Spelling
 

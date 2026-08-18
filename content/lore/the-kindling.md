@@ -14,7 +14,6 @@ links:
 - place/lorithal
 - place/ashbright-university
 - place/tintinabullarium
-- archive/the-fallen-heir
 - character/elaric-the-blightwarden
 - character/wren
 - faction/the-dissenters
@@ -34,4 +33,3 @@ During the rite, orange-white wisps spread across the sky, bells sent ripples th
 The rite is presented publicly as a celebration of Lorithal's traditions and shared future.
 
 Elaric appeared during the Kindling, to the party's surprise. Wren recognized him in the middle of the public spectacle and suffered a severe panic attack, fainting as the rite unfolded around her.
-

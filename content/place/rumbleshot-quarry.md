@@ -12,7 +12,6 @@ tags:
 links:
 - character/foreman-rumbleshot
 - creature/goluub
-- archive/the-drowned-amphitheater
 sources:
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
 - session-log:the-buried-star-tobias-log.txt

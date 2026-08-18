@@ -13,7 +13,6 @@ tags:
 - npc-side
 links:
 - faction/hollow-root-covenant
-- archive/kept
 - character/sister-lethra
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph

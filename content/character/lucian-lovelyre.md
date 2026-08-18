@@ -13,7 +13,6 @@ tags:
 - former-party-member
 links:
 - place/copper-vale
-- archive/bloomfang-rapier
 - character/elaric-the-blightwarden
 - place/peapod-pub
 sources:

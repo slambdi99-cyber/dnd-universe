@@ -9,7 +9,6 @@ tags:
 - npc-side
 links:
 - faction/hollow-root-covenant
-- archive/kept
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - written by The DM

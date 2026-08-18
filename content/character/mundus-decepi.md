@@ -12,7 +12,6 @@ tags:
 - former-party-member
 links:
 - place/copper-vale
-- archive/rootbound-dagger
 - faction/hollow-root-covenant
 - character/elaric-the-blightwarden
 sources:

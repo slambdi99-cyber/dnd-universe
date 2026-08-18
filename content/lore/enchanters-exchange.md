@@ -19,7 +19,7 @@ links:
 - place/copper-ridge
 - faction/house-vaelorith
 - character/wren
-- archive/goltheas-tree
+- place/gulthias-tree
 - place/gulthias-tree
 - place/gulthias-tree
 - creature/goluub

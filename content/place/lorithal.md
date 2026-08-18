@@ -10,7 +10,6 @@ tags:
 - needs-detail
 links:
 - character/wren
-- archive/the-fallen-heir
 - faction/the-dissenters
 - character/aelan-viremont
 - lore/the-kindling

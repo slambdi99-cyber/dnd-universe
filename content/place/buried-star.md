@@ -11,7 +11,6 @@ tags:
 - from-wiki
 links:
 - faction/hollow-root-covenant
-- archive/kept
 - item/splinter-of-the-buried-star
 - character/wren
 sources:

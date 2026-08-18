@@ -11,7 +11,6 @@ tags:
 links:
 - place/underground-chamber
 - place/blighted-bog
-- archive/gnarled-staff-of-the-rooted-one
 sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - discord:lore-drop:2026-08-13

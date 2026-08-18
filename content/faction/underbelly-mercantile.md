@@ -9,7 +9,6 @@ tags:
 - from-wiki
 - primary-faction
 links:
-- archive/dak-patterson
 - character/darius-vell
 - character/worrick-thistleby
 - character/seamus-stonebuckle
