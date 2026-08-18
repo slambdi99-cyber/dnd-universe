@@ -64,14 +64,35 @@ DEFAULT_HOME: tuple[dict, ...] = (
 
 @dataclass
 class IndexTag:
-    """One tag-backed group on a kind's index page."""
+    """One tag-backed group on a kind's index page.
+
+    `tag` matches one tag; `any_tag` matches any of several, for groups whose
+    membership is spelled differently across pages -- a Settlements group is
+    `settlement` or `town` or `city`, and demanding one canonical tag means
+    retagging half the wiki before the index can say what it already knows.
+    """
 
     title: str
     kind: str
-    tag: str
+    tag: str = ""
+    any_tag: list[str] = field(default_factory=list)
+
+    def matches(self, entity) -> bool:
+        if entity.kind != self.kind:
+            return False
+        if self.tag and self.tag not in entity.tags:
+            return False
+        if self.any_tag and not (set(self.any_tag) & set(entity.tags)):
+            return False
+        return bool(self.tag or self.any_tag)
 
     def as_dict(self) -> dict:
-        return {"title": self.title, "kind": self.kind, "tag": self.tag}
+        out: dict[str, Any] = {"title": self.title, "kind": self.kind}
+        if self.tag:
+            out["tag"] = self.tag
+        if self.any_tag:
+            out["any_tag"] = list(self.any_tag)
+        return out
 
 
 @dataclass
@@ -244,9 +265,11 @@ def load(root: Path) -> Schema:
             continue
         kind = str(entry.get("kind", "")).strip().lower()
         tag = str(entry.get("tag", "")).strip()
+        any_tag = [str(t).strip() for t in (entry.get("any_tag") or []) if str(t).strip()]
         title = str(entry.get("title", "")).strip()
-        if kind and tag and title:
-            index_tags.append(IndexTag(title=title, kind=kind, tag=tag))
+        if kind and title and (tag or any_tag):
+            index_tags.append(IndexTag(title=title, kind=kind, tag=tag,
+                                       any_tag=any_tag))
 
     schema = Schema(
         root=Path(root),
@@ -459,9 +482,10 @@ def set_index_tags(schema: Schema, groups: list[dict]) -> tuple[bool, str]:
                            f"{', '.join(schema.keys)}.")
         title = str(entry.get("title", "")).strip()
         tag = str(entry.get("tag", "")).strip()
-        if not title or not tag:
-            return False, "Each index tag group needs a title and a tag."
-        parsed.append(IndexTag(title=title, kind=kind, tag=tag))
+        any_tag = [str(t).strip() for t in (entry.get("any_tag") or []) if str(t).strip()]
+        if not title or not (tag or any_tag):
+            return False, "Each index tag group needs a title and a tag (or any_tag)."
+        parsed.append(IndexTag(title=title, kind=kind, tag=tag, any_tag=any_tag))
     schema.index_tags = parsed
     schema.save()
     return True, f"Index pages rebuilt with {len(parsed)} tag group(s)."
