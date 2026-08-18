@@ -138,6 +138,11 @@ class Entity:
         if self.within and "/" not in self.within:
             self.within = f"place/{self.within}"
 
+        # A page linking to itself is never information; it is a paste slip,
+        # or an assistant citing the page it is writing. Dropped on the way
+        # in, so no reader or renderer ever sees one.
+        self.links = [l for l in self.links if l != self.ref]
+
     @property
     def ref(self) -> str:
         return f"{self.kind}/{self.slug}"
@@ -263,6 +268,10 @@ class Library:
         return self._read(path, kind, slug)
 
     def save(self, entity: Entity) -> Path:
+        # Guarded here too: `upsert` merges link lists after construction,
+        # which is the one path that can reintroduce a self-link past the
+        # __post_init__ check.
+        entity.links = [l for l in entity.links if l != entity.ref]
         path = self.path_for(entity.kind, entity.slug)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(entity.render(), encoding="utf-8")
