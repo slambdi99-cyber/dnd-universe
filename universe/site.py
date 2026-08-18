@@ -230,9 +230,10 @@ a.act .badge { display: inline-block; margin-left: .35rem; padding: 0 .35rem;
 .searchbar .qwrap { position: relative; flex: 1; }
 /* The writing action lives beside the search, in the star's teal: the two
    things you do from anywhere, side by side. */
-.searchbar a.act { border-color: var(--star); color: var(--star); }
-.searchbar a.act:hover {
+.searchbar a.act, h2 a.act { border-color: var(--star); color: var(--star); }
+.searchbar a.act:hover, h2 a.act:hover {
   background: color-mix(in srgb, var(--star) 18%, transparent); }
+h2 a.act { margin-left: .6rem; font-weight: normal; vertical-align: middle; }
 .searchbar #q { display: block; width: 100%; padding: .4rem 2.2rem .4rem .7rem;
   border: 1px solid var(--line); border-radius: 4px; background: var(--bg);
   color: var(--ink); font: inherit; font-size: .9rem; }
@@ -241,7 +242,7 @@ a.act .badge { display: inline-block; margin-left: .35rem; padding: 0 .35rem;
 .searchbar #q::-webkit-search-cancel-button { -webkit-appearance: none; }
 /* The hotkey's calling card: sits in the empty search field, gone the
    moment the field is focused or holds a query. */
-.qkey { position: absolute; right: .45rem; top: 50%;
+.qkey { position: absolute; left: 9.6rem; top: 50%;
   transform: translateY(-50%); pointer-events: none;
   font-size: .66rem; color: var(--muted); background: var(--panel);
   border: 1px solid var(--line); border-radius: 4px; padding: .06rem .4rem; }
@@ -494,8 +495,12 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
   font-variant: small-caps; letter-spacing: .04em; }
 #results .hit { padding: .5rem .4rem; border-bottom: 1px solid var(--line); }
 #results .hit.sel { background: var(--accent-soft); border-radius: 4px; }
-#results .hit.sel::after { content: "↵"; float: right;
-  color: var(--muted); font-size: .8rem; margin-left: .5rem; }
+#results .hit { position: relative; }
+/* Absolutely placed, not floated: a float lands after the row's last block
+   and rendered below the highlight instead of inside it. */
+#results .hit.sel::after { content: "↵"; position: absolute;
+  right: .6rem; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: .8rem; }
 #results .kbdhints { float: right; font-weight: normal; font-size: .7rem;
   color: var(--muted); }
 #results kbd { font-family: inherit; font-size: .66rem;
@@ -932,6 +937,8 @@ function go(url,push){
       if(q) q.value='';
       var qc=document.getElementById('qclear');
       if(qc) qc.classList.remove('show');
+      var qw=q&&q.closest?q.closest('.qwrap'):null;
+      if(qw) qw.classList.remove('hasq');
       var res=document.getElementById('results');
       if(res){ res.hidden=true; res.innerHTML=''; }
       payload.incoming.hidden=false;
@@ -1360,7 +1367,7 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
         # new-page form arrives with this page in its links field. Shown
         # even over an empty section, because the first related page is
         # exactly when the button earns its keep.
-        button = (f' <a class="edit" href="{base}new?links={entity.ref}">'
+        button = (f' <a class="act" href="{base}new?links={entity.ref}">'
                   f'+ Add related</a>' if addable and editable else "")
         if targets or button:
             main_parts.append(f"<h2>{heading}{button}</h2>")
