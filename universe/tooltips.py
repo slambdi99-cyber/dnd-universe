@@ -94,7 +94,43 @@ def build(entities: list[Entity], viewer: frozenset[str], root: Path,
         if key not in seen:
             seen[key] = entry
 
+    # First names for characters: "Elaric" finds Elaric the Blightwarden if
+    # and only if exactly one character starts with Elaric. People talk in
+    # first names; an ambiguous one simply is not offered. Characters only,
+    # deliberately: places and lore lead with ordinary words -- Her Verdancy,
+    # House of the Bricklayers, East Gate -- and a caps-only single word
+    # still matches at the start of every sentence. Titles are not names,
+    # so Sister Lethra does not turn every sentence-initial "Sister" into
+    # her.
+    STOP = {"the", "a", "an", "of", "and",
+            "sister", "brother", "mother", "father", "lady", "lord",
+            "king", "queen", "old", "saint"}
+    candidates: dict[str, list[dict]] = {}
+    for entry in seen.values():
+        words = entry["term"].split()
+        if len(words) < 2 or entry["kind"] != "wiki":
+            continue
+        if entry.get("meta") != "Character":
+            continue
+        lead = words[0]
+        if lead.lower() in STOP or len(lead) < 3:
+            continue
+        candidates.setdefault(lead.lower(), []).append(entry)
+    aliases = {}
+    for lead, owners in candidates.items():
+        if len(owners) == 1 and lead not in seen:
+            aliases[lead] = owners[0]
+
     payload = []
+    for lead, entry in aliases.items():
+        payload.append({
+            "t": entry["term"].split()[0],
+            "k": entry["kind"],
+            "m": entry.get("meta", ""),
+            "d": entry.get("text", ""),
+            "u": entry.get("url", ""),
+            "c": 1,
+        })
     for entry in seen.values():
         term = entry["term"]
         url = entry.get("url", "")
@@ -123,7 +159,7 @@ def build(entities: list[Entity], viewer: frozenset[str], root: Path,
 
 TOOLTIP_CSS = """
 .tt { border-bottom: 1px dotted var(--muted); cursor: help; }
-.tt:hover { border-bottom-color: var(--ink); }
+.tt:hover { border-bottom-color: var(--star); }
 .tt-wiki { border-bottom-style: solid; }
 #tip {
   position: absolute; z-index: 50; max-width: 22rem; padding: .7rem .9rem;
