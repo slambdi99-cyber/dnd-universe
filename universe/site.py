@@ -346,6 +346,17 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
 .card img { width: 100%; height: auto; aspect-ratio: 1/1; object-fit: cover;
   display: block; }
 .card a.thumb { display: block; }
+/* The small variant: thumbnail beside the text, a reference rather than a
+   presentation. Same element, same tilt and glow, half the weight. */
+.grid.smallgrid { grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: .6rem; }
+.card.small { display: flex; align-items: center; }
+.card.small a.thumb { flex: 0 0 4.5rem; align-self: stretch; }
+.card.small a.thumb img { width: 4.5rem; height: 100%; min-height: 4.5rem;
+  aspect-ratio: auto; object-fit: cover; }
+.card.small .body { padding: .45rem .65rem; min-width: 0; }
+.card.small .body p { display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden; font-size: .75rem; }
 .filelist { list-style: none; padding: 0; }
 #lightbox { position: fixed; inset: 0; z-index: 200; display: flex;
   align-items: center; justify-content: center; cursor: zoom-out;
@@ -1284,7 +1295,7 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
                 targets.append(target)
         if targets:
             main_parts.append(f"<h2>{heading}</h2>")
-            main_parts.append(_cards(targets, images, base))
+            main_parts.append(_cards(targets, images, base, small=True))
 
     # Attachments, before the cross-links: a handout or a battle map is part of
     # the page, where Related is navigation away from it. Only shown live; the
@@ -1450,7 +1461,11 @@ def _completeness(e: Entity) -> float:
 
 def _cards(items: list[Entity], images: dict[str, str], base: str,
            notes: dict[str, str] | None = None,
-           by_completeness: bool = False) -> str:
+           by_completeness: bool = False, small: bool = False) -> str:
+    # `small` is the sidebar-weight variant: thumbnail beside the text at a
+    # fraction of the size, for sections that reference pages rather than
+    # present them -- Related on an entity page should not shout as loudly
+    # as the index.
     key = (lambda e: (-_completeness(e), e.name)) if by_completeness \
         else (lambda e: e.name)
     out = []
@@ -1472,12 +1487,14 @@ def _cards(items: list[Entity], images: dict[str, str], base: str,
                ' loading="lazy" decoding="async">'
                "</a>"
                if e.ref in images else "")
+        card_cls = "card small" if small else "card"
         out.append(
-            f'<div class="card">{img}<div class="body">'
+            f'<div class="{card_cls}">{img}<div class="body">'
             f'<a href="{href}">{html.escape(e.name)}</a>'
             f"<p>{html.escape(e.summary[:90])}</p>{note_html}</div></div>"
         )
-    return f'<div class="grid">{"".join(out)}</div>'
+    grid_cls = "grid smallgrid" if small else "grid"
+    return f'<div class="{grid_cls}">{"".join(out)}</div>'
 
 
 def render_index(schema, entities: list[Entity], images: dict[str, str],
