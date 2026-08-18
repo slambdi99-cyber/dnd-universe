@@ -160,16 +160,19 @@ class Wiki:
         forget instead.
         """
         if not user:
-            return ""
+            return "", ""
         try:
             waiting = self.inbox.count(self.library)
         except OSError:
             waiting = 0
         badge = f'<span class="badge">{waiting}</span>' if waiting else ""
+        # Two pieces now: + New stays a visible button because writing is the
+        # point of the wiki, while Inbox and Structure join the site dropdown
+        # with Guide and Changelog -- machinery, not content.
         return (
-            '<a class="act" href="/wiki/new">+ New</a>'
-            f'<a class="act" href="/wiki/inbox">Inbox{badge}</a>'
-            '<a class="act" href="/wiki/structure">Structure</a>'
+            '<a class="act" href="/wiki/new">+ New</a>',
+            f'<a href="/wiki/inbox">Inbox{badge}</a>'
+            '<a href="/wiki/structure">Structure</a>',
         )
 
     def render(self, title: str, body: str, index_json: str = "[]", *,
@@ -177,7 +180,9 @@ class Wiki:
                status: int = 200) -> HTMLResponse:
         return HTMLResponse(
             self.pages.shell(title, "/wiki/", body, index_json, user=user,
-                             live=True, tips=tips, extra=self.nav_extra(user)),
+                             live=True, tips=tips,
+                             extra=(parts := self.nav_extra(user))[1],
+                             actions=parts[0]),
             status_code=status,
         )
 

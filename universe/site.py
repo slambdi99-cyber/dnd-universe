@@ -66,40 +66,194 @@ class Renderer:
         return search_index(self.schema, *args, **kwargs)
 
 CSS = """
+/* Parchment. The background sits at aged-paper tan rather than near-white,
+   panels a shade brighter like a fresh leaf on the pile, ink a warm sepia
+   black. Dark mode is the same paper by candlelight, not gray-on-black.
+   Muted stays dark enough to clear 4.5:1 on the tan. */
+/* Dark, always. The parchment by candlelight is the site's one face; the
+   OS light/dark preference is deliberately ignored. `color-scheme: dark`
+   tells the browser so its own parts -- scrollbars, form controls, the
+   search field's innards -- match. */
 :root {
-  --bg: #faf7f2; --panel: #fffdfa; --ink: #24211d; --muted: #6b6459;
-  --line: #e3ddd2; --accent: #8a5a2b; --accent-soft: #f0e6d8;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #17150f; --panel: #201d16; --ink: #ece7dd; --muted: #9c9384;
-    --line: #322d23; --accent: #d9a05b; --accent-soft: #2b2418;
-  }
+  color-scheme: dark;
+  --bg: #1b1712; --panel: #252018; --ink: #e5dcc9; --muted: #a3947a;
+  --line: #3c352a;
+  --accent: #d2a05f; --accent-soft: #2f2a20;
+  /* The Buried Star's teal: the seam gradient, and the focus color, so the
+     thing you are about to interact with glows faintly starlike. */
+  --star: #3fa9b5;
+  --grad: linear-gradient(90deg, #2a8a96, #3aa77f 55%, #7fd0dd);
+  /* The lava-lamp layer's whole strength. Tune this one number. */
+  --lamp: .08;
+  --chrome: #252018;
+  /* The top bar sits deepest: darker than the page, so the bands read
+     top-down as night sky, chrome, paper. */
+  --chrome-deep: #14100a;
 }
 * { box-sizing: border-box; }
+/* The router focuses the arriving page's h1 so assistive tech announces the
+   navigation and Tab starts from the top of the new content. tabindex="-1"
+   means nothing can reach it by keyboard, so the focus ring marks nothing a
+   sighted reader can act on -- it is just a box around the title. */
+[tabindex="-1"]:focus { outline: none; }
+/* Focus is the star's color everywhere: keyboard rings, and the search field
+   while you type in it. */
+:focus-visible { outline: 2px solid var(--star); outline-offset: 2px; }
+#q:focus { outline: none; border-color: var(--star);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--star) 35%, transparent); }
+/* Paper grain: one screenful of SVG fractal noise, tiled over everything by a
+   fixed overlay. An overlay rather than a body background so the tooth sits
+   on panels and pictures too -- real paper does not stop being paper where
+   the ink is. Multiply so it only ever darkens; too faint to see as pattern,
+   present enough that the flat tan stops looking like a screen. */
+/* The star, sensed more than seen: three teal-green blooms drifting behind
+   the parchment on a slow loop. Transform-only animation so it composites on
+   the GPU; the blooms are soft-edged gradients rather than blurred layers,
+   which costs nothing per frame. Strength lives in --lamp, one number. */
+body::before {
+  content: ""; position: fixed; inset: -40%; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(40% 35% at 25% 30%, #0b6875 0%, transparent 70%),
+    radial-gradient(35% 40% at 75% 60%, #2f9d7a 0%, transparent 70%),
+    radial-gradient(30% 30% at 55% 20%, #63b7c9 0%, transparent 72%);
+  opacity: var(--lamp);
+  animation: lamp 90s ease-in-out infinite alternate;
+}
+@keyframes lamp {
+  0%   { transform: rotate(0deg) translate(-4%, -2%) scale(1); }
+  50%  { transform: rotate(7deg) translate(3%, 4%) scale(1.18); }
+  100% { transform: rotate(-6deg) translate(-2%, 3%) scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+}
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: 99;
+  pointer-events: none; opacity: .45; mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.3' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+/* Rough edges for the artwork: a turbulence-displacement filter defined in an
+   inline SVG in the shell. Warping the picture's edge makes it sit on the
+   paper like something pasted in rather than die-cut. Images and skeleton
+   frames only, never blocks with text -- displaced glyphs read as bad
+   rendering, not as craft. */
+.thumb, img.hero, .filelist .filepic img { filter: url(#roughedge); }
+/* Always leave room for the scrollbar. Pages differ in height, so without this
+   a short page has no scrollbar and a long one does, the viewport width
+   changes by its width on every such navigation, and the whole layout steps
+   sideways mid-transition. */
+html { scrollbar-gutter: stable; }
 body { margin: 0; background: var(--bg); color: var(--ink);
   font: 16px/1.65 Georgia, 'Iowan Old Style', 'Palatino Linotype', serif; }
 a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
-header.top { position: sticky; top: 0; z-index: 10; background: var(--panel);
-  border-bottom: 1px solid var(--line); padding: .7rem 1.2rem;
-  display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; }
+/* Links inside prose read as text first: ink with a quiet underline drawn
+   as a border, waking to full ink on hover. The gold stays for chrome, link
+   lists, and everything outside a paragraph. */
+/* !important so tooltip terms inside prose keep the same quiet underline:
+   their own border rules load after this sheet and would otherwise win. The
+   hover carries it too -- an important base beats a plain hover. */
+p a, .within a { color: inherit; text-decoration: none !important;
+  border-bottom: 1px solid var(--muted) !important; }
+p a:hover, .within a:hover { text-decoration: none !important;
+  color: var(--ink) !important;
+  border-bottom-color: var(--ink) !important; }
+/* No underline anywhere on hover: the border-bottom treatment below is the
+   underline of this site, and the two stacked read as a strikeout gone wrong.
+   Instead the star answers: a wide, faint teal glow blooms slowly behind a
+   hovered link and lets go quickly when the pointer moves on. The trick is
+   two transitions -- the base state's governs the fade-out, the hover
+   state's governs the fade-in. */
+a { text-shadow: 0 0 1.1em color-mix(in srgb, var(--star) 0%, transparent);
+  transition: text-shadow .3s ease; }
+a:hover { text-decoration: none !important;
+  text-shadow: 0 0 1.1em color-mix(in srgb, var(--star) 38%, transparent);
+  transition: text-shadow 1.6s ease; }
+a.act, .menubtn, .tag {
+  box-shadow: 0 0 1em color-mix(in srgb, var(--star) 0%, transparent);
+  transition: box-shadow .3s ease; }
+a.act:hover, .menubtn:hover, .tag:hover {
+  box-shadow: 0 0 1em color-mix(in srgb, var(--star) 25%, transparent);
+  transition: box-shadow 1.6s ease; }
+/* The star's glint: a thin gradient seam along the very top of the site. */
+header.top::before { content: ""; position: absolute; left: 0; right: 0;
+  top: 0; height: 2px; background: var(--grad); }
+header.top { background: var(--chrome-deep);
+  border-bottom: 1px solid var(--line); padding: calc(.45rem + 2px) 1.2rem .45rem;
+  display: flex; gap: .3rem 1rem; align-items: center; flex-wrap: wrap; }
+header.top .home { white-space: nowrap; }
 header.top .home { font-weight: bold; letter-spacing: .02em; }
-header.top nav { display: flex; gap: .8rem; flex-wrap: wrap; font-size: .85rem;
-  align-items: center; }
-header.top .who { font-size: .8rem; color: var(--muted); }
+/* The nav is the one flexible column: it takes the spare width and gives it
+   back first, wrapping its own links internally, so the chips and account
+   links never get shoved into a stack of their own rows. */
+header.top nav { display: flex; gap: .2rem .8rem; flex-wrap: wrap;
+  font-size: .85rem; align-items: center; flex: 1 1 auto; min-width: 0; }
+.sitenav, header.top .who { flex: none; }
+header.top .who { font-size: .75rem; color: var(--muted); }
+/* The right-hand cluster: writing actions and the folded-away site pages,
+   pushed to the far side so the content links read as their own group. */
+.sitenav { margin-left: auto; display: flex; gap: .45rem; align-items: center; }
+/* A plain button and a plain panel. This was a <details> first, and the
+   user-agent's internal layout for details/summary kept injecting phantom
+   height that no CSS of ours could see or remove -- the chip sat 17px below
+   its neighbours with a clean DOM. A div obeys ordinary rules. */
+.menu { position: relative; display: flex; align-items: center; }
+.menubtn { cursor: pointer; font: inherit; font-size: .8rem;
+  padding: .12rem .55rem; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--panel); color: var(--muted); white-space: nowrap; }
+.menubtn[aria-expanded="true"] { border-color: var(--accent);
+  color: var(--accent); }
+.menupanel[hidden] { display: none; }
+.menupanel { position: absolute; right: 0; top: calc(100% + .4rem);
+  display: flex; flex-direction: column; min-width: 9rem; z-index: 20;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.18); padding: .3rem; }
+.menupanel a { padding: .4rem .7rem; border-radius: 4px; font-size: .85rem; }
+.menupanel a:hover { background: var(--accent-soft); text-decoration: none; }
 /* Writing actions, set apart from the browsing links so "add something" is
    never more than one click away from any page. */
-nav a.act { border: 1px solid var(--line); border-radius: 999px;
-  padding: .1rem .6rem; background: var(--panel); }
-nav a.act:hover { background: var(--accent-soft); text-decoration: none; }
-nav a.act .badge { display: inline-block; margin-left: .35rem; padding: 0 .35rem;
+a.act { border: 1px solid var(--line); border-radius: 999px; font-size: .8rem;
+  padding: .12rem .55rem; background: var(--panel); white-space: nowrap; }
+a.act:hover { background: var(--accent-soft); text-decoration: none; }
+a.act .badge { display: inline-block; margin-left: .35rem; padding: 0 .35rem;
   border-radius: 999px; background: var(--accent); color: var(--panel);
   font-size: .75rem; }
-#q { margin-left: auto; padding: .4rem .7rem; min-width: 12rem; flex: 1 1 10rem;
+/* The search sits in its own band between the nav and the content: part of
+   the chrome, not of any page, and the first thing under the header
+   everywhere. It scrolls away with the content rather than shadowing it. */
+/* The search pins to the top; the nav scrolls away with the page. Mid-read
+   the thing you reach for is a search, not the list of kinds. */
+.searchbar { background: var(--chrome); position: sticky; top: 0; z-index: 10;
+  padding: .4rem 1.2rem .5rem; }
+.searchbar { border-bottom: 1px solid var(--line); }
+.searchbar .searchwrap { display: flex; gap: .5rem; align-items: center;
+  max-width: 44rem; margin: 0 auto; }
+.searchbar .qwrap { position: relative; flex: 1; }
+/* The writing action lives beside the search, in the star's teal: the two
+   things you do from anywhere, side by side. */
+.searchbar a.act { border-color: var(--star); color: var(--star); }
+.searchbar a.act:hover {
+  background: color-mix(in srgb, var(--star) 18%, transparent); }
+.searchbar #q { display: block; width: 100%; padding: .4rem 2.2rem .4rem .7rem;
   border: 1px solid var(--line); border-radius: 4px; background: var(--bg);
   color: var(--ink); font: inherit; font-size: .9rem; }
+/* Our own clear button, shown whenever there is a query. The native one only
+   surfaces on hover, which reads as there being no way to clear at all. */
+.searchbar #q::-webkit-search-cancel-button { -webkit-appearance: none; }
+#qclear { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%);
+  display: none; border: 0; background: none; color: var(--muted);
+  font-size: 1.15rem; line-height: 1; padding: .2rem .4rem; cursor: pointer; }
+#qclear:hover { color: var(--accent); }
+#qclear.show { display: block; }
 main { max-width: 46rem; margin: 0 auto; padding: 2rem 1.2rem 5rem; }
+/* Entity pages with an aside need room for two columns. Only widened
+   when there is genuinely a two-column layout inside, so the guide,
+   changelog and index keep the tighter reading measure. */
+main:has(.entity.has-side) { max-width: 72rem; }
+/* Index pages are card grids, and a grid is the one thing here that gets
+   better the more room it has: `auto-fill` just makes more columns. Full
+   bleed, with the page padding as the only margin. */
+main:has(.grid) { max-width: none; }
+h1, h2, h3 { color: var(--accent); }
 h1 { font-size: 2.1rem; margin: 0 0 .2rem; line-height: 1.15; }
 h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; border-bottom: 1px solid var(--line);
   padding-bottom: .3rem; }
@@ -108,6 +262,39 @@ h3 { font-size: 1.05rem; margin: 1.4rem 0 .4rem; }
   letter-spacing: .08em; }
 .summary { font-style: italic; color: var(--muted); margin: .4rem 0 1.4rem;
   font-size: 1.05rem; }
+/* Two-column entity pages on a wide viewport: description on the left, the
+   picture with its tags and metadata stacked on the right. On a narrow
+   viewport everything stacks in source order -- image, description, metadata
+   -- because reading past a wall of tags to reach the description on a phone
+   is worse than tags being at the end.
+
+   Gated on `.has-side`: a page with no picture and no metadata flows as one
+   column at every width. */
+.entity > * + * { margin-top: 1.2rem; }
+.entity > .entity-head > *:last-child { margin-bottom: 0; }
+.entity-side > *:first-child { margin-top: 0; }
+@media (min-width: 64rem) {
+  .entity.has-side {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 22rem);
+    grid-template-areas: "head head" "main hero" "main side";
+    column-gap: 2.5rem;
+    align-items: start;
+  }
+  .entity.has-side > * + * { margin-top: 0; }
+  .entity.has-side > .entity-head { grid-area: head; margin-bottom: 1.2rem; }
+  .entity.has-side > img.hero     { grid-area: hero; }
+  .entity.has-side > .entity-main { grid-area: main; }
+  .entity.has-side > .entity-side { grid-area: side; margin-top: 1.2rem; }
+  .entity.has-side > .entity-main > :first-child { margin-top: 0; }
+  /* The `.meta` margin-top spaces it from a long body in the single-column
+     layout. In the aside it and the table's own margin just open a hole
+     between the tags and the first row. */
+  .entity.has-side > .entity-side .meta { margin-top: 1rem; }
+  .entity.has-side > .entity-side .tags { margin-top: 0; }
+  .entity.has-side > .entity-side .meta > *:first-child { margin-top: 0; }
+  .entity.has-side > .entity-side .meta > *:last-child { margin-bottom: 0; }
+}
 img.hero { width: 100%; border-radius: 6px; border: 1px solid var(--line);
   display: block; margin: 0 0 1.5rem; }
 blockquote { margin: 1rem 0; padding: .5rem 1rem; border-left: 3px solid var(--accent);
@@ -118,9 +305,16 @@ ul.links li a { display: inline-block; padding: .25rem .6rem;
   border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
   font-size: .85rem; }
 .tags { margin: 1rem 0 0; }
-.tag { display: inline-block; font-size: .72rem; text-transform: uppercase;
+.tag { cursor: pointer; display: inline-block; font-size: .72rem; text-transform: uppercase;
   letter-spacing: .06em; color: var(--muted); border: 1px solid var(--line);
   border-radius: 3px; padding: .1rem .4rem; margin: 0 .3rem .3rem 0; }
+.tag:hover { border-color: var(--accent); color: var(--accent); }
+.tagpills { margin: .2rem 0 .4rem; display: flex; flex-wrap: wrap; gap: .35rem; }
+.pill { font: inherit; font-size: .78rem; cursor: pointer;
+  padding: .15rem .6rem; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--panel); color: var(--muted); }
+.pill.on { border-color: var(--accent); color: var(--accent);
+  background: var(--accent-soft); }
 .meta { font-size: .8rem; color: var(--muted); margin-top: 2.5rem;
   border-top: 1px solid var(--line); padding-top: .8rem; }
 footer.build { max-width: 44rem; margin: 3rem auto 1.5rem; padding: 0 1rem;
@@ -129,7 +323,14 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
   gap: 1rem; margin: 1rem 0 2rem; }
 .card { border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
-  background: var(--panel); }
+  background: var(--panel);
+  transition: transform .18s ease-out, border-color .3s ease,
+              box-shadow .3s ease; }
+/* Hovering anywhere on a card lights it and lifts it like a trading card in
+   hand; the tilt itself follows the pointer from the script below. Links
+   inside keep their own hover treatments on top. */
+.card:hover { border-color: var(--star);
+  box-shadow: 0 .4em 1.4em color-mix(in srgb, var(--star) 22%, transparent); }
 /* `height: auto` is load-bearing. The markup states width and height so the
    grid can lay out before the pictures arrive, and those attributes land as
    presentational hints; nothing here set `height`, so the hint stood, an
@@ -138,10 +339,118 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
 .card img { width: 100%; height: auto; aspect-ratio: 1/1; object-fit: cover;
   display: block; }
 .card a.thumb { display: block; }
+.filelist { list-style: none; padding: 0; }
+#lightbox { position: fixed; inset: 0; z-index: 200; display: flex;
+  align-items: center; justify-content: center; cursor: zoom-out;
+  background: rgba(10, 8, 5, .88); }
+#lightbox img { max-width: 94vw; max-height: 94vh; border-radius: 4px;
+  box-shadow: 0 0 3em rgba(0,0,0,.6); }
+.filelist .filepic img { display: block; max-width: 100%; border-radius: 6px;
+  border: 1px solid var(--line); }
+.filelist .filepic .hint { display: block; margin: .3rem 0 1rem; }
+
+/* A card reserves its square before the picture arrives, so the wait is drawn
+   as a slow shimmer rather than left as a hole, and the image fades in over it
+   instead of snapping into place.
+
+   Everything that hides an image is gated behind `.imgfade`, a class set by one
+   line in the head. If that script never runs, the class never appears, every
+   picture renders at full opacity, and all that is lost is the animation --
+   rather than a page of permanently invisible art, which is what a bare
+   `opacity: 0` default would leave behind. */
+@keyframes thumb-shimmer {
+  from { background-position: 150% 0; }
+  to   { background-position: -50% 0; }
+}
+.thumb {
+  background: linear-gradient(90deg,
+    var(--accent-soft) 0%, var(--line) 50%, var(--accent-soft) 100%);
+  background-size: 200% 100%;
+  animation: thumb-shimmer 1.6s linear infinite;
+}
+/* Stop when the picture is there. Thirty gradients animating forever behind
+   opaque images is work the phone does for nobody. */
+.thumb.ready { animation: none; background: none; }
+/* No per-image fade any more. Fading each image after the page fades in read
+   as two loads for one navigation. The whole `#page` fades in as one unit
+   instead, once its main picture is ready; the skeleton keeps below-fold
+   cards looking intentional while lazy images arrive. */
+@media (prefers-reduced-motion: reduce) {
+  .thumb { animation: none; }
+}
+
+/* The arriving page fades in, so following a link reads as one continuous
+   surface rather than a hard cut to a new document.
+
+   Only the arriving page. Cross-document `@view-transition` was here and is
+   deliberately gone: it crossfades by animating the outgoing page out, and
+   when the browser abandons that partway -- which it does whenever the next
+   document is not ready in time -- the old page fades, snaps back, and only
+   then gets replaced. Three visible states for one navigation, and no way from
+   here to make the abort reliable. A one-directional fade cannot do that,
+   because there is no outgoing animation to interrupt.
+
+   `main` rather than `body`: the header is `position: sticky`, and an
+   animating ancestor is how sticky quietly stops sticking. */
+/* One steady fade for the whole `#page`, gated on a `ready` class the router
+   sets after preloading the hero. Cubic-bezier rather than `ease-out` gives a
+   softer settle at the end -- the change reads as arrival, not a snap.
+
+   Class-driven rather than a CSS animation because a keyframe fires on every
+   element insertion, and the router needs to hold the reveal for a beat while
+   the hero decodes. `.imgfade` guards the whole thing: with JS off, no class
+   is added, `#page` is visible immediately, and the site works. */
+.imgfade #page:not(.ready) > :not(.entity),
+.imgfade #page:not(.ready) .entity > * { opacity: 0; }
+.imgfade #page > :not(.entity),
+.imgfade #page .entity > * {
+  transition: opacity 1s cubic-bezier(.4, 0, .2, 1);
+}
+/* Sections arrive in order, each a tenth behind the one before, so the page
+   reads top-to-bottom as it appears. On an entity page the sections are the
+   article's regions -- head, picture, body, metadata -- because the article
+   wrapper itself is one child of `#page` and staggering that alone would be
+   no stagger at all. The `transition-delay` rules must follow the shorthand
+   above: a `transition:` shorthand resets delay to zero.
+
+   First child needs no rule (zero delay); past the eighth everything shares
+   the tail delay rather than drifting later forever. */
+.imgfade #page > :not(.entity):nth-child(2),
+.imgfade #page .entity > :nth-child(2) { transition-delay: 0.1s; }
+.imgfade #page > :not(.entity):nth-child(3),
+.imgfade #page .entity > :nth-child(3) { transition-delay: 0.2s; }
+.imgfade #page > :not(.entity):nth-child(4),
+.imgfade #page .entity > :nth-child(4) { transition-delay: 0.3s; }
+.imgfade #page > :not(.entity):nth-child(5),
+.imgfade #page .entity > :nth-child(5) { transition-delay: 0.4s; }
+.imgfade #page > :not(.entity):nth-child(6),
+.imgfade #page .entity > :nth-child(6) { transition-delay: 0.5s; }
+.imgfade #page > :not(.entity):nth-child(7),
+.imgfade #page .entity > :nth-child(7) { transition-delay: 0.6s; }
+.imgfade #page > :not(.entity):nth-child(8),
+.imgfade #page .entity > :nth-child(8) { transition-delay: 0.7s; }
+.imgfade #page > :not(.entity):nth-child(n+9),
+.imgfade #page .entity > :nth-child(n+9) { transition-delay: .7s; }
+/* The outgoing page. The router adds `leaving` on click, waits out the short
+   fade, and only then swaps. The whole page leaves as one piece -- staggering
+   an exit would just delay the reader -- and quick on the way out, slow on
+   the way in: leaving should feel like acknowledgement, arriving like a
+   settle. */
+.imgfade #page.leaving { opacity: 0; transition: opacity .18s ease-in; }
+@media (prefers-reduced-motion: reduce) {
+  .imgfade #page:not(.ready) > :not(.entity),
+  .imgfade #page:not(.ready) .entity > * { opacity: 1; }
+  .imgfade #page > :not(.entity),
+  .imgfade #page .entity > * { transition: none; }
+  .imgfade #page.leaving { opacity: 1; transition: none; }
+}
 .card .body { padding: .6rem .7rem; }
-.card .body a { font-weight: bold; }
+.card .body > a { font-weight: bold; }
 .card .body p { margin: .2rem 0 0; font-size: .8rem; color: var(--muted); }
-#results .hit { padding: .5rem 0; border-bottom: 1px solid var(--line); }
+.card .body p.contains { font-size: .72rem; color: var(--accent);
+  font-variant: small-caps; letter-spacing: .04em; }
+#results .hit { padding: .5rem .4rem; border-bottom: 1px solid var(--line); }
+#results .hit.sel { background: var(--accent-soft); border-radius: 4px; }
 #results .hit p { margin: .1rem 0 0; font-size: .85rem; color: var(--muted); }
 .empty { color: var(--muted); font-style: italic; }
 table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .9rem; }
@@ -158,11 +467,8 @@ form.auth input, form.auth select { width: 100%; padding: .5rem .6rem; border: 1
 form.auth button { margin-top: 1.2rem; padding: .55rem 1.2rem; border: 0;
   border-radius: 4px; background: var(--accent); color: #fff; font: inherit;
   cursor: pointer; }
-.error { color: #b3261e; background: #fdecea; border: 1px solid #f5c6c2;
+.error { color: #ffb4ab; background: #3b1512; border: 1px solid #5c221d;
   padding: .6rem .8rem; border-radius: 4px; margin: 1rem 0; font-size: .9rem; }
-@media (prefers-color-scheme: dark) {
-  .error { color: #ffb4ab; background: #3b1512; border-color: #5c221d; }
-}
 .hint { color: var(--muted); font-size: .85rem; }
 .guide h1 { margin-top: 0; }
 .guide h2 { margin-top: 2.4rem; }
@@ -215,6 +521,7 @@ details.newperson summary { cursor: pointer; color: var(--accent);
   gap: .8rem; margin: 1rem 0; }
 .artgrid figure { margin: 0; border: 1px solid var(--line); border-radius: 6px;
   overflow: hidden; background: var(--panel); }
+.artgrid .thumb { display: block; }
 .artgrid img { width: 100%; display: block; aspect-ratio: 1/1; object-fit: cover; }
 .artgrid button { width: 100%; border: 0; border-top: 1px solid var(--line);
   padding: .45rem; background: var(--panel); color: var(--accent); font: inherit;
@@ -309,6 +616,8 @@ details h2 { font-size: 1rem; margin-top: 1.6rem; }
 .trail { font-size: .85rem; color: var(--muted); margin: 0 0 .3rem; }
 .trail a { color: var(--muted); text-decoration: none; }
 .trail a:hover { color: var(--accent); text-decoration: underline; }
+.kind a.kindlink { color: inherit; text-decoration: none; }
+.kind a.kindlink:hover { color: var(--accent); text-decoration: underline; }
 
 /* What a place contains. Summaries inline, because a list of fifteen shop
    names tells you much less than a list of fifteen shops. */
@@ -346,9 +655,22 @@ const rank = (e, t) => {
 };
 const q = document.getElementById('q');
 const results = document.getElementById('results');
-const page = document.getElementById('page');
 if (q) {
+  // Keyboard selection: arrows walk the hits, Enter opens the one selected
+  // (or the first, which makes search-type-enter the fast path to a page).
+  let sel = -1;
+  const hitLinks = () => [...results.querySelectorAll('.hit a')];
+  const paint = () => {
+    results.querySelectorAll('.hit').forEach((h, i) =>
+      h.classList.toggle('sel', i === sel));
+    const on = results.querySelectorAll('.hit')[sel];
+    if (on) on.scrollIntoView({ block: 'nearest' });
+  };
   const render = term => {
+    sel = -1;
+    // Read `#page` fresh, not once at load: the router replaces it, and a
+    // captured reference points at a detached node after the first swap.
+    const page = document.getElementById('page');
     const t = term.trim().toLowerCase();
     if (!t) { results.innerHTML=''; results.hidden=true;
               if (page) page.hidden=false; return; }
@@ -364,9 +686,395 @@ if (q) {
           '</a> <span class="kind">' + e.k + '</span><p>' + e.s + '</p></div>').join('')
       : '<p class="empty">Nothing matches that.</p>';
   };
-  q.addEventListener('input', () => render(q.value));
-  q.addEventListener('keydown', e => { if (e.key==='Escape') { q.value=''; render(''); } });
+  const qclear = document.getElementById('qclear');
+  const syncClear = () => { if (qclear) qclear.classList.toggle('show', !!q.value); };
+  q.addEventListener('input', () => { render(q.value); syncClear(); });
+  q.addEventListener('keydown', e => {
+    if (e.key==='Escape') { q.value=''; render(''); syncClear(); return; }
+    if (results.hidden) return;
+    const n = hitLinks().length;
+    if (e.key === 'ArrowDown' && n) {
+      sel = Math.min(sel + 1, n - 1); paint(); e.preventDefault();
+    } else if (e.key === 'ArrowUp' && n) {
+      sel = Math.max(sel - 1, -1); paint(); e.preventDefault();
+    } else if (e.key === 'Enter' && n) {
+      hitLinks()[Math.max(sel, 0)].click(); e.preventDefault();
+    }
+  });
+  if (qclear) qclear.addEventListener('click', () => {
+    q.value=''; render(''); syncClear(); q.focus(); });
+  // A tag is a search the page already wrote: clicking one runs it. The
+  // index includes tags in its haystack, so the term finds every page
+  // carrying the tag. Delegated, so tags on router-swapped pages count.
+  document.addEventListener('click', e => {
+    const t = e.target.closest('.tag');
+    if (!t) return;
+    q.value = t.textContent.trim();
+    render(q.value); syncClear();
+    window.scrollTo(0, 0);
+  });
 }
+"""
+
+
+# Marks each picture once it has actually decoded, and stops the shimmer behind
+# it. Runs after the images are in the DOM; anything still loading keeps its
+# skeleton until its own `load` fires, which for a lazy image is when it is
+# scrolled near.
+NAV_JS = """
+/* Client-side navigation: intercept clicks on same-origin `/wiki/` links,
+   fetch the next page, swap the content region.
+
+   Progressive enhancement, not an app rewrite. Every page still renders on the
+   server, still works with JS off, still bookmarks and view-sources correctly.
+   The router is a shim on top that keeps the document alive across clicks, so
+   the header does not have to be torn down and reborn between pages -- which
+   is what made a navigation read as a flash regardless of what CSS animation
+   we asked for.
+
+   Only `#page` moves. The header, footer, and the tooltip/search listeners on
+   `document` all stay put. Redirects fall through to a real navigation, so
+   sign-out, session expiry and the gate never leave the browser looking at a
+   header from the wrong session. */
+(function(){
+if(!window.history||!window.history.pushState||!window.DOMParser)return;
+
+var savedScroll={};
+
+function localWikiUrl(a,e){
+  if(e.defaultPrevented||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return null;
+  if(e.button!==0)return null;
+  if(a.target||a.hasAttribute('download')||a.hasAttribute('data-full-nav'))return null;
+  var u; try{u=new URL(a.href,location.origin);}catch(x){return null;}
+  if(u.origin!==location.origin)return null;
+  if(u.pathname.indexOf('/wiki/')!==0)return null;
+  /* Downloads and raw images are not pages: fetching a 2MB attachment,
+     failing to find #page in it, and stopping is a click that does nothing.
+     The browser handles these natively. */
+  if(u.pathname.indexOf('/wiki/file/')===0)return null;
+  if(u.pathname.indexOf('/wiki/art/')===0)return null;
+  /* Same-page hash link: let the browser scroll. Nothing to fetch. */
+  if(u.pathname===location.pathname&&u.search===location.search&&u.hash)return null;
+  return u;
+}
+
+document.addEventListener('click',function(e){
+  /* The site menu: the button toggles it; any other click closes it --
+     including its own links, which the router handles without a page load,
+     so nothing else would ever shut it. */
+  var mb=e.target.closest?e.target.closest('.menubtn'):null;
+  document.querySelectorAll('.menu .menupanel:not([hidden])').forEach(function(pn){
+    if(!mb||!pn.parentElement.contains(mb)){
+      pn.hidden=true;
+      pn.parentElement.querySelector('.menubtn').setAttribute('aria-expanded','false');
+    }
+  });
+  if(mb){
+    var pn=mb.parentElement.querySelector('.menupanel');
+    pn.hidden=!pn.hidden;
+    mb.setAttribute('aria-expanded', pn.hidden?'false':'true');
+    return;
+  }
+  var a=e.target.closest?e.target.closest('a'):null;
+  if(!a||!a.getAttribute('href'))return;
+  var u=localWikiUrl(a,e); if(!u)return;
+  e.preventDefault();
+  savedScroll[location.href]=window.scrollY;
+  go(u.href,true);
+});
+
+window.addEventListener('popstate',function(){ go(location.href,false); });
+
+/* Warm the browser cache for the pictures that will be on screen when the
+   next page arrives, so the swap-in reads as one arrival rather than "page,
+   then image". The hero is always above the fold if it exists; eager card
+   images (not `loading="lazy"`) tend to be above the fold too. Everything
+   else stays lazy and shows its skeleton on the way in, which is what
+   skeletons are for.
+
+   Racing against a timer, because one slow or broken picture must not hold
+   the whole navigation up: about a second is short enough to feel like an
+   attentive click and long enough for a cold WEBP over a home line. */
+function preloadAbove(incoming){
+  var urls=[];
+  var hero=incoming.querySelector('img.hero');
+  if(hero&&hero.getAttribute('src')) urls.push(hero.getAttribute('src'));
+  var eager=incoming.querySelectorAll('img:not([loading="lazy"])');
+  for(var j=0;j<eager.length&&urls.length<8;j++){
+    var src=eager[j].getAttribute('src');
+    if(src&&urls.indexOf(src)<0) urls.push(src);
+  }
+  if(!urls.length) return Promise.resolve();
+  var jobs=urls.map(function(u){return new Promise(function(res){
+    var i=new Image(); i.onload=res; i.onerror=res; i.src=u;
+  });});
+  return Promise.race([
+    Promise.all(jobs),
+    new Promise(function(res){ setTimeout(res,900); })
+  ]);
+}
+
+function go(url,push){
+  /* Hovered tooltips do not survive their anchor being removed. Hide any
+     visible tip before the swap so it does not linger over the next page. */
+  if(window.__tipsHide) window.__tipsHide();
+  /* Fade the old page out while the fetch runs, and never swap before the
+     fade has had its moment. The timer rather than `transitionend`, which
+     does not fire for a tab in the background and would wedge the click. */
+  var leaving=document.getElementById('page');
+  if(leaving) leaving.classList.add('leaving');
+  var fadedOut=new Promise(function(res){ setTimeout(res,200); });
+  fetch(url,{credentials:'same-origin',headers:{'Accept':'text/html'}})
+    .then(function(r){
+      /* A redirect means the session changed or the gate is up. Full-nav to
+         the destination rather than swapping content under a stale header. */
+      if(r.redirected){ location.href=r.url; return null; }
+      if(!r.ok) throw new Error('status '+r.status);
+      return r.text();
+    })
+    .then(function(html){
+      if(html===null) return null;
+      var doc=new DOMParser().parseFromString(html,'text/html');
+      var incoming=doc.getElementById('page');
+      /* Anything without a #page is not swappable -- a download, an export,
+         a future route this script has not heard of. Full navigation, never
+         a silent nothing. */
+      if(!incoming){ location.href=url; return null; }
+      /* Preload BEFORE swapping. The old page stays put on screen while the
+         browser warms its cache; the swap then reads as arrival, not blank. */
+      return preloadAbove(incoming).then(function(){ return {doc:doc,incoming:incoming}; });
+    })
+    .then(function(payload){
+      if(!payload) return null;
+      return fadedOut.then(function(){ return payload; });
+    })
+    .then(function(payload){
+      if(!payload) return;
+      var current=document.getElementById('page');
+      if(!current){ location.href=url; return; }
+      if(payload.doc.title) document.title=payload.doc.title;
+      /* Arriving anywhere dismisses the search: the query is cleared, the
+         results list is emptied and hidden. Without this, navigating from a
+         result kept the results on screen and the arriving page hidden --
+         the search UI owns `#page.hidden`, and the incoming element must
+         not inherit a hidden world. */
+      var q=document.getElementById('q');
+      if(q) q.value='';
+      var qc=document.getElementById('qclear');
+      if(qc) qc.classList.remove('show');
+      var res=document.getElementById('results');
+      if(res){ res.hidden=true; res.innerHTML=''; }
+      payload.incoming.hidden=false;
+      current.replaceWith(payload.incoming);
+      if(push) history.pushState({url:url},'',url);
+      var y=savedScroll[url]; window.scrollTo(0,typeof y==='number'?y:0);
+      if(window.__imgFadeInit) window.__imgFadeInit(payload.incoming);
+      /* The tooltip walker runs once on load, scoped to the initial `#page`.
+         Swapped-in content needs the same treatment or nothing lights up. */
+      if(window.__tipsWalk) window.__tipsWalk(payload.incoming);
+      /* Two frames of settle before revealing: one for insert, one for the
+         browser to acknowledge the images are decoded. Without this, the
+         transition sometimes starts from `.ready` and never plays. */
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){ payload.incoming.classList.add('ready'); });
+      });
+      /* Move focus for a11y and to reset tab order onto the new page. */
+      var h1=payload.incoming.querySelector('h1');
+      if(h1){ h1.tabIndex=-1; h1.focus({preventScroll:true}); }
+    })
+    .catch(function(){ location.href=url; });
+}
+})();
+"""
+
+
+TUNER_JS = """
+/* The paper tuner: sliders over the grain and rough-edge parameters, live.
+   A tuning aid, not a feature -- the panel only appears with `?tune` in the
+   URL, but saved values apply on every page load so the whole site can be
+   judged while tuned. `Copy` puts the numbers on the clipboard to be baked
+   into the stylesheet, `Reset` returns to what ships. Live server only. */
+(function(){
+var KEY='paper-tuner';
+var saved={}; try{saved=JSON.parse(localStorage.getItem(KEY))||{};}catch(e){}
+var DEF={go:0.45, gf:0.3, es:4, ef:0.045};
+var v={}; for(var k in DEF) v[k]=(typeof saved[k]==='number')?saved[k]:DEF[k];
+var st=document.createElement('style'); document.head.appendChild(st);
+function noise(f){
+  return 'url("data:image/svg+xml,'+encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'>"+
+    "<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='"+f+
+    "' numOctaves='2' stitchTiles='stitch'/></filter>"+
+    "<rect width='240' height='240' filter='url(#n)'/></svg>")+'")';
+}
+function apply(){
+  st.textContent='body::after{opacity:'+v.go+' !important;'+
+                 'background-image:'+noise(v.gf)+' !important}';
+  var d=document.querySelector('#roughedge feDisplacementMap');
+  if(d) d.setAttribute('scale',v.es);
+  var t=document.querySelector('#roughedge feTurbulence');
+  if(t) t.setAttribute('baseFrequency',v.ef.toFixed(3)+' '+(v.ef*1.5).toFixed(3));
+  localStorage.setItem(KEY,JSON.stringify(v));
+}
+apply();
+if(!/[?&#]tune/.test(location.search+location.hash)) return;
+
+var css=document.createElement('style');
+css.textContent='#tuner{position:fixed;right:1rem;bottom:1rem;z-index:1000;'+
+'background:var(--panel);border:1px solid var(--line);border-radius:8px;'+
+'padding:.8rem 1rem 1rem;font-size:.78rem;width:16rem;'+
+'box-shadow:0 6px 18px rgba(0,0,0,.25)}'+
+'#tuner h3{margin:0 0 .2rem;font-size:.85rem}'+
+'#tuner label{display:block;margin:.5rem 0 .1rem;color:var(--muted)}'+
+'#tuner .val{float:right;color:var(--ink);font-variant-numeric:tabular-nums}'+
+'#tuner input[type=range]{width:100%;margin:0}'+
+'#tuner button{margin:.7rem .5rem 0 0;font:inherit;padding:.2rem .6rem;'+
+'border:1px solid var(--line);border-radius:4px;background:var(--accent-soft);'+
+'color:var(--ink);cursor:pointer}';
+document.head.appendChild(css);
+
+var P=document.createElement('div'); P.id='tuner';
+P.innerHTML='<h3>Paper</h3>';
+function row(label,key,min,max,step){
+  var l=document.createElement('label');
+  l.textContent=label;
+  var out=document.createElement('span'); out.className='val';
+  out.textContent=v[key]; l.appendChild(out);
+  var r=document.createElement('input');
+  r.type='range'; r.min=min; r.max=max; r.step=step; r.value=v[key];
+  r.addEventListener('input',function(){
+    v[key]=parseFloat(r.value); out.textContent=r.value; apply();
+  });
+  P.appendChild(l); P.appendChild(r);
+  return function(){ r.value=v[key]; out.textContent=v[key]; };
+}
+var syncs=[
+  row('grain strength','go',0,0.5,0.01),
+  row('grain fineness','gf',0.15,1.4,0.05),
+  row('edge roughness','es',0,14,1),
+  row('edge wobble','ef',0.005,0.09,0.005),
+];
+var copy=document.createElement('button'); copy.textContent='Copy values';
+copy.addEventListener('click',function(){
+  var txt='grain opacity '+v.go+', grain baseFrequency '+v.gf+
+          ', edge scale '+v.es+', edge baseFrequency '+v.ef.toFixed(3)+
+          ' '+(v.ef*1.5).toFixed(3);
+  (navigator.clipboard&&navigator.clipboard.writeText)?
+    navigator.clipboard.writeText(txt).then(function(){copy.textContent='Copied';}):
+    (copy.textContent=txt);
+});
+var reset=document.createElement('button'); reset.textContent='Reset';
+reset.addEventListener('click',function(){
+  localStorage.removeItem(KEY);
+  for(var k in DEF) v[k]=DEF[k];
+  apply(); syncs.forEach(function(f){f();}); copy.textContent='Copy values';
+});
+P.appendChild(copy); P.appendChild(reset);
+document.body.appendChild(P);
+})();
+"""
+
+
+TILT_JS = """
+/* The trading-card tilt: each card leans toward the pointer, a few degrees
+   of perspective rotation that tracks as the mouse moves and eases back on
+   the way out. Delegated from the document so cards swapped in by the
+   router tilt without rebinding, throttled to one transform per frame.
+   Touch screens and reduced-motion readers never see it. */
+(function(){
+if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+if(matchMedia('(hover: none)').matches)return;
+var card=null,ev=null,raf=0;
+function apply(){
+  raf=0;
+  if(!card||!ev)return;
+  var b=card.getBoundingClientRect();
+  var px=(ev.clientX-b.left)/b.width-.5;
+  var py=(ev.clientY-b.top)/b.height-.5;
+  card.style.transform='perspective(40rem) rotateX('+(-py*5).toFixed(2)+
+    'deg) rotateY('+(px*5).toFixed(2)+'deg) translateY(-2px)';
+}
+document.addEventListener('pointermove',function(e){
+  var c=e.target.closest?e.target.closest('.card'):null;
+  if(c!==card){ if(card)card.style.transform=''; card=c; }
+  if(!c)return;
+  ev=e;
+  if(!raf)raf=requestAnimationFrame(apply);
+},{passive:true});
+document.addEventListener('pointerout',function(e){
+  if(card&&!e.relatedTarget){ card.style.transform=''; card=null; }
+},{passive:true});
+})();
+
+/* Image attachments open full screen instead of downloading: the click is
+   a look, and the download still exists for anyone without scripts or via
+   the browser's save-image. Non-image files keep their download click.
+   The big view fetches the ORIGINAL, not the thumbnail -- a battle map
+   opened fullscreen is opened to be read. Escape or any click closes. */
+(function(){
+function close(){
+  var b=document.getElementById('lightbox');
+  if(b)b.remove();
+}
+document.addEventListener('click',function(e){
+  var a=e.target.closest?e.target.closest('a.lightboxable'):null;
+  if(!a){ if(e.target.closest&&e.target.closest('#lightbox'))close(); return; }
+  e.preventDefault();
+  close();
+  var box=document.createElement('div');
+  box.id='lightbox';
+  var img=document.createElement('img');
+  img.src=a.getAttribute('href');
+  img.alt=(a.querySelector('img')||{}).alt||'';
+  box.appendChild(img);
+  document.body.appendChild(box);
+});
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape')close();
+});
+})();
+"""
+
+
+IMG_FADE_JS = """
+/* Stop each card's skeleton shimmer once its picture is actually there.
+   No per-image opacity fade -- that role now belongs to the `#page` reveal --
+   only the frame's `ready` class, which turns the gradient off. */
+window.__imgFadeInit=function(root){
+var imgs=(root||document).querySelectorAll('.card img,.artgrid img,img.hero');
+for(var i=0;i<imgs.length;i++){(function(img){
+if(img.__fadeBound)return; img.__fadeBound=true;
+var frame=img.closest('.thumb'); if(!frame)return;
+var done=function(){ frame.classList.add('ready'); };
+if(img.complete&&img.naturalWidth>0){done();return;}
+img.addEventListener('load',done);
+/* A picture that will not load must not leave a skeleton shimmering at the
+   reader forever. Give up and let the broken image state through. */
+img.addEventListener('error',done);
+})(imgs[i]);}
+};
+window.__imgFadeInit();
+
+/* Initial-load reveal. On the very first paint the router has not run yet,
+   so the same held-then-fade behavior has to be applied to the `#page` that
+   already exists. Wait for its above-fold pictures, then add `.ready`.
+   A safety timer guards against a hung image. */
+(function(){
+var page=document.getElementById('page'); if(!page) return;
+var above=[]; var hero=page.querySelector('img.hero');
+if(hero) above.push(hero);
+var eager=page.querySelectorAll('img:not([loading="lazy"])');
+for(var i=0;i<eager.length&&above.length<8;i++){
+if(above.indexOf(eager[i])<0) above.push(eager[i]); }
+var pending=above.length; var reveal=function(){ page.classList.add('ready'); };
+if(!pending){ reveal(); return; }
+var one=function(){ if(--pending<=0) reveal(); };
+above.forEach(function(img){
+if(img.complete&&img.naturalWidth>0){ one(); return; }
+img.addEventListener('load',one); img.addEventListener('error',one);
+});
+setTimeout(reveal,900);
+})();
 """
 
 
@@ -377,22 +1085,31 @@ def page_url(ref: str) -> str:
 
 def shell(schema, title: str, base: str, body: str, index_json: str,
           user: str | None = None, live: bool = False,
-          tips: bool = False, extra: str = "") -> str:
+          tips: bool = False, extra: str = "", actions: str = "") -> str:
     """Wrap rendered body text in the site chrome.
 
-    `extra` goes in the nav and is only ever passed by the live server: the
-    static export has nothing to link to for writing, and a New button that
-    404s is worse than no button.
+    `actions` (the + New button) and `extra` (the server-only site links that
+    join the dropdown) are only ever passed by the live server: the static
+    export has nothing to link to for writing, and a New button that 404s is
+    worse than no button.
     """
     # The live server routes /wiki/guide; a static export has to be a real file
     # with an .html extension, or the browser downloads it instead of showing it.
     guide_href = f"{base}guide" if live else f"{base}guide.html"
     schema.reload_if_changed()
+    # Content on the left, site machinery folded away. The kinds are what a
+    # reader navigates by; Inbox, Structure, Guide and Changelog are about
+    # the wiki rather than the world, and sat in the same row they made the
+    # nav read as nine equal destinations when it is really five and change.
     changelog = f'<a href="{base}changelog">Changelog</a>' if live else ""
+    site_links = f'{extra}{changelog}<a href="{guide_href}">Guide</a>'
+    dropdown = (f'<div class="menu"><button type="button" class="menubtn" '
+                f'aria-haspopup="true" aria-expanded="false">Site &#9662;</button>'
+                f'<div class="menupanel" hidden>{site_links}</div></div>')
     nav = "".join(
         f'<a href="{base}{k.key}/index.html">{html.escape(k.label)}</a>'
         for k in schema.nav
-    ) + f'{changelog}<a href="{guide_href}">Guide</a>'
+    )
     # ASCII separators on purpose: these strings get rewritten by tooling now
     # and then, and a stray encoding round-trip turns punctuation into mojibake.
     full = title if title == schema.name else f"{title} - {schema.name}"
@@ -412,19 +1129,34 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(full)}</title>
 <style>{CSS}{tooltips_mod.TOOLTIP_CSS if tips else ""}</style>
+<script>document.documentElement.classList.add("imgfade")</script>
 </head><body>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute">
+  <filter id="roughedge">
+    <feTurbulence type="fractalNoise" baseFrequency=".045 .068" numOctaves="3"
+                  seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="4"/>
+  </filter>
+</svg>
 <header class="top">
   <a class="home" href="{base}index.html">{html.escape(schema.name)}</a>
-  <nav>{nav}{extra}</nav>
+  <nav>{nav}</nav>
+  <div class="sitenav">{dropdown}</div>
   {account}
-  <input id="q" type="search" placeholder="Search the world..." autocomplete="off">
 </header>
+<div class="searchbar"><div class="searchwrap">
+  <span class="qwrap">
+    <input id="q" type="search" placeholder="Search the world..." autocomplete="off">
+    <button id="qclear" type="button" aria-label="Clear search">&#215;</button>
+  </span>
+  {actions}
+</div></div>
 <main>
   <div id="results" hidden></div>
   <div id="page">{body}</div>
 </main>
 <footer class="build">{html.escape(schema.name)} &middot; <code>{html.escape(version_mod.describe())}</code></footer>
-<script>const BASE={json.dumps(base)};{"window.__INDEX__=" + index_json + ";" if index_json != "[]" else ""}{SEARCH_JS}</script>
+<script>const BASE={json.dumps(base)};{"window.__INDEX__=" + index_json + ";" if index_json != "[]" else ""}{SEARCH_JS}{IMG_FADE_JS}{NAV_JS}{TILT_JS}{TUNER_JS if live else ""}</script>
 {f'<script src="{base}search.js" defer></script>' if live else ""}
 {f'<script src="{base}tooltips.js"></script>' if tips else ""}
 </body></html>
@@ -451,16 +1183,27 @@ def render_guide(source: str) -> str:
 def render_body(schema, entity: Entity, library: Library, images: dict[str, str],
                 base: str, viewer, allowed: set[str],
                 editable: bool = False) -> str:
+    # Three regions on a wide viewport: the page identity spans the top, the
+    # picture and the metadata sit on the left, the description and its
+    # sub-sections sit on the right. The regions are separate elements rather
+    # than one flat list, so the source order stays mobile-friendly (image,
+    # description, then metadata) and CSS grid does the reflow at wide widths.
+    head_parts: list[str] = []
+    main_parts: list[str] = []
+    side_parts: list[str] = []
+
     edit_link = (
         f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/edit">Edit</a>'
         f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/art">Art</a>'
         f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/files">Files</a>'
         if editable else ""
     )
-    parts = [
-        f'<div class="kind">{html.escape(schema.label(entity.kind))}'
-        f"{edit_link}</div>",
-    ]
+    head_parts.append(
+        f'<div class="kind"><a class="kindlink" '
+        f'href="{base}{entity.kind}/index.html">'
+        f'{html.escape(schema.label(entity.kind))}</a>'
+        f"{edit_link}</div>"
+    )
 
     # Where you are, for someone who arrived from a search or a link and has
     # no idea whether this pub is in Valeshire or three hundred miles away.
@@ -477,13 +1220,15 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
             f'<a href="{base}{page_url(p.ref)}">{html.escape(p.name)}</a>'
             for p in trail
         )
-        parts.append(f'<nav class="trail">{crumbs}</nav>')
+        head_parts.append(f'<nav class="trail">{crumbs}</nav>')
 
-    parts.append(f"<h1>{html.escape(entity.name)}</h1>")
+    head_parts.append(f"<h1>{html.escape(entity.name)}</h1>")
     if entity.summary:
-        parts.append(f'<p class="summary">{html.escape(entity.summary)}</p>')
+        head_parts.append(f'<p class="summary">{html.escape(entity.summary)}</p>')
+
+    hero_html = ""
     if entity.ref in images:
-        parts.append(
+        hero_html = (
             f'<img class="hero" src="{art_url(base, images[entity.ref], "page")}" '
             f'alt="{html.escape(entity.name)}" loading="lazy">'
         )
@@ -492,28 +1237,28 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
     # them at the table by accident.
     for segment in secrets_mod.parse(entity.body):
         if segment.audience is None:
-            parts.append(_markdown(segment.text))
+            main_parts.append(_markdown(segment.text))
         elif viewer.all_access or (viewer.identities & segment.audience):
             who = ", ".join(sorted(segment.audience))
-            parts.append(
+            main_parts.append(
                 f'<div class="secret"><span class="who">secret &middot; {html.escape(who)}'
                 f"</span>{_markdown(segment.text)}</div>"
             )
 
     def link_list(refs, heading):
-        items = []
+        # Cards, not pills: a related page with a face is recognised faster
+        # than its name, and the grid is the same one the indexes use, so
+        # the whole site turns pages over the same way.
+        targets = []
         for ref in sorted(set(refs)):
             if ref not in allowed:
                 continue
             target = library.load(*ref.split("/", 1))
             if target:
-                items.append(
-                    f'<li><a href="{base}{page_url(ref)}">'
-                    f"{html.escape(target.name)}</a></li>"
-                )
-        if items:
-            parts.append(f"<h2>{heading}</h2>")
-            parts.append(f'<ul class="links">{"".join(items)}</ul>')
+                targets.append(target)
+        if targets:
+            main_parts.append(f"<h2>{heading}</h2>")
+            main_parts.append(_cards(targets, images, base))
 
     # Attachments, before the cross-links: a handout or a battle map is part of
     # the page, where Related is navigation away from it. Only shown live; the
@@ -526,13 +1271,26 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
             size = int(f.get("size", 0) or 0)
             readable = (f"{size / 1024 / 1024:.1f}MB" if size > 1024 * 1024
                         else f"{max(1, size // 1024)}KB")
-            rows.append(
-                f'<li><a href="{base}file/{html.escape(str(f["id"]))}">'
-                f'{html.escape(str(f.get("name", "file")))}</a> '
-                f'<span class="hint">{readable}</span></li>'
-            )
-        parts.append("<h2>Files</h2>")
-        parts.append(f'<ul class="filelist">{"".join(rows)}</ul>')
+            fid = html.escape(str(f["id"]))
+            fname = html.escape(str(f.get("name", "file")))
+            # An image attachment shows itself; clicking it still downloads
+            # the original. Anything else stays a plain link -- the download
+            # route only serves inline what the thumbnailer itself produced.
+            if str(f.get("type", "")).startswith("image/"):
+                rows.append(
+                    f'<li class="filepic"><a href="{base}file/{fid}" '
+                    f'class="lightboxable">'
+                    f'<img src="{base}file/{fid}?size=page" alt="{fname}" '
+                    f'loading="lazy"></a>'
+                    f'<span class="hint">{fname} &middot; {readable}</span></li>'
+                )
+            else:
+                rows.append(
+                    f'<li><a href="{base}file/{fid}">{fname}</a> '
+                    f'<span class="hint">{readable}</span></li>'
+                )
+        main_parts.append("<h2>Files</h2>")
+        main_parts.append(f'<ul class="filelist">{"".join(rows)}</ul>')
 
     # What is inside this place, before Related, because a city's own districts
     # are the page rather than navigation away from it. Direct children only:
@@ -550,8 +1308,8 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
             + "</li>"
         )
     if rows:
-        parts.append(f"<h2>Inside {html.escape(entity.name)}</h2>")
-        parts.append(f'<ul class="within">{"".join(rows)}</ul>')
+        main_parts.append(f"<h2>Inside {html.escape(entity.name)}</h2>")
+        main_parts.append(f'<ul class="within">{"".join(rows)}</ul>')
 
     link_list(entity.links, "Related")
     link_list(
@@ -569,7 +1327,7 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
                 f"level {entity.data['level']}" if entity.data.get("level") else "",
             ])
         )
-        parts.append(
+        main_parts.append(
             '<div class="sheet">'
             f'<div class="statline">{bits}</div>'
             f'<a class="sheetlink" href="{html.escape(sheet)}" target="_blank" '
@@ -580,7 +1338,7 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
         )
 
     if entity.tags:
-        parts.append(
+        side_parts.append(
             '<div class="tags">'
             + "".join(f'<span class="tag">{html.escape(t)}</span>' for t in entity.tags)
             + "</div>"
@@ -602,9 +1360,25 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
         meta.append("<p>Sources: " + ", ".join(
             f"<code>{html.escape(s)}</code>" for s in entity.sources) + "</p>")
     if meta:
-        parts.append(f'<div class="meta">{"".join(meta)}</div>')
+        side_parts.append(f'<div class="meta">{"".join(meta)}</div>')
 
-    return "\n".join(parts)
+    pieces: list[str] = []
+    pieces.append(f'<header class="entity-head">{"".join(head_parts)}</header>')
+    if hero_html:
+        pieces.append(hero_html)
+    if main_parts:
+        pieces.append(f'<div class="entity-main">{"".join(main_parts)}</div>')
+    if side_parts:
+        pieces.append(f'<aside class="entity-side">{"".join(side_parts)}</aside>')
+
+    # Only take on the two-column shape when there is genuinely something to
+    # put on the left. A page with no picture, no tags and no raw metadata is
+    # just prose and would render as a narrow column next to a permanently
+    # empty aside.
+    has_side = bool(hero_html or side_parts)
+    klass = "entity has-side" if has_side else "entity"
+    return f'<article class="{klass}">{"".join(pieces)}</article>'
+
 
 
 # What a card thumbnail actually is, so the markup can say so. Square because
@@ -628,10 +1402,36 @@ def art_url(base: str, name: str, size: str) -> str:
     return f"{base}art/{name}{'&' if '?' in name else '?'}size={size}"
 
 
-def _cards(items: list[Entity], images: dict[str, str], base: str) -> str:
+def _completeness(e: Entity) -> float:
+    """How finished a page is, for ordering an index.
+
+    Art carries the most weight because a card without a picture reads as a
+    stub whatever the prose says; then prose, capped so one enormous page
+    does not pin itself to the front forever. The `needs-*` tags subtract:
+    they are the wiki's own admission that something is missing.
+    """
+    score = 0.0
+    if e.art:
+        score += 2
+    if e.summary:
+        score += 1
+    if e.appearance:
+        score += 1
+    score += min(len(e.body) / 400.0, 3.0)
+    score -= sum(1 for t in e.tags if t.startswith("needs-"))
+    return score
+
+
+def _cards(items: list[Entity], images: dict[str, str], base: str,
+           notes: dict[str, str] | None = None,
+           by_completeness: bool = False) -> str:
+    key = (lambda e: (-_completeness(e), e.name)) if by_completeness \
+        else (lambda e: e.name)
     out = []
-    for e in sorted(items, key=lambda e: e.name):
+    for e in sorted(items, key=key):
         href = f"{base}{page_url(e.ref)}"
+        note = (notes or {}).get(e.ref, "")
+        note_html = f'<p class="contains">{html.escape(note)}</p>' if note else ""
         # The picture is the obvious thing to click on a card, so it opens the
         # page too. It is hidden from assistive tech and skipped by tab: it goes
         # exactly where the title link below it goes, and announcing every card
@@ -649,7 +1449,7 @@ def _cards(items: list[Entity], images: dict[str, str], base: str) -> str:
         out.append(
             f'<div class="card">{img}<div class="body">'
             f'<a href="{href}">{html.escape(e.name)}</a>'
-            f"<p>{html.escape(e.summary[:90])}</p></div></div>"
+            f"<p>{html.escape(e.summary[:90])}</p>{note_html}</div></div>"
         )
     return f'<div class="grid">{"".join(out)}</div>'
 
@@ -681,26 +1481,86 @@ def render_index(schema, entities: list[Entity], images: dict[str, str],
     return "\n".join(parts)
 
 
+# The census vocabulary for a card's "what is inside" line, in display order.
+# A child counts under its first matching entry; anything unmatched is just a
+# place. Same vocabulary as the index groups in structure.yaml on purpose --
+# two names for the same category would drift.
+_CENSUS = [
+    ("region", {"region", "realm"}),
+    ("settlement", {"settlement", "town", "city"}),
+    ("district", {"district"}),
+    ("landmark", {"landmark"}),
+    ("site", {"site"}),
+    ("wild place", {"wilderness", "mountains", "river", "water"}),
+]
+
+
+def _census_line(top: Entity, children: dict[str, list[Entity]]) -> str:
+    """"5 landmarks, 3 districts" for everything inside one place.
+
+    Counts every descendant, not just direct children: the point of the line
+    is "how much world is in here", and a city whose landmarks all hang off
+    its districts would otherwise claim to contain almost nothing. Counting
+    walks only entities this viewer already received, so a hidden page is
+    absent from the census exactly as it is absent from everywhere else.
+    """
+    tally: dict[str, int] = {}
+    queue = list(children.get(top.ref, []))
+    while queue:
+        e = queue.pop()
+        queue.extend(children.get(e.ref, []))
+        for name, tags in _CENSUS:
+            if tags & set(e.tags):
+                tally[name] = tally.get(name, 0) + 1
+                break
+        else:
+            tally["place"] = tally.get("place", 0) + 1
+    ordered = sorted(tally.items(), key=lambda kv: -kv[1])
+    return ", ".join(f"{n} {name}{'s' if n != 1 else ''}" for name, n in ordered)
+
+
 def render_kind_index(schema, kind: str, items: list[Entity],
                       images: dict[str, str], base: str) -> str:
     label = schema.label(kind)
-    parts = [f"<h1>{label}</h1><p class=\"summary\">{len(items)} pages.</p>"]
+
+    # A kind that nests shows only its top-level pages: the primaries. What
+    # is inside a place belongs to that place's page, and a flat index of
+    # sixty nested rooms and alleys buries the eleven places anyone actually
+    # navigates by. Each card carries a census of what it holds instead.
+    nested = [e for e in items if e.within]
+    children: dict[str, list[Entity]] = {}
+    for e in nested:
+        children.setdefault(e.within, []).append(e)
+    top = [e for e in items if not e.within]
+    notes = {e.ref: _census_line(e, children) for e in items} if nested else {}
+    summary = (f"{len(top)} primary, {len(nested)} tucked inside them."
+               if nested else f"{len(items)} pages.")
+
+    parts = [f"<h1>{label}</h1><p class=\"summary\">{summary}</p>"]
     groups = [g for g in schema.index_tags if g.kind == kind]
     if groups:
+        # Groups match over every page, nested or not: tagging a sub-location
+        # `region` is a deliberate promotion into the index (Dire Foothills
+        # sits inside Copper Vale and still deserves the Regions shelf). The
+        # Other section stays primaries-only, so an untagged room or alley
+        # never floats up on its own.
         grouped: set[str] = set()
         for spec in groups:
-            group = [e for e in items if spec.tag in e.tags]
+            group = [e for e in items if spec.matches(e)]
             grouped.update(e.ref for e in group)
             if group:
                 parts.append(f"<h2>{html.escape(spec.title)}</h2>")
-                parts.append(_cards(group, images, base))
-        other = [e for e in items if e.ref not in grouped]
+                parts.append(_cards(group, images, base, notes,
+                                    by_completeness=True))
+        other = [e for e in top if e.ref not in grouped]
         if other:
             parts.append(f"<h2>Other {html.escape(label)}</h2>")
-            parts.append(_cards(other, images, base))
+            parts.append(_cards(other, images, base, notes,
+                                by_completeness=True))
         return "".join(parts)
 
-    parts.append(_cards(items, images, base))
+    parts.append(_cards(top if nested else items, images, base, notes,
+                        by_completeness=True))
     return "".join(parts)
 
 
