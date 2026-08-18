@@ -13,8 +13,10 @@ __pycache__/
 # assets/
 
 # Thumbnails, though, stay out. Those genuinely are rebuilt on demand, and there
-# are several per picture.
+# are several per picture. Both trees, because pictures attached to a page are
+# thumbnailed exactly like generated art is, and repo-sync commits files/.
 assets/**/.thumbs/
+files/**/.thumbs/
 
 # content/ is deliberately NOT ignored. It is the campaign itself, it is only
 # ~100KB, and it is the one thing here that cannot be regenerated. Five people

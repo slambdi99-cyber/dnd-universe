@@ -17,6 +17,7 @@ import markdown as md
 from . import access as access_mod
 from . import hierarchy as hierarchy_mod
 from . import secrets as secrets_mod
+from . import thumbs
 from . import tooltips as tooltips_mod
 from pathlib import Path
 
@@ -125,7 +126,13 @@ ul.links li a { display: inline-block; padding: .25rem .6rem;
   gap: 1rem; margin: 1rem 0 2rem; }
 .card { border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
   background: var(--panel); }
-.card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; display: block; }
+/* `height: auto` is load-bearing. The markup states width and height so the
+   grid can lay out before the pictures arrive, and those attributes land as
+   presentational hints; nothing here set `height`, so the hint stood, an
+   explicit height beats `aspect-ratio`, and every card rendered 220x400
+   instead of square. */
+.card img { width: 100%; height: auto; aspect-ratio: 1/1; object-fit: cover;
+  display: block; }
 .card a.thumb { display: block; }
 .card .body { padding: .6rem .7rem; }
 .card .body a { font-weight: bold; }
@@ -472,7 +479,7 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
         parts.append(f'<p class="summary">{html.escape(entity.summary)}</p>')
     if entity.ref in images:
         parts.append(
-            f'<img class="hero" src="{base}art/{images[entity.ref]}?size=page" '
+            f'<img class="hero" src="{art_url(base, images[entity.ref], "page")}" '
             f'alt="{html.escape(entity.name)}" loading="lazy">'
         )
 
@@ -595,6 +602,27 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
     return "\n".join(parts)
 
 
+# What a card thumbnail actually is, so the markup can say so. Square because
+# `thumbs.SQUARE` crops it that way and the CSS below shows it that way.
+THUMB_PX = thumbs.SIZES["card"]
+
+
+def art_url(base: str, name: str, size: str) -> str:
+    """The URL for one entity's picture at one size.
+
+    `images_for` already puts a `?v=` on the name so the week-long cache lets
+    go when somebody picks a different picture. Appending `?size=` to that
+    produced `...png?v=upload-966b?size=card`, and a second `?` is not a
+    separator: the whole of `upload-966b?size=card` became the value of `v`,
+    `size` was never a parameter at all, and the route fell through to the
+    original every time. Thirty full-size pictures, on a page asking for
+    thirty thumbnails, with nothing anywhere reporting an error.
+
+    So the joining happens here, once, rather than at each call site.
+    """
+    return f"{base}art/{name}{'&' if '?' in name else '?'}size={size}"
+
+
 def _cards(items: list[Entity], images: dict[str, str], base: str) -> str:
     out = []
     for e in sorted(items, key=lambda e: e.name):
@@ -603,8 +631,14 @@ def _cards(items: list[Entity], images: dict[str, str], base: str) -> str:
         # page too. It is hidden from assistive tech and skipped by tab: it goes
         # exactly where the title link below it goes, and announcing every card
         # twice is worse than not linking the image at all.
+        # Width and height are stated, not inferred: the browser then knows a
+        # card's shape before the picture arrives and lays the grid out once,
+        # rather than reflowing every card as each image lands. Decoding is
+        # async so a slow one cannot hold up the paint of the rest.
         img = (f'<a class="thumb" href="{href}" tabindex="-1" aria-hidden="true">'
-               f'<img src="{base}art/{images[e.ref]}?size=card" alt="" loading="lazy">'
+               f'<img src="{art_url(base, images[e.ref], "card")}" alt=""'
+               f' width="{THUMB_PX}" height="{THUMB_PX}"'
+               ' loading="lazy" decoding="async">'
                "</a>"
                if e.ref in images else "")
         out.append(

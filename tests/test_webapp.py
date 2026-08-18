@@ -264,6 +264,38 @@ nopic = site_mod._cards(
     {}, "/wiki/")
 check("a card with no art has no thumb link", "thumb" not in nopic)
 
+# The real `images_for` always puts a `?v=` on the name so the week-long cache
+# lets go when somebody picks a different picture. The fixture above leaves it
+# out, and that is exactly how `?v=...?size=card` shipped: a second `?` is not
+# a separator, so `size` stopped being a parameter, the route fell through to
+# the full-size original, and thirty of those went out to draw thirty
+# thumbnails. So ask the question the way the site asks it.
+import re  # noqa: E402
+from urllib.parse import parse_qs, urlparse  # noqa: E402
+
+versioned = site_mod._cards(
+    [Entity(kind="place", slug="brindlewood", name="Brindlewood", summary="A township.")],
+    {"place/brindlewood": "place-brindlewood.png?v=upload-966b3654dd432f5a"}, "/wiki/")
+src = re.search(r'<img src="([^"]+)"', versioned).group(1)
+query = parse_qs(urlparse(src).query)
+check("a versioned card still asks for a thumbnail",
+      query.get("size") == ["card"], src)
+check("and the version survives alongside it",
+      query.get("v") == ["upload-966b3654dd432f5a"], src)
+check("the card states its size, so the grid lays out once",
+      f'width="{site_mod.THUMB_PX}"' in versioned)
+
+hero = site_mod.render_body(
+    site_mod.schema_mod.load(sandbox),
+    lib.load("place", "brindlewood"), lib,
+    {"place/brindlewood": "place-brindlewood.png?v=upload-966b3654dd432f5a"},
+    "/wiki/", site_mod.access_mod.Viewer.nobody(), set())
+hero_src = re.search(r'<img class="hero" src="([^"]+)"', hero)
+check("the hero asks for its own size too",
+      hero_src is not None
+      and parse_qs(urlparse(hero_src.group(1)).query).get("size") == ["page"],
+      hero_src.group(1) if hero_src else "no hero img")
+
 print("\n== the inbox ==")
 import json  # noqa: E402
 

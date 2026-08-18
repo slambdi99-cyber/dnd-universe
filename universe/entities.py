@@ -19,12 +19,22 @@ built; it's a cheap change now and an expensive one later.
 
 from __future__ import annotations
 
+import copy
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterator
 
 import yaml
+
+try:  # libyaml, when the host has it
+    # Frontmatter parsing is the single hottest thing the site does: every
+    # request that asks "what may this viewer see" parses every page, and the
+    # pure-Python YAML loader is ~40x slower than the C one at that. Where
+    # libyaml is missing the pure-Python loader still works, only slower.
+    _Loader = yaml.CSafeLoader
+except AttributeError:  # pragma: no cover - depends on the host's PyYAML build
+    _Loader = yaml.SafeLoader
 
 # The kinds of thing a campaign world is made of. Add to this freely; nothing
 # is hardcoded to the list except the folder each kind lives in.
@@ -132,6 +142,22 @@ class Entity:
     def ref(self) -> str:
         return f"{self.kind}/{self.slug}"
 
+    def copy(self) -> "Entity":
+        """An independent Entity with the same contents.
+
+        The library hands out cached parses, and an Entity is mutable: `upsert`
+        edits one in place, panels append to `art`. Without a copy at the door,
+        one request's edit would show up in the next request's read of a file
+        that never changed on disk.
+        """
+        return Entity(
+            kind=self.kind, slug=self.slug, name=self.name,
+            summary=self.summary, tags=list(self.tags), links=list(self.links),
+            sources=list(self.sources), art=list(self.art),
+            appearance=self.appearance, visible_to=list(self.visible_to),
+            within=self.within, data=copy.deepcopy(self.data), body=self.body,
+        )
+
     def to_frontmatter(self) -> dict[str, Any]:
         out: dict[str, Any] = {"name": self.name, "kind": self.kind}
         for key in ("summary", "appearance", "within"):
@@ -165,7 +191,7 @@ class Entity:
             )
             return cls(kind=kind, slug=slug, name=first, body=text.strip())
 
-        meta = yaml.safe_load(match.group(1)) or {}
+        meta = yaml.load(match.group(1), Loader=_Loader) or {}
         body = match.group(2).strip()
         return cls(
             kind=meta.get("kind", kind),
@@ -189,10 +215,40 @@ class Entity:
 
 
 class Library:
-    """Reads and writes entities under a content root."""
+    """Reads and writes entities under a content root.
+
+    Parsed pages are cached in memory, keyed on each file's mtime and size, so
+    a file is only parsed again once it actually changes on disk. This is not a
+    micro-optimisation: `entities_for` parses the whole library to work out
+    what a viewer may see, and it runs on every request including each of the
+    thirty thumbnails on the front page. With 120 pages that was 105ms of YAML
+    per image, serialised on the event loop, which cost far more than sending
+    the picture did.
+
+    Keying on (mtime_ns, size) means an edit from anywhere invalidates the
+    entry: the MCP server, a git pull, or a hand edit in an editor all change
+    one or both. Nothing has to remember to tell the cache.
+    """
 
     def __init__(self, root: Path):
         self.root = Path(root)
+        self._parsed: dict[Path, tuple[tuple[int, int], Entity]] = {}
+
+    def _read(self, path: Path, kind: str, slug: str) -> Entity:
+        """Parse a page, or hand back the last parse if it has not changed."""
+        try:
+            stat = path.stat()
+            stamp = (stat.st_mtime_ns, stat.st_size)
+        except OSError:
+            stamp = None
+        if stamp is not None:
+            cached = self._parsed.get(path)
+            if cached is not None and cached[0] == stamp:
+                return cached[1].copy()
+        entity = Entity.parse(path.read_text(encoding="utf-8"), kind=kind, slug=slug)
+        if stamp is not None:
+            self._parsed[path] = (stamp, entity)
+        return entity.copy()
 
     def path_for(self, kind: str, slug: str) -> Path:
         return self.root / kind / f"{slug}.md"
@@ -204,7 +260,7 @@ class Library:
         path = self.path_for(kind, slug)
         if not path.exists():
             return None
-        return Entity.parse(path.read_text(encoding="utf-8"), kind=kind, slug=slug)
+        return self._read(path, kind, slug)
 
     def save(self, entity: Entity) -> Path:
         path = self.path_for(entity.kind, entity.slug)
@@ -264,9 +320,7 @@ class Library:
             if not folder.exists():
                 continue
             for path in sorted(folder.glob("*.md")):
-                yield Entity.parse(
-                    path.read_text(encoding="utf-8"), kind=k, slug=path.stem
-                )
+                yield self._read(path, k, path.stem)
 
     def search(self, query: str) -> list[Entity]:
         """Matching entities, best match first.

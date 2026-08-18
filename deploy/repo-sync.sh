@@ -83,7 +83,16 @@ if ! git push --quiet 2>/dev/null; then
     fi
 fi
 
+# New pictures arrive the same way everything else does: in a pull from the
+# machine at home. Shrinking them here, once, means the first person to open
+# the front page after new art lands gets thumbnails that already exist rather
+# than waiting while thirty of them are built one at a time. Cheap to run when
+# nothing changed, so it is not worth guessing whether anything did.
 if [ "$BEFORE" != "$AFTER" ]; then
+    if [ -x "$ROOT/.venv/bin/python" ]; then
+        say "thumbnails: $("$ROOT/.venv/bin/python" tools/warm_thumbs.py 2>&1 | tail -1)"
+    fi
+
     for path in $WATCH; do
         if git diff --name-only "$BEFORE" "$AFTER" | grep -q "^${path%/}"; then
             say "code changed, restarting the wiki"

@@ -139,7 +139,7 @@ async def art_by_id(request, wiki):
         return wiki.not_found()
     size = request.query_params.get("size", "")
     if size in thumbs_mod.SIZES:
-        path = thumbs_mod.make(path, size) or path
+        path = await run_in_threadpool(thumbs_mod.make, path, size) or path
     # An asset id is a content hash, so these bytes are immutable.
     return FileResponse(path, headers={"Cache-Control": "private, max-age=604800"})
 
@@ -168,9 +168,13 @@ async def art(request, wiki):
     # ?size=card for the grids, ?size=page for a hero. A card was pulling the
     # full-size original, so a front page of thirty of them was tens of
     # megabytes to draw thumbnails a few hundred pixels wide.
+    # Off the event loop: shrinking a picture is tens of milliseconds of CPU,
+    # and a cold front page asks for thirty at once. Done inline, those thirty
+    # queue up behind each other and behind every other request on the server,
+    # so the page that needed the thumbnails is the page they hold up.
     size = request.query_params.get("size", "")
     if size in thumbs_mod.SIZES:
-        path = thumbs_mod.make(path, size) or path
+        path = await run_in_threadpool(thumbs_mod.make, path, size) or path
 
     # Art is content-addressed: a given URL's bytes never change, because
     # picking a different picture changes the entity's current asset id and
