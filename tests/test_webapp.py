@@ -262,7 +262,9 @@ check("and not announced twice", 'aria-hidden="true"' in card)
 nopic = site_mod._cards(
     [Entity(kind="place", slug="brindlewood", name="Brindlewood", summary="A township.")],
     {}, "/wiki/")
-check("a card with no art has no thumb link", "thumb" not in nopic)
+check("a card with no art shows a monogram placeholder",
+      'thumb noart' in nopic and ">B</span>" in nopic,
+      "same shape as its neighbours instead of collapsing to a caption")
 
 # The real `images_for` always puts a `?v=` on the name so the week-long cache
 # lets go when somebody picks a different picture. The fixture above leaves it

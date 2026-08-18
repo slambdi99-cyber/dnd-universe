@@ -295,6 +295,7 @@ h3 { font-size: 1.05rem; margin: 1.4rem 0 .4rem; }
   .entity.has-side > .entity-side .meta > *:first-child { margin-top: 0; }
   .entity.has-side > .entity-side .meta > *:last-child { margin-bottom: 0; }
 }
+img.hero { transition: transform .18s ease-out; }
 img.hero { width: 100%; border-radius: 6px; border: 1px solid var(--line);
   display: block; margin: 0 0 1.5rem; }
 blockquote { margin: 1rem 0; padding: .5rem 1rem; border-left: 3px solid var(--accent);
@@ -346,6 +347,16 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
 .card img { width: 100%; height: auto; aspect-ratio: 1/1; object-fit: cover;
   display: block; }
 .card a.thumb { display: block; }
+/* The placeholder thumbnail: kind-agnostic, a big quiet initial on a wash
+   of parchment. Goes through the same torn-edge filter as real art, so a
+   card without a picture still sits on the page the same way. */
+.card a.thumb.noart { display: flex; align-items: center;
+  justify-content: center; aspect-ratio: 1 / 1;
+  background: linear-gradient(135deg, var(--accent-soft), var(--panel) 75%); }
+.card a.thumb.noart span { font-size: 3rem; font-weight: bold;
+  color: var(--accent); opacity: .45; }
+.card.small a.thumb.noart { aspect-ratio: auto; }
+.card.small a.thumb.noart span { font-size: 1.5rem; }
 /* The small variant: thumbnail beside the text, a reference rather than a
    presentation. Same element, same tilt and glow, half the weight. */
 .grid.smallgrid { grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
@@ -363,6 +374,8 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
   background: rgba(10, 8, 5, .88); }
 #lightbox img { max-width: 94vw; max-height: 94vh; border-radius: 4px;
   box-shadow: 0 0 3em rgba(0,0,0,.6); }
+.filelist .filepic a { display: block;
+  transition: transform .18s ease-out; }
 .filelist .filepic img { display: block; max-width: 100%; border-radius: 6px;
   border: 1px solid var(--line); }
 .filelist .filepic .hint { display: block; margin: .3rem 0 1rem; }
@@ -994,7 +1007,9 @@ document.body.appendChild(P);
 
 
 TILT_JS = """
-/* The trading-card tilt: each card leans toward the pointer, a few degrees
+/* The trading-card tilt: each card -- and each standalone picture, the
+   hero on a page and the attachments in Files -- leans toward the pointer,
+   a few degrees
    of perspective rotation that tracks as the mouse moves and eases back on
    the way out. Delegated from the document so cards swapped in by the
    router tilt without rebinding, throttled to one transform per frame.
@@ -1002,6 +1017,7 @@ TILT_JS = """
 (function(){
 if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
 if(matchMedia('(hover: none)').matches)return;
+var SEL='.card, img.hero, .filelist .filepic a';
 var card=null,ev=null,raf=0;
 function apply(){
   raf=0;
@@ -1013,7 +1029,7 @@ function apply(){
     'deg) rotateY('+(px*5).toFixed(2)+'deg) translateY(-2px)';
 }
 document.addEventListener('pointermove',function(e){
-  var c=e.target.closest?e.target.closest('.card'):null;
+  var c=e.target.closest?e.target.closest(SEL):null;
   if(c!==card){ if(card)card.style.transform=''; card=c; }
   if(!c)return;
   ev=e;
@@ -1481,12 +1497,20 @@ def _cards(items: list[Entity], images: dict[str, str], base: str,
         # card's shape before the picture arrives and lays the grid out once,
         # rather than reflowing every card as each image lands. Decoding is
         # async so a slow one cannot hold up the paint of the rest.
-        img = (f'<a class="thumb" href="{href}" tabindex="-1" aria-hidden="true">'
-               f'<img src="{art_url(base, images[e.ref], "card")}" alt=""'
-               f' width="{THUMB_PX}" height="{THUMB_PX}"'
-               ' loading="lazy" decoding="async">'
-               "</a>"
-               if e.ref in images else "")
+        if e.ref in images:
+            img = (f'<a class="thumb" href="{href}" tabindex="-1" aria-hidden="true">'
+                   f'<img src="{art_url(base, images[e.ref], "card")}" alt=""'
+                   f' width="{THUMB_PX}" height="{THUMB_PX}"'
+                   ' loading="lazy" decoding="async">'
+                   "</a>")
+        else:
+            # No art yet: a monogram on parchment holds the space, so a
+            # card without a picture keeps the same shape as its neighbours
+            # instead of collapsing to a caption. The initial is decoration
+            # -- the title below carries the name for everyone.
+            initial = next((c for c in e.name if c.isalnum()), "?").upper()
+            img = (f'<a class="thumb noart" href="{href}" tabindex="-1" '
+                   f'aria-hidden="true"><span>{html.escape(initial)}</span></a>')
         card_cls = "card small" if small else "card"
         out.append(
             f'<div class="{card_cls}">{img}<div class="body">'
