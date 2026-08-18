@@ -42,12 +42,7 @@ data:
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676
 ---
 
-Casts Speak With Dead. The art of her doing it shows her with a tall wooden staff in a candlelit bedroom, ringed by green skull-spirits, eyes lit cyan by the spell. The staff is very likely Timothy's.
-
-
-
 She is from Lorithal and has been secretive about it. She noticed an aunt at Worrick's party and behaved oddly enough that Tobias got suspicious and tried to find out why.
-
 
 
 The log records that Wren has a lot of information on the Hollow Root Covenant. When a gemstone touched a root in the Covenant's chamber, a voice spoke in the back of her head.
