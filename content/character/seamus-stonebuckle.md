@@ -21,6 +21,7 @@ sources:
 - discord:lore-drop:2026-08-13
 - written by The DM
 - updated by The DM
+- edited by The DM on the wiki
 art:
 - character/seamus-stonebuckle/default-353effbe
 data:
@@ -32,4 +33,4 @@ data:
 
 Business associate of Worrick Thistleby, and a Kept of the Hollow Root Covenant. He wanted the Rumbleshot Quarry workers evacuated for 'safety', which reads very differently once you know his Covenant affiliation.
 
-The party killed him and found a secret letter from Melda on the body.
+The party killed him and found a secret letter from Melda on the body, confirming the collaboration between Lorithal, the Hollow Root, and the Underbelly in securing magical reagents.
