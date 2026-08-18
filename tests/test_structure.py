@@ -128,6 +128,50 @@ check("refuses an unknown kind",
 check("refuses a page that isn't there",
       not schema_mod.move_page(lib, "item/nothing", "lore", schema)[0])
 
+print("\n== a move carries the art ==")
+# Asset ids embed the page ref and every permission check trusts the prefix.
+# A move that leaves old ids behind strands the whole gallery: images 404
+# (the old ref names no page) and Mark inactive answers "not on this page".
+lib.save(Entity(kind="item", slug="lantern", name="Lantern",
+                summary="A lamp.",
+                art=["item/lantern/default-aaaa1111",
+                     "item/lantern/upload-bbbb2222"],
+                data={"active_art": "item/lantern/default-aaaa1111",
+                      "files": [{"id": "item/lantern/upload-cccc3333",
+                                 "name": "deed.pdf", "size": 100}]}))
+assets = sandbox / "assets"
+files_root = sandbox / "files"
+(assets / "item" / "lantern").mkdir(parents=True)
+(assets / "item" / "lantern" / "default-aaaa1111.webp").write_bytes(b"x")
+(assets / "item" / "lantern" / "default-aaaa1111.json").write_text(
+    '{"kind": "item", "slug": "lantern", '
+    '"asset_id": "item/lantern/default-aaaa1111"}', encoding="utf-8")
+(files_root / "item" / "lantern").mkdir(parents=True)
+(files_root / "item" / "lantern" / "upload-cccc3333.pdf").write_bytes(b"y")
+
+ok, msg = schema_mod.move_page(lib, "item/lantern", "lore", schema,
+                               asset_roots=(assets, files_root))
+check("moved", ok, msg)
+moved = lib.load("lore", "lantern")
+check("art ids follow the page",
+      moved.art == ["lore/lantern/default-aaaa1111",
+                    "lore/lantern/upload-bbbb2222"], str(moved.art))
+check("active_art follows too",
+      moved.data.get("active_art") == "lore/lantern/default-aaaa1111")
+check("file attachments follow",
+      moved.data["files"][0]["id"] == "lore/lantern/upload-cccc3333")
+check("the image moved on disk",
+      (assets / "lore" / "lantern" / "default-aaaa1111.webp").exists()
+      and not (assets / "item" / "lantern").exists())
+check("the attachment moved on disk",
+      (files_root / "lore" / "lantern" / "upload-cccc3333.pdf").exists())
+import json as _json
+side = _json.loads((assets / "lore" / "lantern" /
+                    "default-aaaa1111.json").read_text(encoding="utf-8"))
+check("the sidecar was told",
+      side["asset_id"] == "lore/lantern/default-aaaa1111"
+      and side["kind"] == "lore", str(side))
+
 print("\n== removing a kind ==")
 check("refuses while it holds pages",
       not schema_mod.remove_kind(schema, "location", lib)[0],

@@ -18,7 +18,7 @@ sources:
 - dm:wiki:2026-08-13
 - updated by The DM
 art:
-- place/laurelthel/default-c9f59718
+- archive/laurelthel/default-c9f59718
 data:
   map_type: realm
   aka:

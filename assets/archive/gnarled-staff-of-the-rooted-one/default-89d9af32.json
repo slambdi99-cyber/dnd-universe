@@ -1,0 +1,15 @@
+{
+  "kind": "archive",
+  "slug": "gnarled-staff-of-the-rooted-one",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, single object study, centered, dark neutral background, museum lighting, tall gnarled staff of dead root-wood, twisted grain, knotted head, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1755588220,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "archive/gnarled-staff-of-the-rooted-one/default-89d9af32",
+  "created_at": "2026-08-13T02:09:28.131746+00:00",
+  "entity_name": "Gnarled Staff of the Rooted One"
+}

@@ -18,7 +18,7 @@ sources:
 - updated by The DM
 - Duplicate resolved against place/everpool at Sam's request, 2026-08-14.
 art:
-- place/the-drowned-amphitheater/default-6f4a94cb
+- archive/the-drowned-amphitheater/default-6f4a94cb
 data:
   map_type: site
 ---

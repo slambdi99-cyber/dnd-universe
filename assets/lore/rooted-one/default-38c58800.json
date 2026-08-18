@@ -1,0 +1,15 @@
+{
+  "kind": "lore",
+  "slug": "rooted-one",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, character portrait, head and shoulders, facing viewer, neutral background, The Rooted One, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1280585680,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "lore/rooted-one/default-38c58800",
+  "created_at": "2026-08-13T01:38:12.565655+00:00",
+  "entity_name": "The Rooted One"
+}

@@ -17,7 +17,7 @@ sources:
 - written by The DM
 - updated by The DM
 art:
-- character/dak-patterson/default-a8ef7d07
+- archive/dak-patterson/default-a8ef7d07
 ---
 
 Top of the Underbelly's regional hierarchy, above the consorts. The tier above him is unrecorded.

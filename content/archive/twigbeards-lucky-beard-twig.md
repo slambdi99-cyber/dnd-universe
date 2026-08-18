@@ -11,5 +11,5 @@ links:
 sources:
 - discord:dnd-campaign:2025-10-15-magic-items
 art:
-- item/twigbeards-lucky-beard-twig/default-9fa038d7
+- archive/twigbeards-lucky-beard-twig/default-9fa038d7
 ---

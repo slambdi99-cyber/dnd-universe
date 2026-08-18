@@ -16,8 +16,8 @@ sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - discord:lore-drop:2026-08-13
 art:
-- character/rooted-one/default-38c58800
-- character/rooted-one/default-ff9f02be
+- lore/rooted-one/default-38c58800
+- lore/rooted-one/default-ff9f02be
 ---
 
 Discovered within the Underground Chamber beneath the Shallow Bog. His chambers were pilfered by the party, who took his staff along with other magical artifacts.

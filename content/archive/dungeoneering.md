@@ -13,7 +13,7 @@ links:
 sources:
 - discord:dnd-campaign:Dungeoneering_1.01.pdf
 art:
-- lore/dungeoneering/default-6bcc50db
+- archive/dungeoneering/default-6bcc50db
 data:
   author: Magnus Fr.
   version: '1.01'

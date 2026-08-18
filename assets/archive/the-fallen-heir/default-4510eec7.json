@@ -1,0 +1,15 @@
+{
+  "kind": "archive",
+  "slug": "the-fallen-heir",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, heraldic emblem, symmetrical, banner and sigil, flat graphic, rebel banner, torn white cloth, a broken crown device, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1233742448,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "archive/the-fallen-heir/default-4510eec7",
+  "created_at": "2026-08-13T01:51:44.052936+00:00",
+  "entity_name": "For the Fallen Heir"
+}

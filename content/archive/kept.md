@@ -16,8 +16,8 @@ sources:
 - discord:dnd-campaign:2025-11-06-relationship-graph
 - discord:lore-drop:2026-08-13
 art:
-- character/kept/default-d97aa376
-- character/kept/default-16328087
+- archive/kept/default-d97aa376
+- archive/kept/default-16328087
 ---
 
 Earlier seeds treated this as a person because the DM's relationship graph shows it as a node. The lore drop settles it: Seamus Stonebuckle is described as a Kept of the Hollow Root Covenant, so it is a rank or standing within the order.

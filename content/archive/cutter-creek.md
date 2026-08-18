@@ -16,7 +16,7 @@ sources:
 - discord:dnd-campaign:2025-11-22-region-writeup
 - dm-wiki
 art:
-- place/cutter-creek/default-7df1b5f7
+- archive/cutter-creek/default-7df1b5f7
 data:
   map_type: river
   status: gone

@@ -24,7 +24,7 @@ sources:
 - 'DM compendium: Lore/Groups/The Rebellion/The Rebellion.md; reconciled against the
   live wiki at Sam''s request, 2026-08-14.'
 art:
-- faction/the-fallen-heir/default-4510eec7
+- archive/the-fallen-heir/default-4510eec7
 ---
 
 Attacked the party's carriage on the road to Laurelthel, shouting for the fallen heir. Two were captured.

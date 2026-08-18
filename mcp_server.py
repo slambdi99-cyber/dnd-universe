@@ -487,8 +487,9 @@ def build_server(
 
         if rename_to.strip():
             snapshot(f"rename kind {key} to {rename_to}", who)
-            ok, message = schema_mod.rename_kind(schema, key, rename_to,
-                                                 library, label=label)
+            ok, message = schema_mod.rename_kind(
+                schema, key, rename_to, library, label=label,
+                asset_roots=(cfg.assets_dir, cfg.files_dir))
             if not ok:
                 return {"error": message}
             if in_nav is not None or position is not None:
@@ -514,7 +515,9 @@ def build_server(
         _, who = viewer(ctx)
         schema.reload_if_changed()
         snapshot(f"remove kind {key}", who)
-        ok, message = schema_mod.remove_kind(schema, key, library, move_pages_to)
+        ok, message = schema_mod.remove_kind(
+            schema, key, library, move_pages_to,
+            asset_roots=(cfg.assets_dir, cfg.files_dir))
         return {"ok": ok, "message": message, "kinds": list(schema.keys)} if ok \
             else {"error": message}
 
@@ -533,7 +536,9 @@ def build_server(
         entity = find(ref, ids)
         if entity is None:
             return {"error": f"Nothing found for {ref!r}."}
-        ok, message = schema_mod.move_page(library, entity.ref, to_kind, schema)
+        ok, message = schema_mod.move_page(
+            library, entity.ref, to_kind, schema,
+            asset_roots=(cfg.assets_dir, cfg.files_dir))
         return {"ok": ok, "message": message} if ok else {"error": message}
 
     @server.tool(

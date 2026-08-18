@@ -14,7 +14,7 @@ sources:
 - discord:dnd-campaign:2025-10-15-magic-items
 - dm-wiki
 art:
-- item/rootbound-dagger/default-3ecf41c9
+- archive/rootbound-dagger/default-3ecf41c9
 ---
 
 One of the ancient weapons from the Underground Chamber, attuned through blood.

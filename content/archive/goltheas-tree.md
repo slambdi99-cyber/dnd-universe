@@ -16,7 +16,7 @@ sources:
 - dm:wiki:2026-08-13
 - updated by The DM
 art:
-- place/goltheas-tree/default-22b9ac96
+- archive/goltheas-tree/default-22b9ac96
 data:
   map_type: landmark
   aka:

@@ -1,0 +1,15 @@
+{
+  "kind": "archive",
+  "slug": "goltheas-tree",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, wide establishing shot, no people, atmospheric, immense pale tree, black roots spreading through dark earth, faintly luminous bark, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 408648954,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "archive/goltheas-tree/default-22b9ac96",
+  "created_at": "2026-08-13T01:52:53.894275+00:00",
+  "entity_name": "Goltheas Tree"
+}

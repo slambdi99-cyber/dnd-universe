@@ -12,7 +12,7 @@ links:
 sources:
 - session-log:the-buried-star-tobias-log.txt
 art:
-- item/pincushion-wrist-guards/default-b8224574
+- archive/pincushion-wrist-guards/default-b8224574
 data:
   weight_lb: 0.1
   cost_gp: 10

@@ -1,0 +1,15 @@
+{
+  "kind": "archive",
+  "slug": "twigbeards-lucky-beard-twig",
+  "variant": "default",
+  "prompt": "fantasy illustration, painterly, muted earthy palette, soft directional light, single object study, centered, dark neutral background, museum lighting, small gnarled twig charm on a leather cord, worn smooth, faintly green, highly detailed, sharp focus",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 1483867452,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "archive/twigbeards-lucky-beard-twig/default-9fa038d7",
+  "created_at": "2026-08-13T00:23:43.698543+00:00",
+  "entity_name": "Twigbeard's Lucky Beard Twig"
+}

@@ -311,7 +311,7 @@ def update_kind(schema: Schema, key: str, *, label: str | None = None,
 
 
 def rename_kind(schema: Schema, key: str, new_key: str, library,
-                *, label: str = "") -> tuple[bool, str]:
+                *, label: str = "", asset_roots=()) -> tuple[bool, str]:
     """Rename a kind and move every page and link with it.
 
     The migration is the whole job. A rename that leaves forty pages in the old
@@ -327,7 +327,7 @@ def rename_kind(schema: Schema, key: str, new_key: str, library,
     if schema.has(new_key):
         return False, f"{new_key} already exists. Move the pages instead."
 
-    moved = _move_pages(library, key, new_key)
+    moved = _move_pages(library, key, new_key, asset_roots)
     relinked = _rewrite_links(library, {f"{key}/": f"{new_key}/"})
 
     for kind in schema.kinds:
@@ -347,7 +347,7 @@ def rename_kind(schema: Schema, key: str, new_key: str, library,
 
 
 def remove_kind(schema: Schema, key: str, library,
-                move_pages_to: str = "") -> tuple[bool, str]:
+                move_pages_to: str = "", asset_roots=()) -> tuple[bool, str]:
     key = (key or "").strip().lower()
     if not schema.has(key):
         return False, f"No kind called {key!r}."
@@ -363,7 +363,7 @@ def remove_kind(schema: Schema, key: str, library,
         target = move_pages_to.strip().lower()
         if not schema.has(target):
             return False, f"No kind called {target!r} to move them to."
-        _move_pages(library, key, target)
+        _move_pages(library, key, target, asset_roots)
         _rewrite_links(library, {f"{key}/": f"{target}/"})
 
     schema.kinds = [k for k in schema.kinds if k.key != key]
@@ -374,7 +374,8 @@ def remove_kind(schema: Schema, key: str, library,
     return True, f"Removed {key}{where}."
 
 
-def move_page(library, ref: str, to_kind: str, schema: Schema) -> tuple[bool, str]:
+def move_page(library, ref: str, to_kind: str, schema: Schema,
+              asset_roots=()) -> tuple[bool, str]:
     """Move one page to another kind, keeping its links intact."""
     if "/" not in ref:
         return False, "Give the page as kind/slug."
@@ -404,6 +405,7 @@ def move_page(library, ref: str, to_kind: str, schema: Schema) -> tuple[bool, st
             )
 
     entity.kind = to_kind
+    _carry_assets(entity, f"{kind}/{slug}", f"{to_kind}/{slug}", asset_roots)
     library.save(entity)
     library.path_for(kind, slug).unlink()
     relinked = _rewrite_links(library, {f"{kind}/{slug}": f"{to_kind}/{slug}"})
@@ -467,11 +469,77 @@ def set_index_tags(schema: Schema, groups: list[dict]) -> tuple[bool, str]:
 
 # -- migration helpers -------------------------------------------------
 
-def _move_pages(library, old_kind: str, new_kind: str) -> int:
+def _carry_assets(entity, old_ref: str, new_ref: str, asset_roots) -> None:
+    """Take a page's pictures and attachments with it when it moves.
+
+    Asset ids embed the page ref -- `faction/the-belt/default-c27300a6` -- and
+    everything trusts that prefix: the store resolves it to a folder on disk,
+    the art routes check it against what the viewer may see, and the panel's
+    pick/remove guards refuse ids that do not start with the page's own ref.
+    A move that leaves the old prefix behind therefore strands every image:
+    the gallery 404s (the old ref no longer names a page anyone may see) and
+    "Mark inactive" answers that the image is not on this page. Eighteen ids
+    were stranded this way before this existed.
+    """
+    prefix = old_ref + "/"
+
+    def swap(value):
+        return new_ref + value[len(old_ref):] \
+            if isinstance(value, str) and value.startswith(prefix) else value
+
+    entity.art = [swap(a) for a in entity.art]
+    if "active_art" in entity.data:
+        entity.data["active_art"] = swap(entity.data["active_art"])
+    for f in entity.data.get("files") or []:
+        if isinstance(f, dict):
+            f["id"] = swap(f.get("id"))
+
+    for root in asset_roots or ():
+        src = Path(root) / old_ref
+        if not src.is_dir():
+            continue
+        dst = Path(root) / new_ref
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if not dst.exists():
+            src.rename(dst)
+        else:
+            # The target already has a folder (a slug reused after a move
+            # back and forth). Merge rather than clobber; a name collision
+            # keeps the file already there, which is content-addressed and
+            # therefore the same bytes anyway.
+            for item in src.iterdir():
+                target = dst / item.name
+                if not target.exists():
+                    item.rename(target)
+        # Sidecars record their own asset_id and kind. Nothing serves from
+        # them, but a stale ref in a sidecar is a trap for the next cleanup
+        # script that trusts it.
+        for sidecar in dst.glob("*.json"):
+            try:
+                import json
+                d = json.loads(sidecar.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            changed = False
+            if d.get("asset_id", "").startswith(prefix):
+                d["asset_id"] = swap(d["asset_id"])
+                changed = True
+            new_kind, new_slug = new_ref.split("/", 1)
+            if d.get("kind") == old_ref.split("/", 1)[0] and d.get("slug") == new_slug:
+                d["kind"] = new_kind
+                changed = True
+            if changed:
+                sidecar.write_text(json.dumps(d, indent=2), encoding="utf-8")
+
+
+def _move_pages(library, old_kind: str, new_kind: str,
+                asset_roots=()) -> int:
     moved = 0
     for entity in list(library.all(old_kind)):
         source = library.path_for(old_kind, entity.slug)
         entity.kind = new_kind
+        _carry_assets(entity, f"{old_kind}/{entity.slug}",
+                      f"{new_kind}/{entity.slug}", asset_roots)
         library.save(entity)
         if source.exists():
             source.unlink()

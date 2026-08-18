@@ -12,7 +12,7 @@ sources:
 - discord:dnd-campaign:2025-05-08-crafting
 - discord:dnd-campaign:2025-07-24-table-rules
 art:
-- lore/house-rules/default-ec8b7d90
+- archive/house-rules/default-ec8b7d90
 ---
 
 ## Crafting is five times faster

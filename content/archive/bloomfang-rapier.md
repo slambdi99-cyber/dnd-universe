@@ -14,7 +14,7 @@ sources:
 - discord:dnd-campaign:2025-10-15-magic-items
 - dm-wiki
 art:
-- item/bloomfang-rapier/default-bb9ab7cf
+- archive/bloomfang-rapier/default-bb9ab7cf
 ---
 
 One of the ancient weapons from the Underground Chamber. Its bearer is dead.
