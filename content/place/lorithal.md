@@ -5,7 +5,7 @@ summary: A realm with royalty and an active rebellion, and Wren's homeland. Its 
   is a walled, three-tiered city.
 appearance: distant prosperous realm, pale spires, laurel groves, banners
 tags:
-- realm
+- city
 - from-session-log
 - needs-detail
 links:

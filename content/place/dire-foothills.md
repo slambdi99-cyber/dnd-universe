@@ -5,6 +5,7 @@ summary: Forested hills west of the vale, where blasting fractured the watershed
 appearance: dense pine foothills, blasted rock faces, fallen timber, low grey mist
 within: place/copper-vale
 tags:
+- region
 - wilderness
 - from-lore
 links:

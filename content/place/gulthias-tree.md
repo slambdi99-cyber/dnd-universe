@@ -5,6 +5,7 @@ summary: A tree whose wood, cut into stakes, kills vampires. Roots from the Cove
   chambers lead to one.
 appearance: immense pale tree, black roots spreading through dark earth, faintly luminous
   bark
+within: place/blighted-bog
 tags:
 - landmark
 - from-session-log
