@@ -20,4 +20,6 @@ sources:
 - updated by The DM
 art:
 - character/darius-vell/default-e198a3d7
+data:
+  active_art: ''
 ---
