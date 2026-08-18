@@ -18,6 +18,7 @@ art:
 - place/arrowfell/default-0bc3086d
 data:
   map_type: unknown
+  active_art: ''
 ---
 
 Named only by a road arrow leaving the bottom-right of the regional map. Nothing else is known from the imported lore.

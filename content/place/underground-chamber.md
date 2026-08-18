@@ -1,11 +1,11 @@
 ---
 name: Underground Chamber
 kind: place
-summary: Chamber beneath the Shallow Bog holding a ritual altar and a hoard of ancient
+summary: Chamber beneath the Blighted Bog holding a ritual altar and a hoard of ancient
   weapons. It led the party to the Hollow Root.
 appearance: chamber packed with thick gnarled roots, stone ritual altar, racks of
   ancient weapons, a throne
-within: place/shallow-bog
+within: place/blighted-bog
 tags:
 - site
 - plot-critical

@@ -11,7 +11,7 @@ tags:
 - from-lore
 links:
 - place/dire-foothills
-- place/shallow-bog
+- place/blighted-bog
 sources:
 - discord:dnd-campaign:2025-11-22-region-writeup
 - discord:dnd-campaign:Copper_Vale_Map_1.jpg
