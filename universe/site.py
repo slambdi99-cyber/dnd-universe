@@ -239,6 +239,13 @@ a.act .badge { display: inline-block; margin-left: .35rem; padding: 0 .35rem;
 /* Our own clear button, shown whenever there is a query. The native one only
    surfaces on hover, which reads as there being no way to clear at all. */
 .searchbar #q::-webkit-search-cancel-button { -webkit-appearance: none; }
+/* The hotkey's calling card: sits in the empty search field, gone the
+   moment the field is focused or holds a query. */
+.qkey { position: absolute; right: .45rem; top: 50%;
+  transform: translateY(-50%); pointer-events: none;
+  font-size: .66rem; color: var(--muted); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 4px; padding: .06rem .4rem; }
+.qwrap:focus-within .qkey, .qwrap.hasq .qkey { display: none; }
 #qclear { position: absolute; right: .35rem; top: 50%; transform: translateY(-50%);
   display: none; border: 0; background: none; color: var(--muted);
   font-size: 1.15rem; line-height: 1; padding: .2rem .4rem; cursor: pointer; }
@@ -295,7 +302,7 @@ h3 { font-size: 1.05rem; margin: 1.4rem 0 .4rem; }
   .entity.has-side > .entity-side .meta > *:first-child { margin-top: 0; }
   .entity.has-side > .entity-side .meta > *:last-child { margin-bottom: 0; }
 }
-img.hero { transition: transform .18s ease-out; }
+img.hero { transition: transform .18s ease-out; cursor: zoom-in; }
 img.hero { width: 100%; border-radius: 6px; border: 1px solid var(--line);
   display: block; margin: 0 0 1.5rem; }
 blockquote { margin: 1rem 0; padding: .5rem 1rem; border-left: 3px solid var(--accent);
@@ -374,7 +381,7 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
   background: rgba(10, 8, 5, .88); }
 #lightbox img { max-width: 94vw; max-height: 94vh; border-radius: 4px;
   box-shadow: 0 0 3em rgba(0,0,0,.6); }
-.filelist .filepic a { display: block;
+.filelist .filepic a { display: block; cursor: zoom-in;
   transition: transform .18s ease-out; }
 .filelist .filepic img { display: block; max-width: 100%; border-radius: 6px;
   border: 1px solid var(--line); }
@@ -435,7 +442,12 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
 .imgfade #page:not(.ready) .entity > * { opacity: 0; }
 .imgfade #page > :not(.entity),
 .imgfade #page .entity > * {
-  transition: opacity 1s cubic-bezier(.4, 0, .2, 1);
+  /* Two transitions, paired with two delays below: the reveal owns opacity,
+     the tilt owns transform. One shorthand here without transform was wiping
+     the hero's tilt transition -- it snapped while cards eased, because
+     cards sit deeper than the staggered children. */
+  transition: opacity 1s cubic-bezier(.4, 0, .2, 1),
+              transform .18s ease-out;
 }
 /* Sections arrive in order, each a tenth behind the one before, so the page
    reads top-to-bottom as it appears. On an entity page the sections are the
@@ -447,21 +459,21 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
    First child needs no rule (zero delay); past the eighth everything shares
    the tail delay rather than drifting later forever. */
 .imgfade #page > :not(.entity):nth-child(2),
-.imgfade #page .entity > :nth-child(2) { transition-delay: 0.1s; }
+.imgfade #page .entity > :nth-child(2) { transition-delay: 0.1s, 0s; }
 .imgfade #page > :not(.entity):nth-child(3),
-.imgfade #page .entity > :nth-child(3) { transition-delay: 0.2s; }
+.imgfade #page .entity > :nth-child(3) { transition-delay: 0.2s, 0s; }
 .imgfade #page > :not(.entity):nth-child(4),
-.imgfade #page .entity > :nth-child(4) { transition-delay: 0.3s; }
+.imgfade #page .entity > :nth-child(4) { transition-delay: 0.3s, 0s; }
 .imgfade #page > :not(.entity):nth-child(5),
-.imgfade #page .entity > :nth-child(5) { transition-delay: 0.4s; }
+.imgfade #page .entity > :nth-child(5) { transition-delay: 0.4s, 0s; }
 .imgfade #page > :not(.entity):nth-child(6),
-.imgfade #page .entity > :nth-child(6) { transition-delay: 0.5s; }
+.imgfade #page .entity > :nth-child(6) { transition-delay: 0.5s, 0s; }
 .imgfade #page > :not(.entity):nth-child(7),
-.imgfade #page .entity > :nth-child(7) { transition-delay: 0.6s; }
+.imgfade #page .entity > :nth-child(7) { transition-delay: 0.6s, 0s; }
 .imgfade #page > :not(.entity):nth-child(8),
-.imgfade #page .entity > :nth-child(8) { transition-delay: 0.7s; }
+.imgfade #page .entity > :nth-child(8) { transition-delay: 0.7s, 0s; }
 .imgfade #page > :not(.entity):nth-child(n+9),
-.imgfade #page .entity > :nth-child(n+9) { transition-delay: .7s; }
+.imgfade #page .entity > :nth-child(n+9) { transition-delay: .7s, 0s; }
 /* The outgoing page. The router adds `leaving` on click, waits out the short
    fade, and only then swaps. The whole page leaves as one piece -- staggering
    an exit would just delay the reader -- and quick on the way out, slow on
@@ -718,7 +730,24 @@ if (q) {
       : '<p class="empty">Nothing matches that.</p>';
   };
   const qclear = document.getElementById('qclear');
-  const syncClear = () => { if (qclear) qclear.classList.toggle('show', !!q.value); };
+  const syncClear = () => {
+    if (qclear) qclear.classList.toggle('show', !!q.value);
+    const wrap = q.closest('.qwrap');
+    if (wrap) wrap.classList.toggle('hasq', !!q.value);
+  };
+  // Enter with nothing focused jumps to the search: the keyboard's way of
+  // reaching for the bar at the top. Anything interactive keeps its Enter
+  // -- a focused link still navigates, a button still fires.
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || e.metaKey || e.ctrlKey || e.altKey) return;
+    const el = document.activeElement;
+    if (el && el !== document.body &&
+        (el.isContentEditable ||
+         /^(A|BUTTON|INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+    e.preventDefault();
+    q.focus();
+    q.select();
+  });
   q.addEventListener('input', () => { render(q.value); syncClear(); });
   q.addEventListener('keydown', e => {
     if (e.key==='Escape') { q.value=''; render(''); syncClear(); return; }
@@ -1066,18 +1095,25 @@ function close(){
   var b=document.getElementById('lightbox');
   if(b)b.remove();
 }
-document.addEventListener('click',function(e){
-  var a=e.target.closest?e.target.closest('a.lightboxable'):null;
-  if(!a){ if(e.target.closest&&e.target.closest('#lightbox'))close(); return; }
-  e.preventDefault();
+function open(src,alt){
   close();
   var box=document.createElement('div');
   box.id='lightbox';
   var img=document.createElement('img');
-  img.src=a.getAttribute('href');
-  img.alt=(a.querySelector('img')||{}).alt||'';
+  img.src=src; img.alt=alt||'';
   box.appendChild(img);
   document.body.appendChild(box);
+}
+document.addEventListener('click',function(e){
+  var a=e.target.closest?e.target.closest('a.lightboxable'):null;
+  if(a){ e.preventDefault(); open(a.getAttribute('href'),
+    (a.querySelector('img')||{}).alt||''); return; }
+  /* The hero too: clicking the page's picture asks to see it properly.
+     The size param comes off so the original arrives, not the 1000px copy. */
+  var h=e.target.closest?e.target.closest('img.hero'):null;
+  if(h){ open(h.src.replace(/([?&])size=[^&]*&?/,'$1').replace(/[?&]$/,''),
+              h.alt); return; }
+  if(e.target.closest&&e.target.closest('#lightbox'))close();
 });
 document.addEventListener('keydown',function(e){
   if(e.key==='Escape')close();
@@ -1200,6 +1236,7 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
 <div class="searchbar"><div class="searchwrap">
   <span class="qwrap">
     <input id="q" type="search" placeholder="Search the world..." autocomplete="off">
+    <kbd class="qkey" aria-hidden="true">&#8629; enter</kbd>
     <button id="qclear" type="button" aria-label="Clear search">&#215;</button>
   </span>
   {actions}
@@ -1349,20 +1386,13 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
     # are the page rather than navigation away from it. Direct children only:
     # the districts list their own buildings, and a region showing every shop
     # in every town is not an index of anything.
-    rows = []
-    for child in hierarchy_mod.children(entity.ref, siblings):
-        if child.ref not in allowed:
-            continue
-        rows.append(
-            f'<li><a href="{base}{page_url(child.ref)}">'
-            f"{html.escape(child.name)}</a>"
-            + (f' <span class="hint">{html.escape(child.summary)}</span>'
-               if child.summary else "")
-            + "</li>"
-        )
-    if rows:
+    contained = [child for child in hierarchy_mod.children(entity.ref, siblings)
+                 if child.ref in allowed]
+    if contained:
+        # Full-size cards, unlike Related's small ones: what a place holds
+        # is this page's own content, not a reference away from it.
         main_parts.append(f"<h2>Inside {html.escape(entity.name)}</h2>")
-        main_parts.append(f'<ul class="within">{"".join(rows)}</ul>')
+        main_parts.append(_cards(contained, images, base))
 
     link_list(entity.links, "Related")
     link_list(
@@ -1592,7 +1622,7 @@ _CENSUS = [
     ("district", {"district"}),
     ("landmark", {"landmark"}),
     ("site", {"site"}),
-    ("wild place", {"wilderness", "mountains", "river", "water"}),
+    ("wild", {"wilderness", "mountains", "river", "water"}),
 ]
 
 
@@ -1617,7 +1647,12 @@ def _census_line(top: Entity, children: dict[str, list[Entity]]) -> str:
         else:
             tally["place"] = tally.get("place", 0) + 1
     ordered = sorted(tally.items(), key=lambda kv: -kv[1])
-    return ", ".join(f"{n} {name}{'s' if n != 1 else ''}" for name, n in ordered)
+    if not ordered:
+        return ""
+    # Prefixed, because "17 sites, 5 landmarks" floating under a summary
+    # reads as trivia until the line says what it counts.
+    return "inside: " + ", ".join(
+        f"{n} {name}{'s' if n != 1 else ''}" for name, n in ordered)
 
 
 def render_kind_index(schema, kind: str, items: list[Entity],
