@@ -18,6 +18,7 @@ from . import access as access_mod
 from . import hierarchy as hierarchy_mod
 from . import secrets as secrets_mod
 from . import thumbs
+from . import version as version_mod
 from . import tooltips as tooltips_mod
 from pathlib import Path
 
@@ -122,6 +123,9 @@ ul.links li a { display: inline-block; padding: .25rem .6rem;
   border-radius: 3px; padding: .1rem .4rem; margin: 0 .3rem .3rem 0; }
 .meta { font-size: .8rem; color: var(--muted); margin-top: 2.5rem;
   border-top: 1px solid var(--line); padding-top: .8rem; }
+footer.build { max-width: 44rem; margin: 3rem auto 1.5rem; padding: 0 1rem;
+  font-size: .72rem; color: var(--muted); text-align: right; }
+footer.build code { font-size: inherit; background: none; padding: 0; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
   gap: 1rem; margin: 1rem 0 2rem; }
 .card { border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
@@ -419,6 +423,7 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
   <div id="results" hidden></div>
   <div id="page">{body}</div>
 </main>
+<footer class="build">{html.escape(schema.name)} &middot; <code>{html.escape(version_mod.describe())}</code></footer>
 <script>const BASE={json.dumps(base)};{"window.__INDEX__=" + index_json + ";" if index_json != "[]" else ""}{SEARCH_JS}</script>
 {f'<script src="{base}search.js" defer></script>' if live else ""}
 {f'<script src="{base}tooltips.js"></script>' if tips else ""}
