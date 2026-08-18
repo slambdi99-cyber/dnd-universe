@@ -175,12 +175,20 @@ TOOLTIP_JS = r"""
     let n;
     while ((n = w.nextNode())) if (re.test(n.nodeValue)) { re.lastIndex = 0; jobs.push(n); }
     jobs.forEach(node => {
+      // A card naming its own subject must not link to itself either: the
+      // whole card already goes there. Its title link says where "here" is.
+      const card = node.parentElement && node.parentElement.closest('.card');
+      const ownHref = card
+        ? (card.querySelector('.body > a') || {getAttribute: () => ''})
+            .getAttribute('href')
+        : '';
       const html = node.nodeValue.replace(re, (match) => {
         const e = byKey.get(match.toLowerCase());
         if (!e) return match;
         // A page's own name in its own prose is not a link anywhere: leave
         // it as text rather than offering a click that goes nowhere.
         if (e.u && e.u === location.pathname) return match;
+        if (e.u && ownHref && e.u === ownHref) return match;
         const seenKey = e.t.toLowerCase();
         if (seen.has(seenKey)) return match;
         // Ambiguous single words only count when capitalised.
