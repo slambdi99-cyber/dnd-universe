@@ -25,3 +25,5 @@ data:
 ---
 
 He screeched at one point, which the log notes might have brought trouble. Later helped the party out as the kobolds returned to work.
+
+He mentally resisted Goluub at some point, turning him to a life of hermitude on the outskirts of the Everpool. He helped the party infiltrate and subsequently escape the Abyssal Brood.
