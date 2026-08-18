@@ -1634,7 +1634,8 @@ def render_kind_index(schema, kind: str, items: list[Entity],
         children.setdefault(e.within, []).append(e)
     top = [e for e in items if not e.within]
     notes = {e.ref: _census_line(e, children) for e in items} if nested else {}
-    summary = (f"{len(top)} primary, {len(nested)} tucked inside them."
+    summary = (f"{len(items)} {label.lower()} &mdash; {len(top)} top level, "
+               f"{len(nested)} nested."
                if nested else f"{len(items)} pages.")
 
     parts = [f"<h1>{label}</h1><p class=\"summary\">{summary}</p>"]
