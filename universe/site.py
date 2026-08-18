@@ -652,9 +652,13 @@ form.catchup button:hover { color: var(--ink); background: var(--accent-soft); }
   margin: 2rem 0 0; background: var(--panel); }
 .sheet .statline { font-size: .85rem; color: var(--muted); text-transform: uppercase;
   letter-spacing: .06em; margin-bottom: .5rem; }
-a.sheetlink { display: inline-block; padding: .45rem .9rem; border-radius: 4px;
-  background: var(--accent); color: #fff; font-size: .9rem; }
-a.sheetlink:hover { text-decoration: none; opacity: .9; }
+/* The sheet link is a d20 now, not a sentence: the hint below already
+   explains where the numbers live, and the die says "roll here". Brand red,
+   the one non-palette color on the site, because recognition is the point. */
+a.sheetlink { display: inline-flex; padding: .35rem; border-radius: 6px;
+  color: #e40712; border: 1px solid var(--line); background: var(--panel); }
+a.sheetlink svg { width: 1.9rem; height: 1.9rem; }
+a.sheetlink:hover { text-decoration: none; border-color: #e40712; }
 .sheet .hint { margin: .6rem 0 0; }
 .copyblock { position: relative; margin: 1rem 0; }
 .copyblock pre { background: var(--panel); border: 1px solid var(--line);
@@ -1461,7 +1465,15 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
             '<div class="sheet">'
             f'<div class="statline">{bits}</div>'
             f'<a class="sheetlink" href="{html.escape(sheet)}" target="_blank" '
-            f'rel="noopener">Open character sheet on D&amp;D Beyond</a>'
+            f'rel="noopener" title="Open character sheet on D&amp;D Beyond" '
+            f'aria-label="Open character sheet on D&amp;D Beyond">'
+            f'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" '
+            f'stroke-width="1.4" stroke-linejoin="round" aria-hidden="true">'
+            f'<path d="M12 2 L21 7 V17 L12 22 L3 17 V7 Z"/>'
+            f'<path d="M12 7.2 L16.5 15 H7.5 Z"/>'
+            f'<path d="M12 2 V7.2 M21 7 L16.5 15 M3 7 L7.5 15 '
+            f'M12 22 L16.5 15 M12 22 L7.5 15 M21 17 L16.5 15 M3 17 L7.5 15"/>'
+            f'</svg></a>'
             '<p class="hint">Hit points, spells and inventory live on the sheet, '
             'not here. It needs a D&amp;D Beyond account with access to the '
             'campaign.</p></div>'
