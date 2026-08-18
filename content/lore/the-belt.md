@@ -1,6 +1,6 @@
 ---
 name: The Belt
-kind: faction
+kind: lore
 summary: A fake policing group. The party are "members", keeping tabs on the Underbelly
   Mercantile.
 appearance: discreet badge, a plain leather belt buckle sigil, muted browns
@@ -17,7 +17,7 @@ sources:
 - Codex MCP faction index cleanup requested by Sam, 2026-08-14.
 - updated by The DM
 art:
-- faction/the-belt/default-c27300a6
+- lore/the-belt/default-c27300a6
 data:
   active_art: ''
 ---

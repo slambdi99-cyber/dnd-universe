@@ -14,7 +14,7 @@ tags:
 links:
 - character/tavin
 - faction/underbelly-mercantile
-- faction/the-belt
+- lore/the-belt
 - place/peapod-pub
 - character/tobias-goreguts
 - character/darius-vell
