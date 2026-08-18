@@ -1,5 +1,5 @@
 ---
-name: The Pixie Pint Glass
+name: The Pixies' Pint Glass
 kind: place
 summary: A secret bar upstairs at the Pincushion Haberdashery, next door to the Enchanter's
   Guild.
@@ -15,6 +15,7 @@ sources:
 - session-log:the-buried-star-tobias-log.txt
 - 'DM site organization: sub-locations index'
 - updated by The DM
+- edited by The DM on the wiki
 art:
 - place/pixie-pint-glass/default-02ca587d
 data:
@@ -24,3 +25,5 @@ data:
 Reached by asking for a thimble at the tailor's. A pocket watch marked 'underbelly' is the token for going up.
 
 Wren got rich here at a Twig Ball competition.
+
+It's funny cause a thimble would be like a bigass cup of beer for a pixie.

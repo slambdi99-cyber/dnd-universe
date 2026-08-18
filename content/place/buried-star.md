@@ -24,6 +24,7 @@ art:
 data:
   map_type: artifact
   within_inferred: link
+  active_art: ''
 ---
 
 Rumoured to function via Wish magic. Those who commune with it are somehow psychically connected to its intrinsic powers, and those it favours have their desires made manifest.
