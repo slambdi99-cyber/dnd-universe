@@ -18,6 +18,7 @@ sources:
 - dm-wiki
 - written by The DM
 - updated by The DM
+- edited by The DM on the wiki
 art:
 - character/barnaby-thistlewick/default-1e30fb27
 - character/barnaby-thistlewick/default-157764c8
@@ -25,3 +26,5 @@ art:
 ---
 
 Read the magical inscription on the tree bark at the circular clearing. He and Eva were shut out when Elaric sealed the illusory wall behind the party.
+
+He loves juggling and is a bit of a doofus. Currently hosting the Enchanters' Exchange in Valeshire.
