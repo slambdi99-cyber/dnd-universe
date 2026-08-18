@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import hashlib
 import html
+import json
 from pathlib import Path
 
 from starlette.concurrency import run_in_threadpool
@@ -384,6 +385,23 @@ change one.</p>
             "within": entity.within,
         }
 
+    def tag_suggestions() -> dict[str, list[str]]:
+        """The tags each kind actually uses, most common first.
+
+        Mined from the pages rather than configured, so the pills on the new
+        page form always speak the wiki's current vocabulary. Provenance and
+        hygiene tags (from-*, needs-*) are machinery, not description, and
+        offering them as pills would teach people to click them.
+        """
+        from collections import Counter
+        per: dict[str, Counter] = {}
+        for e in library.all():
+            c = per.setdefault(e.kind, Counter())
+            for t in e.tags:
+                if not t.startswith(("from-", "needs-")):
+                    c[t] += 1
+        return {k: [t for t, _ in c.most_common(10)] for k, c in per.items()}
+
     def place_options(current: str, exclude: str = "") -> str:
         """A dropdown of places to sit inside, indented to show the shape.
 
@@ -478,13 +496,21 @@ change one.</p>
             # Discord message straight into the form: the text is already
             # there and you write over it rather than retyping it.
             values = form_values(None, viewer)
-            for field in ("name", "summary", "body", "kind", "source"):
+            for field in ("name", "summary", "body", "kind", "source", "within"):
                 supplied = request.query_params.get(field, "").strip()
                 if supplied and (field != "kind" or schema.has(supplied)):
                     values[field] = supplied
+            # The Inside picker, from birth: half of new places are written
+            # the moment somebody walks into somewhere, and giving the page
+            # its parent now beats a second trip through the edit form. The
+            # field only means anything when the type picked is Place; the
+            # POST below ignores it for everything else.
             return render("New page",
                           _edit_form(values, registry, schema.kinds, withheld=0,
-                                     action="/wiki/new", creating=True),
+                                     action="/wiki/new", creating=True,
+                                     within_options=place_options(
+                                         values.get("within", "")),
+                                     tag_pills=tag_suggestions()),
                           user=user)
 
         form = await request.form()
@@ -499,7 +525,9 @@ change one.</p>
                             "source": str(form.get("source", ""))},
                            registry, schema.kinds, withheld=0,
                            action="/wiki/new", creating=True,
-                           error="Give it a name and pick a type."),
+                           error="Give it a name and pick a type.",
+                           within_options=place_options(""),
+                           tag_pills=tag_suggestions()),
                 user=user,
             )
 
@@ -514,8 +542,20 @@ change one.</p>
             body = body.rstrip() + "\n\n" + secrets_mod.wrap(secret_text, audience)
 
         source = str(form.get("source", "")).strip()
+        # Only places nest; a chosen parent on any other kind is dropped, and
+        # a fresh page has no children, so no choice of parent can loop.
+        within = str(form.get("within", "")).strip()
+        if kind != hierarchy_mod.KIND:
+            within = ""
+        elif within:
+            if "/" not in within:
+                within = f"{hierarchy_mod.KIND}/{within}"
+            # A hand-made POST can name a parent that is not there; a page
+            # inside a ghost renders as inside nothing but keeps the lie.
+            if not library.exists(*within.split("/", 1)):
+                within = ""
         entity = Entity(
-            kind=kind, slug=slug, name=name,
+            kind=kind, slug=slug, name=name, within=within,
             summary=str(form.get("summary", "")).strip(),
             appearance=str(form.get("appearance", "")).strip(),
             body=body.strip(),
@@ -554,7 +594,8 @@ change one.</p>
 
 def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
                action: str, creating: bool = False, error: str = "",
-               within_options: str = "") -> str:
+               within_options: str = "",
+               tag_pills: dict[str, list[str]] | None = None) -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""
     title = "New page" if creating else f"Editing {v['name']}"
 
@@ -590,14 +631,83 @@ def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
         )
 
     # Only places nest, and only on a form that was given the options. Anything
-    # that would make a loop is already missing from the list.
+    # that would make a loop is already missing from the list. On the new-page
+    # form the row is present for every type but shown only while Place is
+    # picked -- the script below drives it off the type selector.
     within_field = (
-        '  <label for="w">Inside <span class="hint">the larger place this one '
+        '  <div id="withinrow">'
+        '<label for="w">Inside <span class="hint">the larger place this one '
         'sits in. A shop goes inside its city, a district inside its '
         'realm.</span></label>\n'
-        f'  <select id="w" name="within">{within_options}</select>\n'
+        f'  <select id="w" name="within">{within_options}</select></div>\n'
         if within_options else ""
     )
+
+    # A new page asks for what only a person can supply -- name, summary,
+    # tags, where it sits. Appearance and body are writing work, better done
+    # on the page itself once it exists, and a six-field birth form gets
+    # abandoned halfway. One exception: the inbox hands a Discord message's
+    # text in as the body, and that text needs somewhere to sit -- dropping
+    # the field would drop the message.
+    appearance_field = "" if creating else f"""
+  <label for="a">Appearance <span class="hint">what it looks like, concrete
+    and visual. This is what the art generator draws, so write physique and
+    colour, not "a tortle".</span></label>
+  <input id="a" name="appearance" value="{html.escape(v['appearance'])}">
+"""
+    body_field = "" if creating and not v["body"].strip() else f"""
+  <label for="b">Body <span class="hint">markdown is fine</span></label>
+  <textarea id="b" name="body" rows="16">{html.escape(v['body'])}</textarea>
+"""
+
+    # The wiki's own vocabulary as toggles, per type. Clicking writes into
+    # the same text input, so hand-typed tags and pills coexist.
+    pills_html = ""
+    pills_script = ""
+    if creating and tag_pills:
+        pills_html = '<div id="tagpills" class="tagpills"></div>'
+        pills_script = f"""
+<script>
+(function() {{
+  var SUG = {json.dumps(tag_pills)};
+  var k = document.getElementById('k');
+  var t = document.getElementById('t');
+  var row = document.getElementById('withinrow');
+  var pills = document.getElementById('tagpills');
+  if (!k || !t || !pills) return;
+  function cur() {{
+    return t.value.split(',').map(function(x) {{ return x.trim(); }})
+      .filter(Boolean);
+  }}
+  function draw() {{
+    if (row) row.style.display = k.value === 'place' ? '' : 'none';
+    pills.innerHTML = '';
+    var have = cur();
+    (SUG[k.value] || []).forEach(function(tag) {{
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pill' + (have.indexOf(tag) >= 0 ? ' on' : '');
+      b.textContent = tag;
+      b.addEventListener('click', function() {{
+        var list = cur(), i = list.indexOf(tag);
+        if (i >= 0) list.splice(i, 1); else list.push(tag);
+        t.value = list.join(', ');
+        b.classList.toggle('on', i < 0);
+      }});
+      pills.appendChild(b);
+    }});
+  }}
+  k.addEventListener('change', draw);
+  t.addEventListener('input', function() {{
+    var have = cur();
+    pills.querySelectorAll('.pill').forEach(function(b) {{
+      b.classList.toggle('on', have.indexOf(b.textContent) >= 0);
+    }});
+  }});
+  draw();
+}})();
+</script>
+"""
 
     boxes = "".join(
         f'<label class="cb"><input type="checkbox" name="audience" '
@@ -620,16 +730,9 @@ def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
   <label for="s">Summary <span class="hint">one sentence on what it is</span></label>
   <input id="s" name="summary" value="{html.escape(v['summary'])}">
 
-  <label for="a">Appearance <span class="hint">what it looks like, concrete
-    and visual. This is what the art generator draws, so write physique and
-    colour, not "a tortle".</span></label>
-  <input id="a" name="appearance" value="{html.escape(v['appearance'])}">
-
-  <label for="b">Body <span class="hint">markdown is fine</span></label>
-  <textarea id="b" name="body" rows="16">{html.escape(v['body'])}</textarea>
-
-{within_field}
-  <label for="t">Tags <span class="hint">comma separated</span></label>
+{appearance_field}{body_field}{within_field}
+  <label for="t">Tags <span class="hint">comma separated, or click</span></label>
+  {pills_html}
   <input id="t" name="tags" value="{html.escape(v['tags'])}">
 
   <label for="l">Links <span class="hint">comma separated, as
@@ -647,6 +750,7 @@ def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
 
   <button type="submit">{"Create" if creating else "Save"}</button>
 </form>
+{pills_script}
 """
 
 
