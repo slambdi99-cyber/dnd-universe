@@ -125,6 +125,7 @@ def build(entities: list[Entity], viewer: frozenset[str], root: Path,
     for lead, entry in aliases.items():
         payload.append({
             "t": entry["term"].split()[0],
+            "n": entry["term"],
             "k": entry["kind"],
             "m": entry.get("meta", ""),
             "d": entry.get("text", ""),
@@ -158,7 +159,7 @@ def build(entities: list[Entity], viewer: frozenset[str], root: Path,
 
 
 TOOLTIP_CSS = """
-.tt { border-bottom: 1px dotted var(--muted); cursor: help; }
+.tt { border-bottom: 1px dotted var(--muted); cursor: pointer; }
 .tt:hover { border-bottom-color: var(--star); }
 .tt-wiki { border-bottom-style: solid; }
 #tip {
@@ -255,12 +256,13 @@ TOOLTIP_JS = r"""
     const e = byKey.get(el.dataset.t);
     if (!e) return;
     tip.innerHTML =
-      '<h4>' + e.t + '</h4>' +
+      '<h4>' + (e.n || e.t) + '</h4>' +
       (e.m ? '<div class="m">' + e.m + '</div>' : '') +
       '<p>' + (e.d || 'No description.') + '</p>' +
-      (e.u ? '<a href="' + e.u + '"' +
-             (e.k === 'wiki' ? '' : ' target="_blank" rel="noopener"') + '>' +
-             '</a>' : '');
+      (e.u && e.k !== 'wiki'
+        ? '<a href="' + e.u + '" target="_blank" rel="noopener">' +
+          'Full entry on D&amp;D Beyond</a>'
+        : '');
     tip.style.display = 'block';
     const r = el.getBoundingClientRect();
     const t = tip.getBoundingClientRect();
