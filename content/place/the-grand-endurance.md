@@ -20,6 +20,9 @@ sources:
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
+- Lore/Locations/Lorithal/Districts/The Grand Endurance.md
 data:
   within_inferred: tag
 ---
+
+The market tier, and the city's lowest. Nearly all resupply in Lorithal happens here, spread across six shopfronts: Greenfinger's for potions and remedies, The Component Drawer for spell components, Fivefold Silks for clothing and cloth, The Kindled Wick for candles and charms, Tolk's Produce for food, and The Brass Ladle for cookware and a hot bowl.
