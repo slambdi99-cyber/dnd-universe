@@ -21,6 +21,9 @@ sources:
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
+- Lore/Locations/Lorithal/Districts/The Broadheights.md
 data:
   within_inferred: tag
 ---
+
+The middle tier is also the city's ceremonial face — banners, sashes, and civic pride. Its one dedicated shop is The White Standard.
