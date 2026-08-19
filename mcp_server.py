@@ -200,7 +200,7 @@ def build_server(
         if not full:
             return out
 
-        body = access_mod.redact(entity.body, ids)
+        body = access_mod.redact_page(entity, ids)
         allowed = {e.ref for e in visible(ids)}
         out.update(
             {
@@ -233,7 +233,8 @@ def build_server(
                 if c.ref in allowed
             ]
 
-        if access_mod.withheld_from(entity.body, ids):
+        if access_mod.withheld_from(entity.body,
+                                    access_mod.page_viewer(entity, ids)):
             out["note"] = (
                 "This page contains secret sections you are not shown. "
                 "Do not speculate about their contents."
@@ -275,7 +276,7 @@ def build_server(
         only present in a secret would reveal the secret's contents.
         """
         return " ".join(
-            [entity.name, entity.summary, access_mod.redact(entity.body, ids),
+            [entity.name, entity.summary, access_mod.redact_page(entity, ids),
              " ".join(entity.tags)]
         ).lower()
 
@@ -736,8 +737,15 @@ def build_server(
             "just the slug. A shop goes inside its city, a district inside its "
             "realm. Leave empty for somewhere top level like a region.",
         ] = "",
+        revealed_by: Annotated[
+            list[str] | None,
+            "DM only: hide this page from everyone until one of these places "
+            "is marked visited, e.g. ['place/krantz-salvage'].",
+        ] = None,
     ) -> dict:
         ids, who = viewer(ctx)
+        if revealed_by and not ids.is_dm:
+            return {"error": "Only the DM can set revealed_by."}
         schema.reload_if_changed()
         if not schema.has(kind):
             return {"error": f"kind must be one of: {', '.join(schema.keys)}. "
@@ -758,8 +766,15 @@ def build_server(
             visible_to=[v.lower() for v in visible_to] if visible_to else [],
             within=ok,
         )
+        if revealed_by:
+            entity.data["revealed_by"] = [
+                str(r).strip().lower() for r in revealed_by if str(r).strip()]
         entity.sources.append(f"written by {who}")
         library.save(entity)
+        if revealed_by:
+            # The gate may already be open -- the named place could have been
+            # visited before this page existed.
+            access_mod.recompute_reveals(library)
         record(f"{entity.ref}: created over MCP", who)
         return {"created": entity.ref, "page": render(entity, ids)}
 
@@ -786,11 +801,28 @@ def build_server(
             "For a place: move it inside another place, as 'place/slug' or "
             "just the slug. Pass an empty string to move it to the top level.",
         ] = None,
+        visited: Annotated[
+            bool | None,
+            "DM only, places only: mark the place as visited by the party "
+            "(or false to unmark). Opens the page's :::visited sections and "
+            "reveals any pages gated on it via revealed_by.",
+        ] = None,
+        revealed_by: Annotated[
+            list[str] | None,
+            "DM only: hide this page from everyone until one of these places "
+            "is marked visited, e.g. ['place/krantz-salvage']. Replaces the "
+            "existing list; pass [] to remove the gate.",
+        ] = None,
     ) -> dict:
         ids, who = viewer(ctx)
         entity = find(ref, ids)
         if entity is None:
             return {"error": f"Nothing found for {ref!r}."}
+
+        if (visited is not None or revealed_by is not None) and not ids.is_dm:
+            return {"error": "Only the DM can change visited or revealed_by."}
+        if visited is not None and entity.kind != hierarchy_mod.KIND:
+            return {"error": "Only a place can be marked visited."}
 
         if within is not None:
             ok, problem = check_within(entity.kind, entity.ref, within)
@@ -811,13 +843,32 @@ def build_server(
             entity.tags = list(dict.fromkeys(entity.tags + list(add_tags)))
         if add_links:
             entity.links = list(dict.fromkeys(entity.links + list(add_links)))
+        if visited is not None:
+            if visited:
+                entity.data["visited"] = True
+            else:
+                entity.data.pop("visited", None)
+        if revealed_by is not None:
+            cleaned = [str(r).strip().lower() for r in revealed_by
+                       if str(r).strip()]
+            if cleaned:
+                entity.data["revealed_by"] = cleaned
+            else:
+                entity.data.pop("revealed_by", None)
+                entity.data.pop("revealed", None)
         for note in ([source] if source else []) + [f"updated by {who}"]:
             if note not in entity.sources:
                 entity.sources.append(note)
 
         library.save(entity)
+        out: dict[str, Any] = {"updated": entity.ref}
+        if visited is not None or revealed_by is not None:
+            newly = access_mod.recompute_reveals(library)
+            if newly:
+                out["visibility_changed"] = newly
         record(f"{entity.ref}: updated over MCP", who)
-        return {"updated": entity.ref, "page": render(entity, ids)}
+        out["page"] = render(entity, ids)
+        return out
 
     @server.tool(
         description="Link two pages to each other. Cross-links are what make "

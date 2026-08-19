@@ -513,6 +513,13 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
 .empty { color: var(--muted); font-style: italic; }
 table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .9rem; }
 th, td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid var(--line); }
+/* Tables people write in page bodies -- shop inventories, price lists. The
+   header treatment keys off thead, which the hand-built metadata table in
+   the aside doesn't have. */
+thead th { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--muted); }
+.tablewrap { overflow-x: auto; margin: 1rem 0; }
+.tablewrap table { margin: 0; }
 .secret { border-left: 3px solid var(--accent); background: var(--accent-soft);
   padding: .6rem 1rem; margin: 1rem 0; border-radius: 0 4px 4px 0; }
 .secret .who { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
@@ -560,6 +567,12 @@ form.danger { margin-top: 2.5rem; border-top: 1px solid var(--line);
 a.edit { float: right; font-size: .8rem; text-transform: none;
   letter-spacing: 0; border: 1px solid var(--line); border-radius: 4px;
   padding: .1rem .5rem; background: var(--panel); }
+/* The DM's visited checkbox, dressed as its edit-link neighbours. */
+form.visited { float: right; margin-right: .5rem; }
+form.visited button { font: inherit; font-size: .8rem; text-transform: none;
+  letter-spacing: 0; border: 1px solid var(--line); border-radius: 4px;
+  padding: .1rem .5rem; background: var(--panel); color: inherit;
+  cursor: pointer; }
 form.auth.wide { max-width: 46rem; }
 form.auth textarea { width: 100%; padding: .5rem .6rem; border: 1px solid var(--line);
   border-radius: 4px; background: var(--panel); color: var(--ink);
@@ -1305,7 +1318,21 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
 
 
 def _markdown(text: str) -> str:
-    return md.markdown(text, extensions=["tables", "nl2br"])
+    return _wrap_tables(md.markdown(text, extensions=["tables", "nl2br"]))
+
+
+def _wrap_tables(rendered: str) -> str:
+    """Put each markdown table in a scroll container.
+
+    A shop inventory is wider than a phone. Bare, the table overflows the
+    column and drags the whole page sideways; wrapped, only the table
+    scrolls. Markdown can't emit the wrapper itself, so it goes on after
+    rendering. The metadata table in the aside is built by hand elsewhere
+    and never passes through here.
+    """
+    return (rendered
+            .replace("<table>", '<div class="tablewrap"><table>')
+            .replace("</table>", "</table></div>"))
 
 
 def render_guide(source: str) -> str:
@@ -1316,7 +1343,7 @@ def render_guide(source: str) -> str:
     """
     return (
         '<div class="guide">'
-        + md.markdown(source, extensions=["tables", "fenced_code", "toc"])
+        + _wrap_tables(md.markdown(source, extensions=["tables", "fenced_code", "toc"]))
         + "</div>"
     )
 
@@ -1339,11 +1366,24 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
         f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/files">Files</a>'
         if editable else ""
     )
+    # The DM's checkbox for "the party has been here". Places only, and only
+    # on the live site: the static export has nobody signed in to press it.
+    visited_toggle = ""
+    if (editable and getattr(viewer, "is_dm", False)
+            and entity.kind == hierarchy_mod.KIND):
+        label = ("Visited &#10003;" if entity.data.get("visited")
+                 else "Mark visited")
+        visited_toggle = (
+            f'<form class="visited" method="post" '
+            f'action="{base}{entity.kind}/{entity.slug}/visited">'
+            f'<button title="Opens this page\'s upon-visiting sections to '
+            f'everyone">{label}</button></form>'
+        )
     head_parts.append(
         f'<div class="kind"><a class="kindlink" '
         f'href="{base}{entity.kind}/index.html">'
         f'{html.escape(schema.label(entity.kind))}</a>'
-        f"{edit_link}</div>"
+        f"{edit_link}{visited_toggle}</div>"
     )
 
     # Where you are, for someone who arrived from a search or a link and has
@@ -1375,14 +1415,23 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
         )
 
     # Secret blocks this viewer may read are shown, marked, so nobody repeats
-    # them at the table by accident.
+    # them at the table by accident. A `:::visited` block outgrows the marking:
+    # once the DM checks the place off it is ordinary public prose, not a
+    # secret everyone happens to share.
+    visited = bool(entity.data.get("visited"))
     for segment in secrets_mod.parse(entity.body):
         if segment.audience is None:
             main_parts.append(_markdown(segment.text))
+        elif visited and secrets_mod.VISITED_KEY in segment.audience:
+            main_parts.append(_markdown(segment.text))
         elif viewer.all_access or (viewer.identities & segment.audience):
-            who = ", ".join(sorted(segment.audience))
+            if secrets_mod.VISITED_KEY in segment.audience:
+                who = "upon visiting"
+            else:
+                who = "secret &middot; " + html.escape(
+                    ", ".join(sorted(segment.audience)))
             main_parts.append(
-                f'<div class="secret"><span class="who">secret &middot; {html.escape(who)}'
+                f'<div class="secret"><span class="who">{who}'
                 f"</span>{_markdown(segment.text)}</div>"
             )
 
@@ -1495,8 +1544,11 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
 
     meta = []
     # Fields already shown as the sheet button don't need a second airing in
-    # the raw metadata table.
-    shown_above = {"visible_to", "dndbeyond_sheet", "dndbeyond_campaign"}
+    # the raw metadata table. The reveal plumbing stays out too: `visited`
+    # reads as honest bookkeeping, but "revealed by place/x" on a freshly
+    # unlocked NPC page is the DM's wiring showing.
+    shown_above = {"visible_to", "dndbeyond_sheet", "dndbeyond_campaign",
+                   "revealed_by", "revealed", "within_inferred"}
     data = {k: v for k, v in entity.data.items()
             if k not in shown_above and v not in (None, "", [], {})}
     if data:
@@ -1777,7 +1829,7 @@ def search_index(schema, entities: list[Entity], viewer) -> str:
                 "s": e.summary[:120],
                 "u": page_url(e.ref),
                 "h": " ".join(
-                    [e.name, e.summary, access_mod.redact(e.body, viewer),
+                    [e.name, e.summary, access_mod.redact_page(e, viewer),
                      " ".join(e.tags)]
                 ).lower(),
             }

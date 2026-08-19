@@ -33,11 +33,17 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-OPEN = re.compile(r"^:::secret\b[ \t]*(?P<audience>.*?)[ \t]*$", re.IGNORECASE)
+OPEN = re.compile(r"^:::(?P<tag>secret|visited)\b[ \t]*(?P<audience>.*?)[ \t]*$",
+                  re.IGNORECASE)
 CLOSE = re.compile(r"^:::[ \t]*$")
 
 # Anyone whose role is dm matches this in an audience list.
 DM_KEY = "dm"
+
+# Not a person. A page marked visited grants this identity to every reader,
+# so a `:::visited` block stays DM-only until the DM checks the place off,
+# then opens to the whole table without anyone editing the body.
+VISITED_KEY = "visited"
 
 
 @dataclass
@@ -79,6 +85,11 @@ def parse(body: str) -> list[Segment]:
             if audience is None:
                 flush()
                 audience = _parse_audience(opening.group("audience"))
+                # `:::visited` is sugar: readable by the DM now and by
+                # everyone once the page is marked visited. Any extra keys
+                # listed on the line keep working alongside.
+                if opening.group("tag").lower() == VISITED_KEY:
+                    audience |= {DM_KEY, VISITED_KEY}
             continue
         if CLOSE.match(line) and audience is not None:
             flush()
@@ -167,6 +178,35 @@ def merge_edit(
 
 
 def wrap(text: str, audience: list[str] | set[str]) -> str:
-    """Build a secret block, for tools that write one."""
-    keys = ", ".join(sorted({str(a).strip().lower() for a in audience if str(a).strip()}))
-    return f":::secret {keys or DM_KEY}\n{text.strip()}\n:::"
+    """Build a secret block, for tools that write one.
+
+    An audience carrying the visited key round-trips as `:::visited`, the
+    form a person would have typed, rather than as the expanded audience
+    list the parser gives it.
+    """
+    keys = {str(a).strip().lower() for a in audience if str(a).strip()}
+    if VISITED_KEY in keys:
+        rest = ", ".join(sorted(keys - {VISITED_KEY, DM_KEY}))
+        header = f":::{VISITED_KEY}" + (f" {rest}" if rest else "")
+    else:
+        header = f":::secret {', '.join(sorted(keys)) or DM_KEY}"
+    return f"{header}\n{text.strip()}\n:::"
+
+
+def visible_body(body: str, identities: set[str] | frozenset[str]) -> str:
+    """The body as this viewer may *edit* it.
+
+    Withheld blocks are removed, exactly as `redact` does -- but blocks the
+    viewer may read keep their fences. `redact` strips them for display, and
+    an edit form built from that flattens every readable secret into public
+    prose on the next save. The fences are part of the text the editor is
+    trusted with; hiding them was how secrets leaked.
+    """
+    viewer = {i.lower() for i in identities}
+    parts = []
+    for segment in parse(body):
+        if segment.audience is None:
+            parts.append(segment.text)
+        elif viewer & segment.audience:
+            parts.append(wrap(segment.text, segment.audience))
+    return "\n\n".join(parts).strip()

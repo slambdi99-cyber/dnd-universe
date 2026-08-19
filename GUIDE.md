@@ -75,6 +75,20 @@ The form has:
 - **Add a secret**, at the bottom. Type something, tick who's allowed to read
   it, and only those people ever see it.
 
+The body can hold a table, which is the right shape for a shop inventory or a
+price list. Leave a blank line before it and give it a header row:
+
+```
+| Item           | Price | Stock |
+| -------------- | ----: | ----: |
+| Healing potion | 50 gp |     3 |
+| Rope, 50 ft    |  1 gp |    12 |
+```
+
+The columns don't have to line up in what you type -- the pipes are what
+matter. A `:` at the right end of a dashed line right-aligns that column,
+which is where numbers want to be.
+
 Edits are attributed, so pages record who changed them.
 
 **One thing to know if you edit a page with secrets on it.** You only ever see

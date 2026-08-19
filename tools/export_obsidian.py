@@ -124,8 +124,8 @@ def render_page(
     if entity.summary:
         parts += [f"*{entity.summary}*", ""]
 
-    body = access_mod.redact(entity.body, VIEWER) if VIEWER \
-        else secrets_mod.strip_all(entity.body)
+    body = access_mod.redact_page(entity, VIEWER) if VIEWER \
+        else secrets_mod.redact(entity.body, access_mod.unlocked(entity))
     if body:
         parts += [body, ""]
 
