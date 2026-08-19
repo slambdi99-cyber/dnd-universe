@@ -22,4 +22,5 @@ sources:
 - updated by The DM
 data:
   within_inferred: tag
+  visited: true
 ---
