@@ -263,7 +263,8 @@ main:has(.entity.has-side) { max-width: 72rem; }
    better the more room it has: `auto-fill` just makes more columns. Full
    bleed, with the page padding as the only margin. */
 main:has(.grid) { max-width: none; }
-h1, h2, h3 { color: var(--accent); }
+h1 { color: var(--accent); }
+h2, h3 { color: var(--muted); }
 h1 { font-size: 2.1rem; margin: 0 0 .2rem; line-height: 1.15; }
 h2 { font-size: 1.25rem; margin: 2rem 0 .6rem; border-bottom: 1px solid var(--line);
   padding-bottom: .3rem; }
