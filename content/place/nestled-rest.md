@@ -20,6 +20,7 @@ sources:
 - 'DM site organization: sub-locations index'
 - updated by The DM
 - Lore/Locations/Lorithal/Districts/Nestled Rest.md
+- party lodging since arriving in Lorithal
 data:
   within_inferred: link
 ---
