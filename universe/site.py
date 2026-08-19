@@ -306,7 +306,7 @@ h3 { font-size: 1.05rem; margin: 1.4rem 0 .4rem; }
   .entity.has-side > .entity-side .meta > *:first-child { margin-top: 0; }
   .entity.has-side > .entity-side .meta > *:last-child { margin-bottom: 0; }
 }
-img.hero { transition: transform .18s ease-out; cursor: zoom-in; }
+img.hero { transition: transform .18s ease-out; cursor: zoom-in !important; }
 img.hero { width: 100%; border-radius: 6px; border: 1px solid var(--line);
   display: block; margin: 0 0 1.5rem; }
 blockquote { margin: 1rem 0; padding: .5rem 1rem; border-left: 3px solid var(--accent);
@@ -385,7 +385,7 @@ footer.build code { font-size: inherit; background: none; padding: 0; }
   background: rgba(10, 8, 5, .88); }
 #lightbox img { max-width: 94vw; max-height: 94vh; border-radius: 4px;
   box-shadow: 0 0 3em rgba(0,0,0,.6); }
-.filelist .filepic a { display: block; cursor: zoom-in;
+.filelist .filepic a { display: block; cursor: zoom-in !important;
   transition: transform .18s ease-out; }
 .filelist .filepic img { display: block; max-width: 100%; border-radius: 6px;
   border: 1px solid var(--line); }
