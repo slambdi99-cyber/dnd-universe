@@ -18,6 +18,9 @@ sources:
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
+- Lore/Locations/Lorithal/Districts/Orchid Court.md
 data:
   within_inferred: tag
 ---
+
+The social district, where the city's administration and its salons overlap. The Orchid Court Perfumery is its most celebrated shopfront.
