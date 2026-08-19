@@ -809,6 +809,9 @@ if (q) {
     q.value = t.textContent.trim();
     render(q.value); syncClear();
     window.scrollTo(0, 0);
+    // Focused, so arrows and typing work immediately -- a tag click IS a
+    // search, and a search leaves you at the keyboard.
+    q.focus();
   });
 }
 """
