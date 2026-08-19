@@ -20,6 +20,9 @@ sources:
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
+- Lore/Locations/Lorithal/Districts/Ashbright University.md
 data:
   within_inferred: tag
 ---
+
+The university district on the upper tier, home of the wizarding students whose antics fill the sky during The Kindling. Three shops serve the campus: Inkhorn & Quill for scrolls and spellbooks, The Patient Hour for lenses and instruments, and Rifflewig Repairs for clockwork.
