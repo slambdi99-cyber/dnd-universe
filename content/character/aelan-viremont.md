@@ -11,7 +11,6 @@ tags:
 - wizard
 - human
 links:
-- place/copper-vale
 - place/lorithal
 sources:
 - discord:Party-Chat-voice
