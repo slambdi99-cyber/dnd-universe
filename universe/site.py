@@ -129,7 +129,7 @@ body::before {
 }
 body::after {
   content: ""; position: fixed; inset: 0; z-index: 99;
-  pointer-events: none; opacity: .45; mix-blend-mode: soft-light;
+  pointer-events: none; opacity: .18; mix-blend-mode: soft-light;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.3' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 /* Rough edges for the artwork: a turbulence-displacement filter defined in an
@@ -1007,7 +1007,7 @@ TUNER_JS = """
 (function(){
 var KEY='paper-tuner';
 var saved={}; try{saved=JSON.parse(localStorage.getItem(KEY))||{};}catch(e){}
-var DEF={go:0.45, gf:0.3, es:4, ef:0.045};
+var DEF={go:0.18, gf:0.3, es:4, ef:0.045};
 var v={}; for(var k in DEF) v[k]=(typeof saved[k]==='number')?saved[k]:DEF[k];
 var st=document.createElement('style'); document.head.appendChild(st);
 function noise(f){
