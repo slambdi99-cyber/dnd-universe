@@ -1658,6 +1658,18 @@ def _completeness(e: Entity) -> float:
     return score
 
 
+def _sort_name(e: Entity) -> str:
+    """Where a name files alphabetically: 'The Kindled Wick' under K.
+
+    Half the shops in Lorithal start with 'The', and an index that piles
+    them all under T answers no question anyone brings to it.
+    """
+    name = e.name.strip().lower()
+    if name.startswith("the ") and len(name) > 4:
+        name = name[4:]
+    return name
+
+
 def _cards(items: list[Entity], images: dict[str, str], base: str,
            notes: dict[str, str] | None = None,
            by_completeness: bool = False, small: bool = False) -> str:
@@ -1665,8 +1677,8 @@ def _cards(items: list[Entity], images: dict[str, str], base: str,
     # fraction of the size, for sections that reference pages rather than
     # present them -- Related on an entity page should not shout as loudly
     # as the index.
-    key = (lambda e: (-_completeness(e), e.name)) if by_completeness \
-        else (lambda e: e.name)
+    key = (lambda e: (-_completeness(e), _sort_name(e))) if by_completeness \
+        else _sort_name
     out = []
     for e in sorted(items, key=key):
         href = f"{base}{page_url(e.ref)}"
