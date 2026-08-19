@@ -180,7 +180,9 @@ header.top::before { content: ""; position: absolute; left: 0; right: 0;
 header.top { background: var(--chrome-deep);
   border-bottom: 1px solid var(--line); padding: calc(.45rem + 2px) 1.2rem .45rem;
   display: flex; gap: .3rem 1rem; align-items: center; flex-wrap: wrap; }
-header.top .home { white-space: nowrap; }
+header.top .home { white-space: nowrap; display: inline-flex;
+  align-items: center; gap: .45rem; }
+.brandstar { width: 1.05rem; height: 1.05rem; }
 header.top .home { font-weight: bold; letter-spacing: .02em; }
 /* The nav is the one flexible column: it takes the spare width and gives it
    back first, wrapping its own links internally, so the chips and account
@@ -1273,7 +1275,7 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
   </filter>
 </svg>
 <header class="top">
-  <a class="home" href="{base}index.html">{html.escape(schema.name)}</a>
+  <a class="home" href="{base}index.html"><svg class="brandstar" viewBox="0 0 64 64" aria-hidden="true"><path d="M32.0 7.0 L36.6 22.5 L51.5 16.4 L42.2 29.7 L56.4 37.6 L40.2 38.5 L42.8 54.5 L32.0 42.5 L21.2 54.5 L23.8 38.5 L7.6 37.6 L21.8 29.7 L12.5 16.4 L27.4 22.5 Z" fill="var(--star)"/><circle cx="32" cy="32" r="3.2" fill="var(--ink)"/></svg>{html.escape(schema.name)}</a>
   <nav>{nav}</nav>
   <div class="sitenav">{dropdown}</div>
   {account}
