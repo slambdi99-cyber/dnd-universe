@@ -490,3 +490,4 @@ nothing points at, which is how a shared wiki quietly rots.
 | `assets/` | Generated art. Regenerable, but committed: the server has no GPU. |
 | `art-queue/` | Pictures the site asked for, waiting for the machine at home. |
 | `deploy/` | Setting the server up, and keeping it in step with GitHub. |
+| `OPERATIONS.md` | Where everything runs, how a change travels, what to do when it stops. |
