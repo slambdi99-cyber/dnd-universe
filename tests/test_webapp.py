@@ -368,6 +368,48 @@ ic.post("/wiki/inbox", data={"id": str(BASE + 3)})
 check("dismissing works", "left the cart" not in ic.get("/wiki/inbox").text)
 check("empty inbox says so", "Nothing waiting" in ic.get("/wiki/inbox").text)
 
+print("\n== attaching a file from the inbox ==")
+# A map posted in Discord should land on a page without a download-reupload
+# round trip through someone's phone.
+att_dir = lore / "lore-drop" / "attachments"
+att_dir.mkdir(parents=True, exist_ok=True)
+(att_dir / "map.png").write_bytes(b"\x89PNG\r\n\x1a\n" + b"not really a map")
+write_lore([
+    discord_msg(1, "The old bridge at Cutter Creek washed out in spring."),
+    discord_msg(2, "Sister Lethra keeps the records in a locked cabinet."),
+    discord_msg(3, "Does anyone remember where we left the cart?"),
+    {**discord_msg(4, "tactical grid from tonight"),
+     "attachments": [{"filename": "map.png", "file": "map.png",
+                      "content_type": "image/png"}]},
+])
+inbox_page = ic.get("/wiki/inbox")
+check("a message with a file offers an attach target",
+      "Attach the file to" in inbox_page.text)
+check("the dropdown hides what the viewer can't see",
+      "DM Notes" not in inbox_page.text)
+refused = ic.post("/wiki/inbox", data={"action": "attach",
+                                       "id": str(BASE + 4),
+                                       "page": "lore/dm-notes"})
+check("a hidden page is not a valid target",
+      "error=" in refused.headers.get("location", ""),
+      "the dropdown never offered it; a hand-made POST must not work either")
+attached = ic.post("/wiki/inbox", data={"action": "attach",
+                                        "id": str(BASE + 4),
+                                        "page": "place/brindlewood"})
+check("attaching redirects with a note", attached.status_code == 303
+      and "note=" in attached.headers.get("location", ""))
+bw = lib.load("place", "brindlewood")
+bw_files = bw.data.get("files") or []
+check("the file is on the page",
+      any(f.get("name") == "map.png" for f in bw_files))
+check("the page cites the message",
+      f"discord:lore-drop:{BASE + 4}" in bw.sources)
+check("so the message leaves the inbox",
+      "tactical grid" not in ic.get("/wiki/inbox").text)
+check("and the file downloads from the page",
+      bool(bw_files)
+      and ic.get(f"/wiki/file/{bw_files[0]['id']}").status_code == 200)
+
 (lore / "lore-drop" / "attachments").mkdir(parents=True, exist_ok=True)
 (lore / "lore-drop" / "attachments" / "9-map.png").write_bytes(b"\x89PNG\r\n\x1a\n")
 check("serves an attachment",
@@ -663,6 +705,204 @@ check("renders", shape.status_code == 200)
 check("lists every place a viewer may see", "Valeshire" in shape.text)
 check("and not the ones they may not", "Hidden Vault" not in shape.text)
 check("the DM sees the hidden one", "Hidden Vault" in dm.get("/wiki/places").text)
+
+print("\n== indexes keep hidden pages off the screen ==")
+# Indexes are what gets projected at the table, so a hidden page stays off
+# them for everyone -- the DM included. The review page above is the DM's
+# tool for finding them; the index is the table's.
+kind_index = dm.get("/wiki/place/index.html")
+check("the kind index still lists visible places", "Valeshire" in kind_index.text)
+check("but not the hidden one, even for the DM",
+      "Hidden Vault" not in kind_index.text,
+      "search and the review page still reach it; the index gets projected")
+home = dm.get("/wiki/")
+check("nor does the front page", "Hidden Vault" not in home.text)
+# Search suggestions surface under a typed letter on the same projected
+# screen, so the search index follows the index rule, not the page rule.
+search = dm.get("/wiki/search.js")
+check("search index skips the hidden page, even for the DM",
+      "Hidden Vault" not in search.text,
+      "a hidden name in the suggestions is the spoiler itself")
+check("but still carries visible ones", "Valeshire" in search.text)
+
+print("\n== hiding pages at will: met, known, seen ==")
+lib.save(Entity(kind="character", slug="stranger", name="The Stranger",
+                summary="Nobody knows them yet.", appearance="a hood",
+                body="Public prose.\n\n:::visited\nUPONMEETING\n:::"))
+check("a fresh page is public",
+      wren.get("/wiki/character/stranger.html").status_code == 200)
+check("its upon-meeting prose is fenced",
+      "UPONMEETING" not in wren.get("/wiki/character/stranger.html").text)
+dm.post("/wiki/character/stranger/visited", data={"set": "false"})
+check("the DM hides them at will",
+      wren.get("/wiki/character/stranger.html").status_code == 404)
+check("the file says met: false",
+      lib.load("character", "stranger").data.get("met") is False)
+dm_view = dm.get("/wiki/character/stranger.html")
+check("the DM still reads the page", dm_view.status_code == 200)
+check("with the kind's verb on the chip", "hidden until marked met" in dm_view.text,
+      "no revealed_by sources: the only key is the DM's own button, say so")
+check("a player cannot press the button",
+      wren.post("/wiki/character/stranger/visited",
+                data={"set": "true"}).status_code == 404)
+dm.post("/wiki/character/stranger/visited", data={"set": "true"})
+met = wren.get("/wiki/character/stranger.html")
+check("marking met reveals them", met.status_code == 200)
+check("and opens the upon-meeting prose", "UPONMEETING" in met.text)
+
+print("\n== encounters cascade ==")
+# Visit the shop and you have met the shopkeeper: the gate is the cascade.
+lib.save(Entity(kind="place", slug="wick-shop", name="The Wick Shop",
+                summary="Candles and charms.", appearance="a shop"))
+lib.save(Entity(kind="character", slug="shopkeep", name="The Shopkeep",
+                summary="Keeps the wick shop.", appearance="an apron",
+                body="Runs the counter.\n\n:::visited\nMETBYVISIT\n:::",
+                data={"revealed_by": ["place/wick-shop"]}))
+check("gated on an unvisited shop, so hidden",
+      wren.get("/wiki/character/shopkeep.html").status_code == 404)
+wiring = dm.get("/wiki/character/shopkeep.html")
+check("the DM reads the gate as a section of the page",
+      "Revealed by <span" in wiring.text and "The Wick Shop" in wiring.text)
+check("and the chip names the key inline",
+      "hidden until met &middot; via" in wiring.text,
+      "a chip that just says 'hidden until met' points at nothing")
+shop_page = dm.get("/wiki/place/wick-shop.html")
+check("and the same wire from the other end",
+      "Reveals <span" in shop_page.text and "The Shopkeep" in shop_page.text)
+check("with the encounter state on the card",
+      "not yet encountered" in shop_page.text)
+check("players never see the wiring",
+      "Reveals <span" not in wren.get("/wiki/place/wick-shop.html").text)
+dm.post("/wiki/place/wick-shop/visited")  # the original toggle, no set field
+keeper = wren.get("/wiki/character/shopkeep.html")
+check("visiting the shop reveals the shopkeep", keeper.status_code == 200)
+check("and counts as meeting them: the upon-meeting prose is open",
+      "METBYVISIT" in keeper.text)
+dm.post("/wiki/place/wick-shop/visited")  # toggle back off
+check("un-visiting takes them away again",
+      wren.get("/wiki/character/shopkeep.html").status_code == 404,
+      "the cascade wrote only the derived flag, so it retracts cleanly")
+
+print("\n== wiring reveals from the page ==")
+check("the sections carry an add form",
+      'action="/wiki/place/wick-shop/wire"' in dm.get("/wiki/place/wick-shop.html").text)
+check("with the whole library as its picker",
+      'datalist id="allpages"' in dm.get("/wiki/place/wick-shop.html").text)
+lib.save(Entity(kind="character", slug="regular", name="The Regular",
+                summary="Always at the counter.", appearance="a mug"))
+r = dm.post("/wiki/place/wick-shop/wire",
+            data={"direction": "reveals", "target": "character/regular"})
+check("wiring 'reveals' redirects home", r.status_code == 303)
+check("and writes the gate on the target",
+      "place/wick-shop" in (lib.load("character", "regular").data.get("revealed_by") or []))
+r = dm.post("/wiki/character/regular/wire",
+            data={"direction": "revealed_by", "target": "The Shopkeep"})
+check("an exact name resolves like a ref", r.status_code == 303, str(r.status_code))
+check("and lands on this page's own gate",
+      "character/shopkeep" in lib.load("character", "regular").data["revealed_by"])
+check("wiring twice records once",
+      dm.post("/wiki/place/wick-shop/wire",
+              data={"direction": "reveals", "target": "character/regular"}).status_code == 303
+      and (lib.load("character", "regular").data["revealed_by"]).count("place/wick-shop") == 1)
+check("a page cannot reveal itself",
+      dm.post("/wiki/character/regular/wire",
+              data={"direction": "revealed_by", "target": "character/regular"}).status_code == 400)
+check("an unknown target is refused",
+      dm.post("/wiki/character/regular/wire",
+              data={"direction": "revealed_by", "target": "nowhere"}).status_code == 400)
+check("players cannot wire",
+      wren.post("/wiki/place/wick-shop/wire",
+                data={"direction": "reveals", "target": "character/regular"}).status_code == 404)
+check("nor do they see the forms",
+      'wire"' not in wren.get("/wiki/place/wick-shop.html").text)
+# Wiring to a page the party already stands in reveals in the same breath.
+dm.post("/wiki/place/wick-shop/visited", data={"set": "true"})
+check("a wire to visited ground is live at once",
+      wren.get("/wiki/character/regular.html").status_code == 200)
+dm.post("/wiki/place/wick-shop/visited", data={"set": "clear"})
+
+print("\n== the reveal web ==")
+board = dm.get("/wiki/reveals")
+check("the DM gets the board", board.status_code == 200)
+check("wired pages are on it",
+      "The Shopkeep" in board.text and "The Wick Shop" in board.text)
+check("cards carry their wires for the script",
+      'data-srcs="place/wick-shop"' in board.text)
+check("and their toggles", 'name="back" value="reveals"' in board.text)
+check("players get a 404, not a hint",
+      wren.get("/wiki/reveals").status_code == 404)
+check("the menu offers it to the DM",
+      "/wiki/reveals" in dm.get("/wiki/").text)
+check("but not to players", "/wiki/reveals" not in wren.get("/wiki/").text)
+r = dm.post("/wiki/place/wick-shop/visited",
+            data={"set": "true", "back": "reveals"})
+check("a board toggle returns to the board",
+      r.status_code == 303 and r.headers["location"] == "/wiki/reveals")
+check("and the flag moved", lib.load("place", "wick-shop").data.get("visited") is True)
+dm.post("/wiki/place/wick-shop/visited", data={"set": "clear", "back": "reveals"})
+
+print("\n== the DM borrows a player's eyes ==")
+mask = signed_in_as("dm")
+check("the site menu offers View as", "View as" in mask.get("/wiki/").text)
+check("players are not offered it", "View as" not in wren.get("/wiki/").text)
+mask.post("/wiki/impersonate", data={"who": "wren"})
+front = mask.get("/wiki/")
+check("the header says whose eyes", "seeing as Wren" in front.text)
+check("a concealed page is gone for the mask too",
+      mask.get("/wiki/character/shopkeep.html").status_code == 404)
+check("so is a dm-only page",
+      mask.get("/wiki/lore/dm-notes.html").status_code == 404)
+blocked = mask.post("/wiki/character/stranger/edit", data={
+    "name": "The Stranger", "summary": "VANDALIZED", "appearance": "x",
+    "body": "", "tags": "", "links": ""})
+check("writes are refused while masked",
+      blocked.headers.get("location") == "/wiki/"
+      and lib.load("character", "stranger").summary != "VANDALIZED",
+      "an edit through the mask would land in the player's name")
+check("players cannot impersonate",
+      wren.post("/wiki/impersonate", data={"who": "dm"}).status_code == 404)
+mask.post("/wiki/impersonate", data={})  # the back-to-yourself button
+check("the mask comes off", "seeing as" not in mask.get("/wiki/").text)
+check("and the DM's eyes are back",
+      mask.get("/wiki/lore/dm-notes.html").status_code == 200)
+
+print("\n== the DM wires gates from the edit form ==")
+lib.save(Entity(kind="item", slug="ledger-book", name="Ledger Book",
+                summary="A ledger.", appearance="a ledger"))
+ledger_form = {"name": "Ledger Book", "summary": "A ledger.",
+               "appearance": "a ledger", "body": "", "tags": "", "links": ""}
+check("the DM's form offers the gate",
+      'name="revealed_by"' in dm.get("/wiki/item/ledger-book/edit").text)
+check("a player's form does not",
+      'name="revealed_by"' not in wren.get("/wiki/item/ledger-book/edit").text)
+dm.post("/wiki/item/ledger-book/edit",
+        data={**ledger_form, "revealed_by": "place/wick-shop"})
+check("saving a gate hides the item",
+      wren.get("/wiki/item/ledger-book.html").status_code == 404)
+check("and the form reads it back",
+      "place/wick-shop" in dm.get("/wiki/item/ledger-book/edit").text)
+dm.post("/wiki/place/wick-shop/visited")
+check("the gate obeys the source's flag",
+      wren.get("/wiki/item/ledger-book.html").status_code == 200)
+dm.post("/wiki/item/ledger-book/edit",
+        data={**ledger_form, "revealed_by": "place/wick-shop"})
+check("a gate re-saved against a visited source stays open",
+      wren.get("/wiki/item/ledger-book.html").status_code == 200,
+      "the edit handler recomputes, so the gate is born open")
+dm.post("/wiki/place/wick-shop/visited")  # unvisit
+check("and closes when the source unvisits",
+      wren.get("/wiki/item/ledger-book.html").status_code == 404)
+wren.post("/wiki/character/stranger/edit",
+          data={"name": "The Stranger", "summary": "Nobody knows them yet.",
+                "appearance": "a hood", "body": "Public prose.", "tags": "",
+                "links": "", "revealed_by": "place/wick-shop"})
+check("a player smuggling the field changes nothing",
+      not lib.load("character", "stranger").data.get("revealed_by"))
+dm.post("/wiki/item/ledger-book/edit", data={**ledger_form, "revealed_by": ""})
+check("clearing the field opens the gate",
+      wren.get("/wiki/item/ledger-book.html").status_code == 200)
+check("and drops the bookkeeping with it",
+      "revealed" not in (lib.load("item", "ledger-book").data or {}))
 
 print("\n== asking for art where there is no graphics card ==")
 # The site now runs on a free server with no GPU. Pressing Art there has to do

@@ -15,6 +15,7 @@ from collections import defaultdict
 import markdown as md
 
 from . import access as access_mod
+from . import encounter as encounter_mod
 from . import hierarchy as hierarchy_mod
 from . import secrets as secrets_mod
 from . import thumbs
@@ -211,6 +212,17 @@ header.top .who { font-size: .75rem; color: var(--muted); }
   box-shadow: 0 6px 18px rgba(0,0,0,.18); padding: .3rem; }
 .menupanel a { padding: .4rem .7rem; border-radius: 4px; font-size: .85rem; }
 .menupanel a:hover { background: var(--accent-soft); text-decoration: none; }
+.menupanel form.viewas { display: flex; gap: .4rem; padding: .4rem .7rem;
+  border-top: 1px solid var(--line); margin-top: .3rem; }
+.menupanel form.viewas select, .menupanel form.viewas button { font: inherit;
+  font-size: .8rem; background: var(--bg); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 4px; padding: .2rem .4rem; }
+header.top .who.mask { color: var(--accent); }
+header.top .who form { display: inline; }
+header.top .who button { font: inherit; font-size: .75rem; cursor: pointer;
+  background: none; border: 1px solid var(--accent); border-radius: 4px;
+  color: var(--accent); padding: .1rem .45rem; }
+header.top .who button:hover { background: var(--accent-soft); }
 /* Writing actions, set apart from the browsing links so "add something" is
    never more than one click away from any page. */
 a.act { border: 1px solid var(--line); border-radius: 999px; font-size: .8rem;
@@ -255,6 +267,136 @@ h2 a.act { margin-left: .6rem; font-weight: normal; vertical-align: middle; }
 #qclear:hover { color: var(--accent); }
 #qclear.show { display: block; }
 main { max-width: 46rem; margin: 0 auto; padding: 2rem 1.2rem 5rem; }
+/* Recently visited: a quiet trail down the right edge, built client-side by
+   RECENT_JS from localStorage. Wide viewports only -- on a phone it would
+   shove the reading column aside for a list the search already answers.
+   The body becomes a two-column grid rather than the rail floating fixed:
+   the card-grid pages run main at max-width none, and a fixed rail would
+   sit on top of them at every width. */
+#recent { display: none; }
+@media (min-width: 80rem) {
+  /* The rail's column is reserved whether or not a rail is showing: if the
+     content column changed width whenever the trail emptied or filled,
+     every clear and every first visit would reflow the whole page. So the
+     grid is unconditional at this width, and the rail only ever fades
+     inside its reserved seat. */
+  body { display: grid; grid-template-columns: minmax(0, 1fr) 13rem; }
+  body > header.top, body > .searchbar { grid-column: 1 / -1; }
+  body > #recent { display: block; grid-column: 2; grid-row: 3;
+    position: sticky; top: 3.4rem; align-self: start; min-width: 0;
+    max-height: calc(100vh - 3.4rem); overflow-y: auto; overflow-x: hidden;
+    box-sizing: border-box; padding: 2rem 1.4rem 1.6rem 1rem;
+    opacity: 1; transition: opacity .25s ease; }
+  body > #recent.closed { opacity: 0; }
+  /* As grid items, main and the footer keep their auto margins -- and a
+     grid item with auto margins shrinks to fit, which collapsed the index
+     card grids to a sliver. An explicit 100% width restores block behaviour:
+     prose pages still centre under their max-width, grids fill the column. */
+  body > main, body > footer.build { grid-column: 1;
+    width: 100%; box-sizing: border-box; }
+}
+#recent li.enter { animation: recententer .3s ease both; }
+@keyframes recententer {
+  from { opacity: 0; transform: translateY(-6px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body > #recent, #recent a.rcard { transition: none; }
+  #recent li.enter { animation: none; }
+}
+#recent h2 { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--muted); margin: 0 0 .55rem; font-weight: normal; }
+#recent ul { list-style: none; margin: 0; padding: 0; }
+#recent li { margin: 0; line-height: 1.25; }
+/* Tiny cards, whole card the link: a face beside the name, and a target the
+   height a finger needs rather than a line of text. */
+/* Every card carries the border, transparent until a state colors it in:
+   a border that appears out of nowhere grows the box and nudges every
+   card below it. The active states step left instead -- a transform moves
+   paint, never layout. */
+#recent a.rcard { display: flex; align-items: center; gap: .55rem;
+  padding: .3rem .45rem; min-height: 44px; box-sizing: border-box;
+  border-radius: 6px; border: 1px solid transparent;
+  transition: transform .2s ease, background .2s ease,
+              border-color .2s ease; }
+#recent a.rcard:hover { background: var(--accent-soft); }
+/* Where you are now: held quietly at its place in the trail. */
+#recent a.rcard.current { background: var(--panel);
+  border-color: var(--line); transform: translateX(-6px); }
+/* Where the keys are pointed mid-traversal, before the debounce commits:
+   the same box, drawn dashed because it is a destination, not a place.
+   While the keys are walking, the current page's own marker stands down
+   so only one card is ever lit. */
+#recent a.rcard.pending { background: var(--panel);
+  border-style: dashed; border-color: var(--muted);
+  transform: translateX(-6px); }
+#recent.traversing a.rcard.current:not(.pending) { background: none;
+  border-color: transparent; transform: none; }
+#recent .rthumb { flex: none; width: 34px; height: 34px; border-radius: 5px;
+  overflow: hidden; background: var(--panel); border: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: .85rem; }
+#recent .rthumb img { width: 100%; height: 100%; object-fit: cover;
+  display: block; }
+#recent .rtext { min-width: 0; }
+#recent .rname { display: block; font-size: .85rem; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+#recent .rkind { display: block; font-size: .66rem; color: var(--muted); }
+/* The reveal web: columns by depth, wires drawn over the top. Cards carry
+   their own state so the board reads with the script off; the SVG is
+   decoration on facts already on screen. */
+.webboard { position: relative; overflow-x: auto; padding: 1rem 0 2rem; }
+.webboard svg.webwires { position: absolute; top: 0; left: 0; z-index: 0;
+  pointer-events: none; }
+.webboard .wire { stroke: var(--line); }
+.webboard .wire.live { stroke: var(--star); }
+/* One cluster per first cause. Inside, each row is a card beside the stack
+   of what it opens: the wires only ever reach the next stack over. */
+.webcluster { position: relative; z-index: 1; padding: 1rem 0;
+  border-top: 1px solid var(--line); }
+.webcluster:first-child { border-top: 0; }
+.webrow { display: flex; align-items: center; gap: 3.5rem;
+  margin: .5rem 0; }
+.webrow > .webnode { flex: 0 0 15rem; }
+.webkids { display: flex; flex-direction: column; min-width: 0; }
+.webnode { border: 1px solid var(--line); border-radius: 6px;
+  padding: .45rem .6rem .5rem; background: var(--panel); }
+.webnode a { font-size: .9rem; }
+.webnode .wstate { display: block; font-size: .68rem; color: var(--muted); }
+.webnode.lit { border-color: var(--star); }
+.webnode.half { border-color: var(--accent); }
+.webnode.dark { border-style: dashed; opacity: .65; }
+.webnode.dim { opacity: .75; }
+.webnode .wacts { display: flex; gap: .35rem; margin-top: .35rem; }
+.webnode .wacts form { margin: 0; }
+.webnode .wacts button { font: inherit; font-size: .68rem;
+  padding: .08rem .5rem; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--bg); color: var(--muted); cursor: pointer; }
+.webnode .wacts button:hover { color: var(--accent);
+  border-color: var(--accent); }
+/* Wiring a reveal: one compact row under the section it feeds. The input
+   leans on the shared datalist for type-ahead, so there is no script and
+   no popup -- the browser's own picker does the searching. */
+form.wire { display: flex; gap: .4rem; margin: .5rem 0 0; }
+form.wire input { flex: 0 1 18rem; padding: .25rem .55rem;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--bg);
+  color: var(--ink); font: inherit; font-size: .8rem; }
+form.wire button { font: inherit; font-size: .8rem; padding: .2rem .7rem;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+  color: var(--muted); cursor: pointer; }
+form.wire button:hover { color: var(--accent); border-color: var(--accent); }
+/* The rail's one-line footer: the traversal keys' calling card on the left,
+   in the same voice as the search field's hotkey chip, and clear on the
+   right. */
+#recent .rfoot { display: flex; align-items: center;
+  justify-content: space-between; gap: .5rem; margin-top: .7rem; }
+#recent .rhint { display: inline-flex; align-items: center; gap: .25rem;
+  font-size: .64rem; color: var(--muted); white-space: nowrap; }
+#recent .rhint kbd { font-family: inherit; background: var(--panel);
+  border: 1px solid var(--line); border-radius: 4px; padding: .02rem .3rem; }
+#recent .rclear { font-size: .7rem; color: var(--muted);
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit;
+  font-size: .7rem; }
+#recent .rclear:hover { color: var(--accent); }
 /* Entity pages with an aside need room for two columns. Only widened
    when there is genuinely a two-column layout inside, so the guide,
    changelog and index keep the tighter reading measure. */
@@ -669,6 +811,7 @@ form.catchup button:hover { color: var(--ink); background: var(--accent-soft); }
 .msg .acts { margin-top: .7rem; display: flex; gap: .8rem; align-items: center;
   font-size: .85rem; }
 .msg form { display: inline; }
+.msg .acts select { max-width: 14rem; }
 .msg button { border: 1px solid var(--line); border-radius: 4px; padding: .25rem .7rem;
   background: var(--bg); color: var(--ink); font: inherit; font-size: .85rem;
   cursor: pointer; }
@@ -1004,6 +1147,8 @@ function go(url,push){
       /* The tooltip walker runs once on load, scoped to the initial `#page`.
          Swapped-in content needs the same treatment or nothing lights up. */
       if(window.__tipsWalk) window.__tipsWalk(payload.incoming);
+      /* The recently-visited rail records the arrival, same deal. */
+      if(window.__recentNote) window.__recentNote(payload.incoming);
       /* Two frames of settle before revealing: one for insert, one for the
          browser to acknowledge the images are decoded. Without this, the
          transition sometimes starts from `.ready` and never plays. */
@@ -1016,6 +1161,220 @@ function go(url,push){
     })
     .catch(function(){ location.href=url; });
 }
+})();
+"""
+
+
+RECENT_JS = """
+/* Recently visited: a per-person trail kept in localStorage, drawn as a rail
+   down the right on wide screens. Client-side on purpose: rendering it on the
+   server would mean the server keeping browsing history, and the static
+   export has no server at all. JS off means no rail and nothing else lost.
+
+   The store is keyed by the signed-in name, not shared: two people at one
+   browser must not read each other's trail, because a page's bare title --
+   who exists, where is real -- is often itself a spoiler. */
+(function(){
+var KEY='recent:'+(window.__WHO__||'guest');
+var shown=[];  /* URLs on screen after the last render, for entry/move motion */
+function reduced(){
+  return window.matchMedia&&
+         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY))||[]; }
+                 catch(e){ return []; } }
+function save(list){ try{ localStorage.setItem(KEY,JSON.stringify(list)); }
+                     catch(e){} }
+function here(){ return location.pathname+location.search; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function note(root){
+  /* `root` is only passed by the router; its presence is what separates a
+     soft navigation (animate the rail's changes) from a full page load
+     (draw it settled -- a rail that slides open on every load is noise). */
+  cancelPend();
+  var soft=!!root;
+  root=root||document.getElementById('page');
+  if(root){
+    /* Entity pages only, recognised by their kind chip. Indexes, the guide
+       and search are navigation, not somewhere you were. */
+    var kind=root.querySelector('.kind .kindlink');
+    var h1=root.querySelector('h1');
+    if(kind&&h1){
+      /* The page's own art, stored at the card size the index grids already
+         use, so the rail's thumbnails come out of the same cache. */
+      var thumb='';
+      var hero=root.querySelector('img.hero');
+      if(hero&&hero.getAttribute('src')){
+        try{
+          var hu=new URL(hero.getAttribute('src'),location.href);
+          hu.searchParams.set('size','card');
+          thumb=hu.pathname+hu.search;
+        }catch(x){}
+      }
+      /* A page already in the trail is refreshed where it sits rather than
+         bubbled to the top. Reordering on every revisit made the rail churn
+         -- and it made keyboard traversal impossible, because stepping onto
+         an entry would immediately reshuffle the list underneath the step. */
+      var entry={u:here(), n:h1.textContent.trim(),
+                 k:kind.textContent.trim().replace(/s$/,''), t:thumb};
+      var list=load(), at=-1;
+      for(var j=0;j<list.length;j++)
+        if(list[j].u===entry.u){ at=j; break; }
+      if(at>=0) list[at]=entry; else list.unshift(entry);
+      save(list.slice(0,12));
+    }
+  }
+  render(soft);
+}
+function dismiss(){
+  /* Fade the rail out inside its seat. The column itself never moves --
+     the space stays reserved, so clearing reflows nothing. */
+  var rail=document.getElementById('recent');
+  var done=function(){ if(rail) rail.remove(); shown=[]; };
+  if(!rail||reduced()){ done(); return; }
+  rail.classList.add('closed');
+  setTimeout(done,280);
+}
+function render(soft){
+  /* The page you are on stays in the list, marked, rather than being
+     hidden: filtering it out made every navigation a card vanishing here
+     and reappearing there, and the rail read as churn instead of a trail. */
+  var list=load().slice(0,10);
+  var rail=document.getElementById('recent');
+  if(!list.length){ dismiss(); return; }
+  var fresh=!rail;
+  if(fresh){
+    var main=document.querySelector('main');
+    if(!main) return;
+    rail=document.createElement('nav');
+    rail.id='recent';
+    rail.setAttribute('aria-label','Recently visited');
+    main.parentNode.insertBefore(rail,main);
+  }
+  /* Where each card sat before the rebuild, for the move animation. */
+  var was={};
+  rail.querySelectorAll('li[data-u]').forEach(function(li){
+    was[li.getAttribute('data-u')]=li.getBoundingClientRect().top;
+  });
+  var h='<h2>Recently visited</h2><ul>';
+  for(var i=0;i<list.length;i++){
+    var e=list[i];
+    var face=e.t
+      ?'<img src="'+esc(e.t)+'" alt="" loading="lazy" decoding="async">'
+      :esc((e.n||'?').charAt(0).toUpperCase());
+    var cur=e.u===here();
+    h+='<li data-u="'+esc(e.u)+'"><a class="rcard'+(cur?' current':'')+
+       '" href="'+esc(e.u)+'"'+(cur?' aria-current="page"':'')+'>'+
+       '<span class="rthumb">'+face+'</span>'+
+       '<span class="rtext"><span class="rname">'+esc(e.n)+'</span>'+
+       (e.k?'<span class="rkind">'+esc(e.k)+'</span>':'')+
+       '</span></a></li>';
+  }
+  h+='</ul><div class="rfoot"><span class="rhint" aria-hidden="true">'+
+     '<kbd>pg&#9650;</kbd><kbd>pg&#9660;</kbd></span>'+
+     '<button type="button" class="rclear">clear</button></div>';
+  rail.innerHTML=h;
+  rail.querySelector('.rclear').addEventListener('click',function(){
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    dismiss();
+  });
+  if(soft&&!reduced()){
+    if(fresh){
+      /* Fade into the reserved seat rather than popping. */
+      rail.classList.add('closed');
+      void rail.offsetWidth;
+      requestAnimationFrame(function(){
+        rail.classList.remove('closed');
+      });
+    }else{
+      rail.classList.remove('closed');
+      /* FLIP: cards that were already on screen glide from their old seat
+         to the new one; cards seen for the first time fade in. */
+      rail.querySelectorAll('li[data-u]').forEach(function(li){
+        var u=li.getAttribute('data-u');
+        if(u in was){
+          var d=was[u]-li.getBoundingClientRect().top;
+          if(d&&li.animate)
+            li.animate([{transform:'translateY('+d+'px)'},
+                        {transform:'translateY(0)'}],
+                       {duration:260,easing:'ease'});
+        }else if(shown.indexOf(u)<0){
+          li.classList.add('enter');
+        }
+      });
+    }
+  }
+  /* Keep the marked card in sight when the rail itself scrolls. */
+  var curLi=rail.querySelector('a.rcard.current');
+  if(curLi&&curLi.scrollIntoView) curLi.scrollIntoView({block:'nearest'});
+  shown=list.map(function(e){ return e.u; });
+}
+/* PageUp / PageDown walk the trail: down is older, up is newer. Only when
+   a rail is actually on screen, never while typing, and past either end
+   the keys fall through to the browser's ordinary page scroll.
+
+   Rapid presses are debounced: each press moves a marker, which is a class
+   flip and costs nothing, and the actual navigation fires once the keys go
+   quiet. Navigating per press queued a fetch and a fade behind every
+   keystroke, and holding the key buried the router alive. */
+var pend=null, pendTimer=null;
+function cancelPend(){
+  if(pendTimer){ clearTimeout(pendTimer); pendTimer=null; }
+  pend=null;
+  var rail=document.getElementById('recent');
+  if(rail){
+    rail.classList.remove('traversing');
+    rail.querySelectorAll('a.rcard.pending').forEach(function(a){
+      a.classList.remove('pending');
+    });
+  }
+}
+document.addEventListener('keydown',function(ev){
+  if(ev.key!=='PageDown'&&ev.key!=='PageUp')return;
+  if(ev.metaKey||ev.ctrlKey||ev.altKey||ev.shiftKey)return;
+  var t=ev.target;
+  if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.tagName==='SELECT'
+         ||t.isContentEditable))return;
+  var rail=document.getElementById('recent');
+  if(!rail||!rail.offsetParent||rail.classList.contains('closed'))return;
+  var links=rail.querySelectorAll('li a.rcard');
+  if(!links.length)return;
+  var cur=-1;
+  for(var i=0;i<links.length;i++)
+    if(links[i].classList.contains('current')){ cur=i; break; }
+  var base=pend===null?cur:pend;
+  var next=base+(ev.key==='PageDown'?1:-1);
+  if(next<0||next>=links.length){
+    if(pend===null)return;       /* not traversing: the page may scroll */
+    ev.preventDefault(); return; /* mid-run: hold at the end of the list */
+  }
+  ev.preventDefault();
+  links.forEach(function(a){ a.classList.remove('pending'); });
+  pend=next;
+  /* One marker at a time: while the keys are walking, the where-you-are
+     box yields to the where-you're-pointed box. */
+  rail.classList.add('traversing');
+  links[next].classList.add('pending');
+  if(links[next].scrollIntoView) links[next].scrollIntoView({block:'nearest'});
+  if(pendTimer) clearTimeout(pendTimer);
+  pendTimer=setTimeout(function(){
+    pendTimer=null;
+    var target=pend===null?null:links[pend];
+    pend=null;
+    if(target&&!target.classList.contains('current')){
+      /* Leave the markers standing until the new page lands: pulling them
+         now would relight the card being left for as long as the fetch
+         takes -- a flash of the wrong place. note() clears them after
+         the swap. */
+      target.click();
+    }else{
+      cancelPend();
+    }
+  },300);
+});
+window.__recentNote=note;
+note();
 })();
 """
 
@@ -1241,6 +1600,25 @@ def page_url(ref: str) -> str:
     return f"{kind}/{slug}.html"
 
 
+class MaskedName(str):
+    """A display name that is really the DM looking through someone's eyes.
+
+    A plain `str` subclass on purpose: every existing consumer -- escaping,
+    truthiness checks, the shell's greeting -- keeps working untouched, and
+    only the chrome that cares asks for `.real` to learn who is actually
+    signed in. Made by `Wiki.viewer_for` when the DM is impersonating a
+    player to check what the table can and cannot see.
+    """
+
+    real: str = ""
+
+    @classmethod
+    def of(cls, shown: str, real: str) -> "MaskedName":
+        out = cls(shown)
+        out.real = real
+        return out
+
+
 def shell(schema, title: str, base: str, body: str, index_json: str,
           user: str | None = None, live: bool = False,
           tips: bool = False, extra: str = "", actions: str = "") -> str:
@@ -1274,14 +1652,26 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
     # and then, and a stray encoding round-trip turns punctuation into mojibake.
     full = title if title == schema.name else f"{title} - {schema.name}"
     if live:
-        account = (
-            f'<span class="who">{html.escape(user)} &middot; '
-            f'<a href="{base}login">not you?</a> &middot; '
-            f'<a href="{guide_href}">guide</a> &middot; '
-            f'<a href="{base}connect">connect an assistant</a> &middot; '
-            f'<a href="{base}logout">sign out</a></span>'
-            if user else f'<span class="who"><a href="{base}login">sign in</a></span>'
-        )
+        real = getattr(user, "real", "")
+        if user and real:
+            # The DM is borrowing a player's eyes. Say so loudly and keep the
+            # way back one press away -- a DM who forgets they are masked
+            # will misread half the wiki.
+            account = (
+                f'<span class="who mask">seeing as {html.escape(user)} &middot; '
+                f'<form method="post" action="{base}impersonate">'
+                f'<button>back to {html.escape(real)}</button></form></span>'
+            )
+        elif user:
+            account = (
+                f'<span class="who">{html.escape(user)} &middot; '
+                f'<a href="{base}login">not you?</a> &middot; '
+                f'<a href="{guide_href}">guide</a> &middot; '
+                f'<a href="{base}connect">connect an assistant</a> &middot; '
+                f'<a href="{base}logout">sign out</a></span>'
+            )
+        else:
+            account = f'<span class="who"><a href="{base}login">sign in</a></span>'
     else:
         account = ""
     return f"""<!doctype html>
@@ -1319,7 +1709,7 @@ def shell(schema, title: str, base: str, body: str, index_json: str,
   <div id="page">{body}</div>
 </main>
 <footer class="build">{html.escape(schema.name)} &middot; <code>{html.escape(version_mod.describe())}</code></footer>
-<script>const BASE={json.dumps(base)};{"window.__INDEX__=" + index_json + ";" if index_json != "[]" else ""}{SEARCH_JS}{IMG_FADE_JS}{NAV_JS}{TILT_JS}{TUNER_JS if live else ""}</script>
+<script>const BASE={json.dumps(base)};window.__WHO__={json.dumps(user or "")};{"window.__INDEX__=" + index_json + ";" if index_json != "[]" else ""}{SEARCH_JS}{IMG_FADE_JS}{NAV_JS}{RECENT_JS}{TILT_JS}{TUNER_JS if live else ""}</script>
 {f'<script src="{base}search.js" defer></script>' if live else ""}
 {f'<script src="{base}tooltips.js"></script>' if tips else ""}
 </body></html>
@@ -1375,26 +1765,65 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
         f'<a class="edit" href="{base}{entity.kind}/{entity.slug}/files">Files</a>'
         if editable else ""
     )
-    # The DM's checkbox for "the party has been here". Places only, and only
-    # on the live site: the static export has nobody signed in to press it.
+    # The DM's checkbox for "the party has come across this" -- visited on a
+    # place, met on a character, seen on an item. Live site only: the static
+    # export has nobody signed in to press it. Three states, so the row also
+    # carries the way in ("Hide until met") and the way back out ("Stop
+    # hiding"): the flag is how the DM conceals a page at will.
     visited_toggle = ""
-    if (editable and getattr(viewer, "is_dm", False)
-            and entity.kind == hierarchy_mod.KIND):
-        label = ("Visited &#10003;" if entity.data.get("visited")
-                 else "Mark visited")
-        visited_toggle = (
-            f'<form class="visited" method="post" '
-            f'action="{base}{entity.kind}/{entity.slug}/visited">'
-            f'<button title="Opens this page\'s upon-visiting sections to '
-            f'everyone">{label}</button></form>'
-        )
+    if editable and getattr(viewer, "is_dm", False):
+        verb = encounter_mod.flag_key(entity.kind)
+        state = encounter_mod.flag_of(entity)
+        action = f"{base}{entity.kind}/{entity.slug}/visited"
+
+        def _mark(value: str, label: str, title: str) -> str:
+            return (f'<form class="visited" method="post" action="{action}">'
+                    f'<input type="hidden" name="set" value="{value}">'
+                    f'<button title="{title}">{label}</button></form>')
+
+        if state is True:
+            visited_toggle = _mark(
+                "clear", f"{verb.capitalize()} &#10003;",
+                f"Unmarks {verb} and closes this page's :::visited sections")
+        elif state is False:
+            visited_toggle = (
+                _mark("true", f"Mark {verb}",
+                      "Reveals this page to everyone and opens its "
+                      ":::visited sections")
+                + _mark("clear", "Stop hiding",
+                        f"Shows the page again without marking it {verb}"))
+        else:
+            visited_toggle = (
+                _mark("true", f"Mark {verb}",
+                      "Opens this page's :::visited sections to everyone")
+                + _mark("false", f"Hide until {verb}",
+                        "Hides this page from everyone but you"))
     # The grey chip is the DM-side answer to "can the table see this page?"
     # -- rendered only to people already inside the page's circle, so it
     # never tells a player anything.
     hidden_chip = ""
     if _hidden_from_players(entity):
-        gated = bool(access_mod.reveal_requirements(entity))
-        label = "hidden until visited" if gated else "hidden &middot; restricted"
+        if encounter_mod.concealed(entity):
+            verb = encounter_mod.flag_key(entity.kind)
+            # Name what lifts the veil. A bare "hidden until met" reads as a
+            # promise the world keeps by itself, when half the time the only
+            # key is the DM's own button -- say which, and link the pages
+            # whose encounter carries this one with it.
+            srcs = []
+            for ref in sorted(encounter_mod.sources_of(entity)):
+                kind_, _, slug_ = ref.partition("/")
+                target = library.load(kind_, slug_)
+                if target:
+                    srcs.append(f'<a href="{base}{page_url(ref)}">'
+                                f'{html.escape(target.name)}</a>')
+                else:
+                    srcs.append(html.escape(ref))
+            if srcs:
+                label = f"hidden until {verb} &middot; via " + ", ".join(srcs)
+            else:
+                label = f"hidden until marked {verb}"
+        else:
+            label = "hidden &middot; restricted"
         hidden_chip = f'<span class="hiddenchip">{label}</span>'
     head_parts.append(
         f'<div class="kind"><a class="kindlink" '
@@ -1433,14 +1862,28 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
 
     # Secret blocks this viewer may read are shown, marked, so nobody repeats
     # them at the table by accident. A `:::visited` block outgrows the marking:
-    # once the DM checks the place off it is ordinary public prose, not a
-    # secret everyone happens to share.
-    visited = bool(entity.data.get("visited"))
+    # once the page is encountered -- visited, met, seen, or revealed by
+    # cascade -- it is ordinary public prose, not a secret everyone happens
+    # to share.
+    visited = encounter_mod.encountered(entity)
+    # Secret table columns filter by the same identities as blocks, with the
+    # page's own visited unlock counted in. All-access keeps every column,
+    # chips on, exactly as it keeps every block.
+    if viewer.all_access:
+        col_viewer = secrets_mod.ALL
+    else:
+        col_viewer = set(viewer.identities)
+        if visited:
+            col_viewer.add(secrets_mod.VISITED_KEY)
+
+    def cols(text: str) -> str:
+        return secrets_mod.redact_columns(text, col_viewer)
+
     for segment in secrets_mod.parse(entity.body):
         if segment.audience is None:
-            main_parts.append(_markdown(segment.text))
+            main_parts.append(_markdown(cols(segment.text)))
         elif visited and secrets_mod.VISITED_KEY in segment.audience:
-            main_parts.append(_markdown(segment.text))
+            main_parts.append(_markdown(cols(segment.text)))
         elif viewer.all_access or (viewer.identities & segment.audience):
             # Upon-visiting blocks wear grey while dormant: the DM's eye
             # sorts "waiting to be found" from the accent of a live secret.
@@ -1452,7 +1895,7 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
                 klass = "secret"
             main_parts.append(
                 f'<div class="{klass}"><span class="who">{who}'
-                f"</span>{_markdown(segment.text)}</div>"
+                f"</span>{_markdown(cols(segment.text))}</div>"
             )
 
     def link_list(refs, heading, addable=False):
@@ -1526,6 +1969,71 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
         [e.ref for e in library.backlinks(entity.ref) if e.ref not in entity.links],
         "Mentioned by",
     )
+
+    # The reveal graph as sections of the page itself, not fine print in the
+    # aside: the DM plans sessions by reading it from both ends -- what
+    # unlocks this page, and what walking into this page unlocks. Cards, so
+    # the graph is walked the same way everything else here is. Players
+    # never receive these sections; the wiring is the trick showing.
+    if getattr(viewer, "is_dm", False):
+
+        def wire_section(refs, heading, direction):
+            targets, missing = [], []
+            for ref in sorted(set(refs)):
+                target = (library.load(*ref.split("/", 1))
+                          if "/" in ref else None)
+                if target is None:
+                    # A gate naming a page renamed or never written: exactly
+                    # the mistake this section exists to surface.
+                    missing.append(f"<code>{html.escape(ref)}</code>")
+                else:
+                    targets.append(target)
+            # On the live site the section renders even empty: the first
+            # wire is exactly when the add form earns its keep. The static
+            # export has no route to post to, so there it stays earned.
+            add = ""
+            if editable:
+                add = (
+                    f'<form class="wire" method="post" '
+                    f'action="{base}{entity.kind}/{entity.slug}/wire">'
+                    f'<input type="hidden" name="direction" value="{direction}">'
+                    f'<input name="target" list="allpages" required '
+                    f'placeholder="kind/slug or exact name">'
+                    f"<button>Wire</button></form>"
+                )
+            if not targets and not missing and not add:
+                return
+            main_parts.append(
+                f'<h2>{heading} <span class="hiddenchip">dm only</span></h2>')
+            if targets:
+                notes = {
+                    t.ref: ("encountered" if encounter_mod.encountered(t)
+                            else "not yet encountered")
+                    for t in targets
+                }
+                main_parts.append(_cards(targets, images, base, notes,
+                                         small=True))
+            if missing:
+                main_parts.append(
+                    f'<p class="hint">Names a page that does not exist: '
+                    f'{", ".join(missing)}</p>')
+            main_parts.append(add)
+
+        wire_section(encounter_mod.sources_of(entity), "Revealed by",
+                     "revealed_by")
+        wire_section([e.ref for e in library.all()
+                      if entity.ref in encounter_mod.sources_of(e)],
+                     "Reveals", "reveals")
+        if editable:
+            # One shared picker for both forms. Built from the whole
+            # library, not the search index: the pages a DM wires gates to
+            # are usually exactly the hidden ones search no longer names.
+            options = "".join(
+                f'<option value="{html.escape(e.ref)}">'
+                f"{html.escape(e.name)}</option>"
+                for e in sorted(library.all(), key=lambda e: e.name.lower())
+            )
+            main_parts.append(f'<datalist id="allpages">{options}</datalist>')
 
     sheet = entity.data.get("dndbeyond_sheet")
     if sheet:
@@ -1682,12 +2190,11 @@ def _hidden_from_players(e: Entity) -> bool:
     """Whether ordinary players cannot see this page.
 
     Rendering never needs a viewer to answer this: anyone a page like this
-    is rendered FOR is already inside its circle -- the DM on a gated page,
-    the named audience on a restricted one -- so marking it grey leaks
+    is rendered FOR is already inside its circle -- the DM on a concealed
+    page, the named audience on a restricted one -- so marking it grey leaks
     nothing and tells the DM at a glance what the table can't see yet.
     """
-    gated = bool(access_mod.reveal_requirements(e)) and not e.data.get("revealed")
-    return gated or bool(access_mod.audience_of(e))
+    return encounter_mod.concealed(e) or bool(access_mod.audience_of(e))
 
 
 def _sort_name(e: Entity) -> str:
@@ -1758,6 +2265,11 @@ def render_index(schema, entities: list[Entity], images: dict[str, str],
     costs nothing to leave configured.
     """
     schema.reload_if_changed()
+    # Indexes are the screen-share surface: pages the table can't see stay off
+    # them entirely, even for viewers inside the circle. The DM still reaches
+    # a hidden page through search, the review page, or its own URL -- what
+    # they lose is a veiled card glowing on a projected index.
+    entities = [e for e in entities if not _hidden_from_players(e)]
     parts = [
         f'<a class="newpage" href="{base}new">+ New page</a>' if editable else "",
         f"<h1>{html.escape(schema.name)}</h1>",
@@ -1823,6 +2335,11 @@ def render_kind_index(schema, kind: str, items: list[Entity],
                       images: dict[str, str], base: str) -> str:
     label = schema.label(kind)
 
+    # Same rule as the front page: hidden pages stay off the index for
+    # everyone, census and counts included, so the numbers a player sees and
+    # the numbers the DM sees agree.
+    items = [e for e in items if not _hidden_from_players(e)]
+
     # A kind that nests shows only its top-level pages: the primaries. What
     # is inside a place belongs to that place's page, and a flat index of
     # sixty nested rooms and alleys buries the eleven places anyone actually
@@ -1865,8 +2382,184 @@ def render_kind_index(schema, kind: str, items: list[Entity],
     return "".join(parts)
 
 
+def render_reveal_web(schema, library: Library, base: str) -> str:
+    """The reveal graph as a board: every wire and its state on one screen.
+
+    DM only, by the route. Nodes are the pages that participate -- sources,
+    gated pages, and anything flag-tracked -- laid out in columns by how far
+    from a first cause they sit. The wires are drawn by a page script over
+    the top; without JS the columns and each card's own state still read.
+    Toggling a card posts to the same route as the page-top buttons, so the
+    board is another view of the same machinery, not a second mechanism.
+    """
+    everything = list(library.all())
+    by_ref = {e.ref: e for e in everything}
+    edges: list[tuple[str, str]] = []
+    nodes: dict[str, Entity] = {}
+    for e in everything:
+        srcs = encounter_mod.sources_of(e)
+        if srcs or encounter_mod.flag_of(e) is not None:
+            nodes[e.ref] = e
+        for s in srcs:
+            edges.append((s, e.ref))
+            if s in by_ref:
+                nodes[s] = by_ref[s]
+
+    sources_in = {r: set() for r in nodes}
+    for s, t in edges:
+        if s in nodes and t in nodes:
+            sources_in[t].add(s)
+
+    def state_of(e: Entity) -> tuple[str, str]:
+        flag = encounter_mod.flag_of(e)
+        verb = encounter_mod.flag_key(e.kind)
+        if flag is True:
+            return "lit", f"{verb} &#10003;"
+        if flag is False:
+            return "dark", "hidden by hand"
+        if e.data.get("revealed"):
+            return "half", "revealed via cascade"
+        if encounter_mod.concealed(e):
+            return "dim", "waiting"
+        return "plain", "public"
+
+    def card(e: Entity) -> str:
+        state, label = state_of(e)
+        verb = encounter_mod.flag_key(e.kind)
+        flag = encounter_mod.flag_of(e)
+        acts = []
+
+        def act(value: str, text: str) -> str:
+            return (f'<form method="post" '
+                    f'action="{base}{e.kind}/{e.slug}/visited">'
+                    f'<input type="hidden" name="set" value="{value}">'
+                    f'<input type="hidden" name="back" value="reveals">'
+                    f"<button>{text}</button></form>")
+
+        if flag is True:
+            acts.append(act("clear", "unmark"))
+        else:
+            acts.append(act("true", f"mark {verb}"))
+            acts.append(act("false", "hide") if flag is not False
+                        else act("clear", "unhide"))
+        srcs = " ".join(sorted(sources_in.get(e.ref, ())))
+        return (
+            f'<div class="webnode {state}" data-ref="{html.escape(e.ref)}" '
+            f'data-srcs="{html.escape(srcs)}">'
+            f'<a href="{base}{page_url(e.ref)}">{html.escape(e.name)}</a>'
+            f'<span class="wstate">{html.escape(schema.label(e.kind).rstrip("s"))}'
+            f" &middot; {label}</span>"
+            f'<div class="wacts">{"".join(acts)}</div></div>'
+        )
+
+    # One cluster per first cause, laid out as a tree: the source on the
+    # left, what it opens stacked beside it, what those open further right.
+    # Wires then only ever hop to a neighbouring stack, instead of vaulting
+    # a whole column of strangers. A page with several sources is placed
+    # under its first; the script still draws its other wires.
+    children: dict[str, list[str]] = {}
+    for ref in nodes:
+        srcs = sorted(sources_in.get(ref, ()))
+        if srcs:
+            children.setdefault(srcs[0], []).append(ref)
+
+    def weight(ref: str, seen: frozenset = frozenset()) -> int:
+        if ref in seen:
+            return 0
+        return 1 + sum(weight(c, seen | {ref})
+                       for c in children.get(ref, ()))
+
+    def row(ref: str, seen: set) -> str:
+        if ref in seen:
+            return ""
+        seen.add(ref)
+        kids = sorted(children.get(ref, ()),
+                      key=lambda r: _sort_name(nodes[r]))
+        kids_html = "".join(row(k, seen) for k in kids)
+        return ('<div class="webrow">' + card(nodes[ref])
+                + (f'<div class="webkids">{kids_html}</div>'
+                   if kids_html else "")
+                + "</div>")
+
+    roots = [r for r in nodes if not sources_in.get(r)]
+    seen: set[str] = set()
+    clusters, lone = [], []
+    for r in sorted(roots, key=lambda r: (-weight(r), _sort_name(nodes[r]))):
+        if children.get(r):
+            clusters.append(f'<div class="webcluster">{row(r, seen)}</div>')
+        else:
+            lone.append(nodes[r])
+    lone_html = ""
+    if lone:
+        lone_html = (
+            "<h2>Tracked, wired to nothing</h2>"
+            '<div class="grid smallgrid">'
+            + "".join(card(e) for e in lone) + "</div>"
+        )
+
+    return (
+        '<div class="kind">Reveal web '
+        '<span class="hiddenchip">dm only</span></div>'
+        "<h1>What opens what</h1>"
+        f'<p class="summary">{len(nodes)} pages wired by {len(edges)} reveals. '
+        "A lit card has been encountered; its wires carry. Cascades do not "
+        "chain -- a card revealed by cascade passes nothing on until you "
+        "mark it yourself.</p>"
+        f'<div class="webboard" id="webboard">{"".join(clusters)}</div>'
+        + lone_html
+        + _WEB_JS
+    )
+
+
+_WEB_JS = """
+<script>
+(function(){
+  var board=document.getElementById('webboard');
+  if(!board) return;
+  var svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('class','webwires');
+  board.insertBefore(svg,board.firstChild);
+  function draw(){
+    svg.setAttribute('width',board.scrollWidth);
+    svg.setAttribute('height',board.scrollHeight);
+    svg.innerHTML='';
+    var b=board.getBoundingClientRect();
+    board.querySelectorAll('.webnode[data-srcs]').forEach(function(t){
+      var srcs=t.getAttribute('data-srcs').split(' ').filter(Boolean);
+      var tr=t.getBoundingClientRect();
+      srcs.forEach(function(ref){
+        var s=board.querySelector('.webnode[data-ref="'+ref+'"]');
+        if(!s) return;
+        var sr=s.getBoundingClientRect();
+        var x1=sr.right-b.left+board.scrollLeft, y1=sr.top+sr.height/2-b.top+board.scrollTop;
+        var x2=tr.left-b.left+board.scrollLeft,  y2=tr.top+tr.height/2-b.top+board.scrollTop;
+        var mid=(x1+x2)/2;
+        var p=document.createElementNS('http://www.w3.org/2000/svg','path');
+        p.setAttribute('d','M'+x1+' '+y1+' C'+mid+' '+y1+', '+mid+' '+y2+', '+x2+' '+y2);
+        p.setAttribute('fill','none');
+        p.setAttribute('stroke-width','1.5');
+        p.setAttribute('class',
+          s.classList.contains('lit')?'wire live':'wire');
+        svg.appendChild(p);
+      });
+    });
+  }
+  draw();
+  window.addEventListener('resize',draw);
+})();
+</script>
+"""
+
+
 def search_index(schema, entities: list[Entity], viewer) -> str:
-    """Client-side index containing only text this viewer may read."""
+    """Client-side index containing only text this viewer may read.
+
+    Hidden pages stay out for everyone, the DM included, same rule as the
+    indexes: search suggestions appear under a typed letter, on a screen
+    that gets projected, and a hidden name surfacing there is the same
+    spoiler as a veiled card on an index. The review page and a page's own
+    URL remain the DM's way in.
+    """
     return json.dumps(
         [
             {
@@ -1880,6 +2573,7 @@ def search_index(schema, entities: list[Entity], viewer) -> str:
                 ).lower(),
             }
             for e in entities
+            if not _hidden_from_players(e)
         ],
         ensure_ascii=False,
     )
