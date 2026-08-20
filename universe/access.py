@@ -97,9 +97,36 @@ def audience_of(entity: Entity) -> frozenset[str] | None:
     return frozenset(names) or None
 
 
+def reveal_requirements(entity: Entity) -> frozenset[str]:
+    """The places whose visiting reveals this page, or empty if ungated.
+
+    `revealed_by` in a page's data names one or more places as 'place/slug'
+    (a bare slug is taken as a place). Until one of them is marked visited,
+    the page is the DM's alone -- it does not exist for anyone else.
+    """
+    raw = entity.data.get("revealed_by")
+    if not raw:
+        return frozenset()
+    if isinstance(raw, str):
+        raw = [raw]
+    refs = set()
+    for r in raw:
+        r = str(r).strip().lower()
+        if r:
+            refs.add(r if "/" in r else f"place/{r}")
+    return frozenset(refs)
+
+
 def readable(entity: Entity, viewer: Viewer) -> bool:
     if viewer.all_access:
         return True
+    # A gated page stays invisible until a visit reveals it. `revealed` is
+    # recomputed by `recompute_reveals` whenever a place's visited flag
+    # moves, so this check needs no knowledge of the rest of the world --
+    # which is what lets every per-entity caller stay correct for free.
+    if (reveal_requirements(entity) and not entity.data.get("revealed")
+            and not viewer.is_dm):
+        return False
     audience = audience_of(entity)
     if audience is None:
         return True
@@ -120,6 +147,74 @@ def redact(body: str, viewer: Viewer) -> str:
     if viewer.all_access:
         return body
     return secrets_mod.redact(body, viewer.identities)
+
+
+def unlocked(entity: Entity) -> frozenset[str]:
+    """Pseudo-identities this page grants to every reader.
+
+    A place the DM has marked visited hands out `visited`, which is what
+    opens its `:::visited` blocks. Nobody carries the key themselves --
+    it belongs to the page, so checking the place off reveals the section
+    for the whole table at once.
+    """
+    if entity.data.get("visited"):
+        return frozenset({secrets_mod.VISITED_KEY})
+    return frozenset()
+
+
+def page_viewer(entity: Entity, viewer: Viewer) -> Viewer:
+    """The viewer as this page counts them: identities plus the page's own."""
+    extra = unlocked(entity)
+    if not extra:
+        return viewer
+    return Viewer(identities=viewer.identities | extra,
+                  name=viewer.name, all_access=viewer.all_access)
+
+
+def redact_page(entity: Entity, viewer: Viewer) -> str:
+    """`redact`, with the page's unlocks applied. Use this whenever the
+    entity is in hand; bare `redact` cannot know a place has been visited."""
+    return redact(entity.body, page_viewer(entity, viewer))
+
+
+def recompute_reveals(library) -> list[str]:
+    """Bring every gated page's `revealed` flag in line with the visited map.
+
+    Called whenever a visited flag moves, or a page's `revealed_by` changes.
+    The flag is derived state written to disk so that `readable` can stay a
+    pure per-entity check; this function is the single place that derives it.
+    Returns the refs whose visibility just changed.
+    """
+    visited = {e.ref for e in library.all() if e.data.get("visited")}
+    changed = []
+    for entity in list(library.all()):
+        req = reveal_requirements(entity)
+        if not req:
+            continue
+        want = bool(req & visited)
+        have = bool(entity.data.get("revealed"))
+        if want == have:
+            continue
+        if want:
+            entity.data["revealed"] = True
+        else:
+            entity.data.pop("revealed", None)
+        library.save(entity)
+        changed.append(entity.ref)
+    return changed
+
+
+def editable_body(entity: Entity, viewer: Viewer) -> str:
+    """The body an edit form may show this viewer.
+
+    Unlike `redact_page` this keeps the fences on blocks the viewer may
+    read, so saving the form back preserves them instead of quietly
+    publishing every secret the editor was allowed to see.
+    """
+    if viewer.all_access:
+        return entity.body
+    return secrets_mod.visible_body(
+        entity.body, page_viewer(entity, viewer).identities)
 
 
 def withheld_from(body: str, viewer: Viewer) -> bool:

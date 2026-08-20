@@ -378,7 +378,7 @@ change one.</p>
             "name": entity.name,
             "summary": entity.summary,
             "appearance": entity.appearance,
-            "body": access_mod.redact(entity.body, viewer),
+            "body": access_mod.editable_body(entity, viewer),
             "tags": ", ".join(entity.tags),
             "links": ", ".join(entity.links),
             "kind": entity.kind,
@@ -433,7 +433,11 @@ change one.</p>
             return HTMLResponse("Not found", status_code=404)
         entity = library.load(kind, slug)
 
-        withheld = len(secrets_mod.withheld_blocks(entity.body, viewer.identities))
+        # The page's own unlocks count here too: an editor on a visited place
+        # sees its upon-visiting sections in the textarea like any other
+        # public prose, instead of having them "preserved" behind their back.
+        editing_ids = access_mod.page_viewer(entity, viewer).identities
+        withheld = len(secrets_mod.withheld_blocks(entity.body, editing_ids))
 
         if request.method == "GET":
             return render(
@@ -473,7 +477,7 @@ change one.</p>
         if secret_text and audience:
             body = body.rstrip() + "\n\n" + secrets_mod.wrap(secret_text, audience)
         # Anything this editor could not see is carried across untouched.
-        entity.body = secrets_mod.merge_edit(entity.body, body, viewer.identities)
+        entity.body = secrets_mod.merge_edit(entity.body, body, editing_ids)
 
         note = f"edited by {user} on the wiki"
         if note not in entity.sources:
@@ -521,6 +525,42 @@ change one.</p>
                 library.save(other)
         wiki.record(f"{ref}: deleted on the wiki", user or "someone")
         return RedirectResponse(f"/wiki/{kind}/index.html", status_code=303)
+
+    async def toggle_visited(request):
+        """Check a place off as visited by the party, or uncheck it.
+
+        DM only. The flag is what opens the page's `:::visited` sections to
+        everyone, so this button is the reveal: stock a shop's inventory
+        behind the fence, press this when the party walks in.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        kind, slug = request.path_params["kind"], request.path_params["slug"]
+        ref = f"{kind}/{slug}"
+        _, allowed = entities_for(viewer)
+        # Non-DMs get the same 404 as a missing page, like every other
+        # route: a 403 would confirm there is something here to press.
+        if ref not in allowed or not viewer.is_dm:
+            return HTMLResponse("Not found", status_code=404)
+        entity = library.load(kind, slug)
+        if entity.data.get("visited"):
+            # Removed rather than set False, so the metadata table doesn't
+            # carry a "visited False" row on every unvisited place.
+            entity.data.pop("visited", None)
+            note = "unmarked visited"
+        else:
+            entity.data["visited"] = True
+            note = "marked visited"
+        library.save(entity)
+        # Visiting can reveal other pages outright -- an NPC, a landmark --
+        # so the reveal map is settled in the same breath as the flag.
+        revealed = access_mod.recompute_reveals(library)
+        if revealed:
+            note += ", revealing " + ", ".join(sorted(revealed))
+        wiki.record(f"{ref}: {note} on the wiki", user or "someone")
+        return RedirectResponse(f"/wiki/{kind}/{slug}.html", status_code=303)
 
     async def new_page(request):
         redirect = require_login(request)
@@ -612,6 +652,7 @@ change one.</p>
         Route("/wiki/new", new_page, methods=["GET", "POST"]),
         Route("/wiki/{kind}/{slug}/edit", edit, methods=["GET", "POST"]),
         Route("/wiki/{kind}/{slug}/delete", delete_page, methods=["POST"]),
+        Route("/wiki/{kind}/{slug}/visited", toggle_visited, methods=["POST"]),
         Route("/wiki/enter", enter, methods=["GET", "POST"]),
         Route("/wiki/login", login, methods=["GET", "POST"]),
         Route("/wiki/people/new", add_person, methods=["GET", "POST"]),
@@ -705,7 +746,8 @@ but the page comes off the site now.">
   <input id="a" name="appearance" value="{html.escape(v['appearance'])}">
 """
     body_field = "" if creating and not v["body"].strip() else f"""
-  <label for="b">Body <span class="hint">markdown is fine</span></label>
+  <label for="b">Body <span class="hint">markdown is fine, tables included
+    &mdash; the <a href="/wiki/guide">guide</a> shows the shape</span></label>
   <textarea id="b" name="body" rows="16">{html.escape(v['body'])}</textarea>
 """
 

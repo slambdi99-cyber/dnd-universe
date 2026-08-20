@@ -69,7 +69,7 @@ def wiki_entries(entities: list[Entity], viewer: frozenset[str],
     for entity in (e for e in entities if _readable(e, viewer)):
         summary = entity.summary.strip()
         if not summary:
-            body = access_mod.redact(entity.body, viewer)
+            body = access_mod.redact_page(entity, viewer)
             summary = body.split("\n\n")[0][:200] if body else ""
         out.append({
             "term": entity.name,

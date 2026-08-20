@@ -23,6 +23,7 @@ sources:
 - party lodging since arriving in Lorithal
 data:
   within_inferred: link
+  visited: true
 ---
 
 Dollin Marsh runs the desk, hears everything, and prices it fairly.

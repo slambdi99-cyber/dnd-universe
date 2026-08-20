@@ -107,6 +107,35 @@ wrapped = s.wrap(CANARY, ["Wren", "dm"])
 check("wrap hides from others", CANARY not in s.strip_all(wrapped))
 check("wrap shows to audience", CANARY in s.redact(wrapped, {"wren"}))
 
+print("\n== visited blocks ==")
+gated = f"Public shopfront.\n\n:::visited\n{CANARY}\n:::"
+check("player cannot read before the visit",
+      CANARY not in s.redact(gated, {"wren", "player"}))
+check("the DM can", CANARY in s.redact(gated, {"dm"}))
+check("the visited key opens it",
+      CANARY in s.redact(gated, {"wren", "player", "visited"}))
+check("public text around it survives",
+      "Public shopfront." in s.redact(gated, {"wren"}))
+extra = f":::visited wren\n{CANARY}\n:::"
+check("extra keys on the line still work", CANARY in s.redact(extra, {"wren"}))
+check("but other players still wait", CANARY not in s.redact(extra, {"tobias"}))
+check("wrap keeps the visited spelling",
+      s.wrap(CANARY, {"dm", "visited"}).startswith(":::visited"))
+check("wrapped visited round-trips",
+      CANARY in s.redact(s.wrap(CANARY, {"dm", "visited"}), {"visited"}))
+
+print("\n== the edit form must not flatten readable secrets ==")
+page = f"Public opening.\n\n:::secret dm\n{CANARY}\n:::\n\nPublic close."
+form = s.visible_body(page, {"dm"})
+check("readable block keeps its fence", ":::secret dm" in form)
+saved = s.merge_edit(page, form, {"dm"})
+check("a no-op edit keeps the secret", s.has_secrets(saved))
+check("and its audience", CANARY not in s.redact(saved, {"wren"}))
+check("withheld blocks still drop from the form",
+      CANARY not in s.visible_body(page, {"wren"}))
+form_v = s.visible_body(gated, {"dm"})
+check("visited fence survives the form too", ":::visited" in form_v)
+
 print("\n== people registry ==")
 reg = People(
     members={
