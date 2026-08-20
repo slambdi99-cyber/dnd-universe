@@ -21,4 +21,8 @@ data:
   revealed: true
 ---
 
-Athene is warm, unhurried, and remembers your name the second time you come in. Candles, charms, and a kind word — the sort of shop people visit for the company as much as the stock. Until you attempt to intimidate her into becoming your bitch, at which point she will bolt into the crowd and won't forget who are.
+Athene is warm, unhurried, and remembers your name the second time you come in. Candles, charms, and a kind word — the sort of shop people visit for the company as much as the stock. ...Until you attempt to intimidate her into becoming your bitch, at which point she will bolt into the crowd and won't forget who are.
+
+She was employed by the royal family, among other shopkeepers, to supply small teal wishstones for the holiday. This displeased the party greatly!
+
+After being attacked, robbed, and held hostage, she offered to craft a unique weapon using Gulthias wood and a splinter of the Buried Star. That wasn't enough ROI for the party, though.
