@@ -36,7 +36,6 @@ data:
     type: image/png
     size: 3089928
     by: The DM
-  visited: true
 ---
 
 Wren knows about Lorithal and is from there, but has been secretive on the subject. She noticed an aunt of hers at Worrick's party, which Tobias found suspicious.
