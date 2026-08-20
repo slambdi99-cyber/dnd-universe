@@ -11,6 +11,10 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Tintinabullarium.md
 - written by The DM
+- edited by The DM on the wiki
+data:
+  revealed_by:
+  - tintinabullarium
 ---
 
 A folding table by the bell steps, everything on it arranged just so.
