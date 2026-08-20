@@ -11,9 +11,10 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Ember Grove.md
 - written by The DM
+- edited by The DM on the wiki
 data:
   revealed_by:
-  - place/the-ashbright-stretch
+  - place/ember-grove
 ---
 
 Pale, quiet, and immaculate, just below the House. Nerith pours, and listens.
