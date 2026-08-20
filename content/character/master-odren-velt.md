@@ -14,6 +14,8 @@ sources:
 - Lore/Characters/Lorithal/Master Odren Velt.md
 - compendium sync by The DM, 2026-08-20
 data:
+  visible_to:
+  - dm
   met: false
   occupation: Excavation and tunnel contractor
 ---

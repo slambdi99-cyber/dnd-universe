@@ -14,6 +14,8 @@ sources:
 - Lore/Characters/Lorithal/Ilvani Serescel.md
 - compendium sync by The DM, 2026-08-20
 data:
+  visible_to:
+  - dm
   met: false
   occupation: Financier
 ---

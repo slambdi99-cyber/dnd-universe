@@ -14,6 +14,8 @@ sources:
 - Lore/Characters/Lorithal/Thessaline Vaul.md
 - compendium sync by The DM, 2026-08-20
 data:
+  visible_to:
+  - dm
   met: false
   occupation: Tastemaker and salon owner
 ---

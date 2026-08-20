@@ -22,6 +22,8 @@ sources:
 - Lore/Groups/Orchid Court/Orchid Court (Faction).md
 - compendium sync by The DM, 2026-08-20
 data:
+  visible_to:
+  - dm
   known: false
 ---
 
