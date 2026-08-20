@@ -23,4 +23,4 @@ data:
 
 Dollin hears everything and prices it fairly — rooms, rumors, and discretion alike. The party has taken rooms under his roof.
 
-Wren had a panic attack so he splashed water on her, then overheard some frantic whispers about the strange figure who took part in the events.
+Wren had a panic attack so he splashed water on her, then overheard some frantic whispers about the strange figure who took part in the holiday events.
