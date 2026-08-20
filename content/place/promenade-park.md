@@ -18,6 +18,7 @@ sources:
 - written by The DM
 - 'DM site organization: sub-locations index'
 - updated by The DM
-data:
-  within_inferred: link
+- edited by The DM on the wiki
 ---
+
+Aelan took the party here for the yearly mourning of his father, who died on the same day as the fallen heir. Wren, Timothy & Korran thought that was totally weird! Tobias pressed a blue orchid in his flower book remembrance.
