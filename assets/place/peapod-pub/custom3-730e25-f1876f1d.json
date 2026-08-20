@@ -1,0 +1,16 @@
+{
+  "kind": "place",
+  "slug": "peapod-pub",
+  "variant": "custom3-730e25",
+  "prompt": "a low timber tavern at dusk, lantern light on wet cobbles, hanging sign",
+  "negative": "text, watermark, signature, blurry, lowres, deformed hands, extra limbs, modern clothing, photograph",
+  "seed": 602701973,
+  "model": "stabilityai/stable-diffusion-xl-base-1.0",
+  "width": 1024,
+  "height": 1024,
+  "steps": 30,
+  "asset_id": "place/peapod-pub/custom3-730e25-f1876f1d",
+  "created_at": "2026-08-20T01:40:17.194010+00:00",
+  "entity_name": "Peapod Public House",
+  "custom_prompt": true
+}
