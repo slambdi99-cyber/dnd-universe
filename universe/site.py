@@ -524,6 +524,15 @@ thead th { font-size: .72rem; text-transform: uppercase; letter-spacing: .08em;
   padding: .6rem 1rem; margin: 1rem 0; border-radius: 0 4px 4px 0; }
 .secret .who { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
   color: var(--accent); display: block; margin-bottom: .3rem; }
+/* Dormant, not secret: what the table will get once they've been there.
+   Grey where a live secret is gold, so the DM's eye sorts the two. */
+.secret.veiled { border-left-color: var(--line); background: var(--panel); }
+.secret.veiled .who { color: var(--muted); }
+.card.veiled { opacity: .55; filter: grayscale(.65); }
+.card.veiled:hover { opacity: .85; filter: grayscale(.2); }
+.hiddenchip { font-size: .7rem; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--muted); border: 1px dashed var(--line); border-radius: 4px;
+  padding: .1rem .5rem; margin-left: .8rem; vertical-align: middle; }
 form.auth { max-width: 22rem; }
 form.auth label { display: block; margin: .9rem 0 .2rem; font-size: .85rem;
   color: var(--muted); }
@@ -1379,10 +1388,18 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
             f'<button title="Opens this page\'s upon-visiting sections to '
             f'everyone">{label}</button></form>'
         )
+    # The grey chip is the DM-side answer to "can the table see this page?"
+    # -- rendered only to people already inside the page's circle, so it
+    # never tells a player anything.
+    hidden_chip = ""
+    if _hidden_from_players(entity):
+        gated = bool(access_mod.reveal_requirements(entity))
+        label = "hidden until visited" if gated else "hidden &middot; restricted"
+        hidden_chip = f'<span class="hiddenchip">{label}</span>'
     head_parts.append(
         f'<div class="kind"><a class="kindlink" '
         f'href="{base}{entity.kind}/index.html">'
-        f'{html.escape(schema.label(entity.kind))}</a>'
+        f'{html.escape(schema.label(entity.kind))}</a>{hidden_chip}'
         f"{edit_link}{visited_toggle}</div>"
     )
 
@@ -1425,13 +1442,16 @@ def render_body(schema, entity: Entity, library: Library, images: dict[str, str]
         elif visited and secrets_mod.VISITED_KEY in segment.audience:
             main_parts.append(_markdown(segment.text))
         elif viewer.all_access or (viewer.identities & segment.audience):
+            # Upon-visiting blocks wear grey while dormant: the DM's eye
+            # sorts "waiting to be found" from the accent of a live secret.
             if secrets_mod.VISITED_KEY in segment.audience:
-                who = "upon visiting"
+                who, klass = "upon visiting", "secret veiled"
             else:
                 who = "secret &middot; " + html.escape(
                     ", ".join(sorted(segment.audience)))
+                klass = "secret"
             main_parts.append(
-                f'<div class="secret"><span class="who">{who}'
+                f'<div class="{klass}"><span class="who">{who}'
                 f"</span>{_markdown(segment.text)}</div>"
             )
 
@@ -1658,6 +1678,18 @@ def _completeness(e: Entity) -> float:
     return score
 
 
+def _hidden_from_players(e: Entity) -> bool:
+    """Whether ordinary players cannot see this page.
+
+    Rendering never needs a viewer to answer this: anyone a page like this
+    is rendered FOR is already inside its circle -- the DM on a gated page,
+    the named audience on a restricted one -- so marking it grey leaks
+    nothing and tells the DM at a glance what the table can't see yet.
+    """
+    gated = bool(access_mod.reveal_requirements(e)) and not e.data.get("revealed")
+    return gated or bool(access_mod.audience_of(e))
+
+
 def _sort_name(e: Entity) -> str:
     """Where a name files alphabetically: 'The Kindled Wick' under K.
 
@@ -1706,6 +1738,8 @@ def _cards(items: list[Entity], images: dict[str, str], base: str,
             img = (f'<a class="thumb noart" href="{href}" tabindex="-1" '
                    f'aria-hidden="true">{_kind_icon(e.kind)}</a>')
         card_cls = "card small" if small else "card"
+        if _hidden_from_players(e):
+            card_cls += " veiled"
         out.append(
             f'<div class="{card_cls}">{img}<div class="body">'
             f'<a href="{href}">{html.escape(e.name)}</a>'
