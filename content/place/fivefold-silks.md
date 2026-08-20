@@ -19,6 +19,7 @@ data:
   revealed_by:
   - place/the-grand-endurance
   revealed: true
+  visited: true
 ---
 
 Bolts, thread, and a cutting table that has seen every fashion the city owns.

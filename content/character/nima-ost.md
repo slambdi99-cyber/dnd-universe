@@ -18,6 +18,7 @@ data:
   revealed_by:
   - place/fivefold-silks
   occupation: Clothier at Fivefold Silks
+  revealed: true
 ---
 
 Nima has dressed half the market and tailored for the other half. Quick with a needle, quicker with a fitting, and entirely uninterested in what her customers do with what they buy.
