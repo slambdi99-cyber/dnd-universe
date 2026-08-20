@@ -32,3 +32,5 @@ Bolts, thread, and a cutting table that has seen every fashion the city owns.
 | Vaelorith livery | 40g | 2 | |
 | Banner, blank | 6g | 8 | |
 :::
+
+The party bought some colorful (or quaint) attire and put 50 gold on the Viremont tab.
