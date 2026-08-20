@@ -18,4 +18,5 @@ sources:
 - written by The DM
 - Codex MCP location index cleanup requested by Sam, 2026-08-14.
 - updated by The DM
+- edited by The DM on the wiki
 ---
