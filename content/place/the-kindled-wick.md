@@ -20,6 +20,7 @@ data:
   active_art: place/the-kindled-wick/upload-eb64beb3b9ce8fb1
   revealed_by:
   - place/the-grand-endurance
+  revealed: true
 ---
 
 Candles, charms, and a bowl of pale stones by the register. Athene is warm, unhurried, and remembers your name the second time you come in.

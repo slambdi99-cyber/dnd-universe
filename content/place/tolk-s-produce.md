@@ -15,6 +15,7 @@ sources:
 data:
   revealed_by:
   - place/the-grand-endurance
+  revealed: true
 ---
 
 Crates of the season's produce, some of it fresher than the rest.

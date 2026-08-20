@@ -15,6 +15,7 @@ sources:
 data:
   revealed_by:
   - place/the-grand-endurance
+  revealed: true
 ---
 
 Cookware out front, three tables and a pot in back. Everyone in the market eats here, which means everything in the market gets said here — and Odo Pell will pass it along unprompted, at length.

@@ -26,6 +26,7 @@ data:
   visited: true
   revealed_by:
   - place/the-grand-endurance
+  revealed: true
 ---
 
 Dollin Marsh runs the desk, hears everything, and prices it fairly.

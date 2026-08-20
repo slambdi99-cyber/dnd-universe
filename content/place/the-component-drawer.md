@@ -15,6 +15,7 @@ sources:
 data:
   revealed_by:
   - place/the-grand-endurance
+  revealed: true
 ---
 
 Four hundred labeled drawers, floor to ceiling, and Mirelle knows every one by touch.
