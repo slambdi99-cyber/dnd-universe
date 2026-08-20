@@ -21,4 +21,4 @@ sources:
 - edited by The DM on the wiki
 ---
 
-Aelan took the party here for the yearly mourning of his father, who died on the same day as the fallen heir. Everyone thought that was totally weird besides Tobias, who pressed a blue orchid in his flower book in remembrance.
+Aelan took the party here for the yearly mourning of his father, who died on the same day as the fallen heir. Everyone thought that was totally weird besides Tobias, who pressed a blue orchid in his flower book as remembrance.
