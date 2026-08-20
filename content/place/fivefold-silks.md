@@ -16,6 +16,7 @@ art:
 - place/fivefold-silks/upload-5e471e3e6e69b0d2
 data:
   active_art: place/fivefold-silks/upload-5e471e3e6e69b0d2
+  visited: true
 ---
 
 Bolts, thread, and a cutting table that has seen every fashion the city owns.
