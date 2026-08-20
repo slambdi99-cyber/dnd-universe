@@ -35,6 +35,9 @@ GIVE_UP_AFTER=5
 
 say() { echo "[repo-sync] $*"; }
 
+# The branch this server serves from. Everything below reattaches to it.
+BRANCH=main
+
 ci_verdict() {
     # "success", "failure", "pending", or "unknown" for one commit.
     #
@@ -87,6 +90,31 @@ if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
     exit 1
 fi
 
+# A detached HEAD, which is what an interrupted rebase leaves behind once its
+# state directory is gone. This happened: a pull was cut off, HEAD was left on
+# a bare commit, and every run for days afterwards died on "You are not
+# currently on a branch" while the wiki cheerfully committed new pages onto a
+# branch that did not exist. Eleven commits of the table's writing ended up
+# reachable only from this machine.
+#
+# So it recovers rather than reporting. The unique commits are parked on a
+# branch first, because reattaching would otherwise strand them where only the
+# reflog knows they exist.
+if ! git symbolic-ref -q HEAD >/dev/null; then
+    LOOSE="$(git rev-parse --short HEAD)"
+    say "HEAD is detached at $LOOSE. Recovering."
+    if [ -n "$(git log --oneline "$BRANCH..HEAD" 2>/dev/null)" ]; then
+        SAVED="detached-$LOOSE"
+        git branch -f "$SAVED" HEAD
+        say "kept $(git rev-list --count "$BRANCH..HEAD") commit(s) on $SAVED; merge that when you can."
+    fi
+    if ! git checkout -q "$BRANCH"; then
+        say "could not get back onto $BRANCH. Fix it by hand."
+        exit 1
+    fi
+    say "back on $BRANCH."
+fi
+
 # The website commits its own edits so they carry the right author. This is for
 # anything that slipped through: a thumbnail folder, an upload, a page written
 # by something that forgot.
@@ -100,9 +128,12 @@ fi
 
 BEFORE="$(git rev-parse HEAD)"
 
-if ! git pull --rebase --quiet; then
+# Merge, not rebase. An interrupted rebase leaves HEAD detached, which is
+# exactly how this script spent days failing every two minutes. A merge
+# cannot do that, and a merge commit in the log is a small price.
+if ! git -c user.name=wiki.local -c user.email=server@wiki.local pull --no-rebase --quiet; then
     say "pull failed. Someone has to look at this."
-    git rebase --abort 2>/dev/null || true
+    git merge --abort 2>/dev/null || true
     exit 1
 fi
 
