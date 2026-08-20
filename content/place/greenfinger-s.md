@@ -18,6 +18,8 @@ art:
 data:
   visited: true
   active_art: place/greenfinger-s/upload-bd68e9eec6588fa9
+  revealed_by:
+  - place/the-grand-endurance
 ---
 
 A narrow shop that smells like a crushed stem. Wisp Greenfinger works standing on a stool, and knows her stock down to the last sprig.

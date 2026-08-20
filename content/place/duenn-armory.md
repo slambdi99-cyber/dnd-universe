@@ -12,6 +12,9 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/West Post.md
 - written by The DM
+data:
+  revealed_by:
+  - place/west-post
 ---
 
 Guard stock. Permit, vouch, or a very good reason.

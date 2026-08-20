@@ -12,6 +12,9 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Ashbright University.md
 - written by The DM
+data:
+  revealed_by:
+  - place/ashbright-university
 ---
 
 A shop the faculty calls a hobby. Lenses, mirrors, and a wall of notes nobody's read.

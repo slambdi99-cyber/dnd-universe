@@ -12,6 +12,9 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Ashbright University.md
 - written by The DM
+data:
+  revealed_by:
+  - place/ashbright-university
 ---
 
 Clocks, locks, and small broken things, all of them fixed properly.

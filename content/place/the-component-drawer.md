@@ -12,6 +12,9 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/The Grand Endurance.md
 - written by The DM
+data:
+  revealed_by:
+  - place/the-grand-endurance
 ---
 
 Four hundred labeled drawers, floor to ceiling, and Mirelle knows every one by touch.

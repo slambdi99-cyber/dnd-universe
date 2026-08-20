@@ -11,6 +11,9 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Harvest Abbey.md
 - written by The DM
+data:
+  revealed_by:
+  - place/the-broadheights
 ---
 
 Sacks to the rafters and a long line at the side door every morning.

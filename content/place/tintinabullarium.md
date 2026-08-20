@@ -23,6 +23,8 @@ sources:
 - Lore/Locations/Lorithal/Districts/Tintinabullarium.md
 data:
   within_inferred: link
+  revealed_by:
+  - place/the-broadheights
 ---
 
 The bell district. Bells ring across the city during The Kindling, and the monastery's fieldworkers keep them. Two vendors: The Ninth Bell for bellcraft and chimes, and Thessaly's Stall for devotional goods by the bell steps.

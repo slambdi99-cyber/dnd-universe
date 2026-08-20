@@ -12,6 +12,9 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Ashbright University.md
 - written by The DM
+data:
+  revealed_by:
+  - place/ashbright-university
 ---
 
 Tucked into the campus arcade, with the best scroll selection in the city.

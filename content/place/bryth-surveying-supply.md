@@ -12,6 +12,9 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Service Quarter.md
 - written by The DM
+data:
+  revealed_by:
+  - place/service-quarter
 ---
 
 Sits beside the sewer access and officially serves the University's survey work. The best-stocked adventuring shelf in Lorithal.

@@ -27,6 +27,9 @@ sources:
   Vaelorith District.md, Sessions/2026-08-12.md'
 - edited by The DM on the wiki
 - Lore/Locations/Lorithal/Districts/Ember Grove.md
+data:
+  revealed_by:
+  - place/the-ashbright-stretch
 ---
 
 Ember Grove lies at the crown of Lorithal, directly beneath the House Vaelorith District, its flowering trees hugging the northern wall in a dense band of pale blossom. The grove is where the Kindling rite is enacted each year on the Day of the Fallen Heir; Elaric leads the ceremony from a balcony overlooking the trees, stepping out to the gathered crowd before the rite begins. From the grove's center a beam of energy rises — pale blue at first, shifting to a deep teal — as figures pass out of sight among the trees. The bells of the Tintinabullarium ring across the city as the rite unfolds, and the pale-orange wisps that fill the sky over Lorithal at that time of year respond to their tone.

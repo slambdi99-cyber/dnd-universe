@@ -12,6 +12,9 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Service Quarter.md
 - written by The DM
+data:
+  revealed_by:
+  - place/service-quarter
 ---
 
 Cash only, no names, no receipts. Dossel remembers faces anyway.

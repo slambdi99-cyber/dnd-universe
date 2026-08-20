@@ -12,6 +12,9 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/West Post.md
 - written by The DM
+data:
+  revealed_by:
+  - place/west-post
 ---
 
 A desk, a stamp, and a line that moves exactly as fast as Sergeant Bael wants it to.

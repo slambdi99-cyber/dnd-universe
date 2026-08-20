@@ -12,6 +12,9 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/The Grand Endurance.md
 - written by The DM
+data:
+  revealed_by:
+  - place/the-grand-endurance
 ---
 
 Crates of the season's produce, some of it fresher than the rest.

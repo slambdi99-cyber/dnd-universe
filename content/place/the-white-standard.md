@@ -12,6 +12,9 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/The Broadheights.md
 - written by The DM
+data:
+  revealed_by:
+  - place/the-broadheights
 ---
 
 Banners, poles, and bunting. Oleander is apoplectic about the colored cloth going up around the city and says so to every customer.
