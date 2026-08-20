@@ -12,33 +12,27 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Tintinabullarium.md
 - written by The DM
+- edited by The DM on the wiki
+data:
+  revealed_by:
+  - place/the-tintinabullarium
 ---
 
 Grum is deaf. He tests every bell with a palm flat to the bronze, and his casts ring truer than anyone's.
 
 :::visited
-| Item | Price | Qty |
-| --- | ---: | ---: |
-| Handbell | 5g | 6 |
-| Tuning fork, standard | 20g | 4 |
-| Tuning fork, unlabeled | 100g | 2 |
-| Chime of Opening | 400g | 1 |
-| Signal whistle | 5s | 10 |
-| Prayer chimes, set | 25g | 3 |
-| Bronze scrap, per lb | 1g | — |
-| Clapper, replacement | 8g | 6 |
-| Bell-cast repair, per job | 25g | — |
-| Custom bell casting | 200g | — |
-| Tone-reading, per object | 15g | — |
-| Ear trumpet, ornamental | 12g | 2 |
-:::
-
-:::secret dm
-| Item | Notes |
-| --- | --- |
-| Tuning fork, unlabeled | Not a standard pitch |
-| Chime of Opening | 10 charges |
-| Custom bell casting | A month's work |
-| Tone-reading, per object | Hands it back, tells you if it's wrong |
-| Ear trumpet, ornamental | He finds these very funny |
+| Item | Price | Qty | Notes ::dm |
+| --- | ---: | ---: | --- |
+| Handbell | 5g | 6 | |
+| Tuning fork, standard | 20g | 4 | |
+| Tuning fork, unlabeled | 100g | 2 | Not a standard pitch |
+| Chime of Opening | 400g | 1 | 10 charges |
+| Signal whistle | 5s | 10 | |
+| Prayer chimes, set | 25g | 3 | |
+| Bronze scrap, per lb | 1g | — | |
+| Clapper, replacement | 8g | 6 | |
+| Bell-cast repair, per job | 25g | — | |
+| Custom bell casting | 200g | — | A month's work |
+| Tone-reading, per object | 15g | — | Hands it back, tells you if it's wrong |
+| Ear trumpet, ornamental | 12g | 2 | He finds these very funny |
 :::
