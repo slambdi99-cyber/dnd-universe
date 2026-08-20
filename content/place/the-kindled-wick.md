@@ -40,4 +40,4 @@ Candles, charms, and a bowl of pale stones by the register. Athene is warm, unhu
 
 ## Secret tunnels
 
-The party discovered a dark, concealed service tunnel behind the back room of this small shop. Athene informed them it's used for unmonitored travel, nothing more.
+The party discovered a dark, concealed service tunnel behind the back room of this small shop. Athene informed them it's used for unmonitored travel, nothing more. She mentioned a need to check with her "associates" before she can offer its passage to the party.
