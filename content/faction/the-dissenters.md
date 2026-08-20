@@ -46,12 +46,10 @@ Signs of the movement gathering force, in rough order:
 - A House banner pulled down mid-crowd
 - A martyr named in chalk
 - Bells tolling out of turn
-- The Kindling faltering, as pockets of the crowd refuse to look up
 
 ## People
 
 - **Corvin** — the loudest man in the Service Quarter
-- **Erevan Rifflewig** — builds the bombs
 - **Lyanne** — a captured ambusher
 
 ## Encounters

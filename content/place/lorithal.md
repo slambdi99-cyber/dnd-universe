@@ -1,8 +1,8 @@
 ---
 name: Lorithal
 kind: place
-summary: A realm with royalty and an active rebellion, and Wren's homeland. Its capital
-  is a walled, three-tiered city.
+summary: A realm with royalty and the active dissent of the Dissenters, and Wren's
+  homeland. Its capital is a walled, three-tiered city.
 appearance: distant prosperous realm, pale spires, laurel groves, banners
 tags:
 - city
@@ -40,6 +40,6 @@ data:
 
 Wren knows about Lorithal and is from there, but has been secretive on the subject. She noticed an aunt of hers at Worrick's party, which Tobias found suspicious.
 
-The party travelled to Lorithal for festivities in August 2026. Their carriage was attacked on the road by rebels shouting for the fallen heir.
+The party travelled to Lorithal for festivities in August 2026. Their carriage was attacked on the road by Dissenters shouting for the fallen heir.
 
 Older session notes sometimes spell the realm as Laurelthel, Laurelfell, or Laurefall. Those are all the same place: Lorithal.
