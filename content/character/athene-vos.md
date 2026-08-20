@@ -25,4 +25,4 @@ Athene is warm, unhurried, and remembers your name the second time you come in. 
 
 ## Confrontation with the party
 
-After being attacked, robbed, and held hostage on the Kindling, she offered to craft a unique weapon using Gulthias wood and a splinter of the Buried Star. That wasn't enough ROI for the party, though.
+After being attacked, robbed, and held hostage on the Kindling, she offered to craft a unique weapon using Gulthias wood and a splinter of the Buried Star. That wasn't enough to ease the party's grip on her, so she was forced to escape their custody and flee her own shop.
