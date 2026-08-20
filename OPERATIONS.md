@@ -19,7 +19,7 @@ The site: **https://buried-star.tailb26c5b.ts.net/wiki**
 | **GitHub**, `dnd-universe` | The source of truth. Public. | Everything: pages, art, code, history |
 | **GitHub**, `dnd-scribe` | Private. The Discord reader. | The bot, and the raw channel archive |
 | **The server**, an Oracle free VM | Serves the website and MCP, reads Discord | Nothing unique, by design |
-| **The PC at home** | Draws pictures. Development. | Nothing unique, by design |
+| **The PC at home** | Draws pictures, records sessions. Development. | Nothing unique, by design |
 
 That last column is the point. Both machines are disposable. The server can be
 rebuilt in half an hour from `deploy/CHECKLIST.md`, and the PC is a clone.
@@ -175,6 +175,13 @@ nothing backs up. The usual cause is a deploy key added without write access.
 ```bash
 ssh buried-star 'journalctl -u buried-star-repo -n 30 --no-pager'
 ```
+
+**Did the bot say "The application did not respond"?** The transcription bot
+on the PC is offline. It runs as a scheduled task, "The Buried Star,
+transcription bot", started at logon and restarted on crash; its log is
+`.bot.log` next to `run.py` in `dnd-scribe`. Discord keeps slash commands
+registered even when the bot is down, which is why the command appears and then
+fails.
 
 **Did a picture never arrive?** At home, read `.draw-queued.log` for what the
 last drain actually did, and `python tools\draw_queued.py --list` for what is
