@@ -28,6 +28,12 @@ data:
   status: active
   dndbeyond_sheet: https://www.dndbeyond.com/characters/151162336
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676
+  files:
+  - id: character/timothy-tuttle/upload-d39eb4dfc8bb45e9
+    name: content3.png
+    type: image/png
+    size: 3286345
+    by: The DM
 ---
 
 Has turned into a giant frog, a giant wolf spider, a wolf, a mouse, etc.

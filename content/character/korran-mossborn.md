@@ -38,6 +38,12 @@ data:
   status: active
   dndbeyond_sheet: https://www.dndbeyond.com/characters/153830761
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676
+  files:
+  - id: character/korran-mossborn/upload-4cbff68fe7c03ed6
+    name: content2.png
+    type: image/png
+    size: 2612086
+    by: The DM
 ---
 
 Born not among his people's peaks but in the lowland marshes, after a rockslide swept his tribe away during a seasonal migration. Found as a child by a wandering hermit of the Bogwatchers' Sanctum and raised in their hidden temple amid the mists and moss.

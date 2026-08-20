@@ -12,6 +12,10 @@ sources:
 - Lore/Locations/Lorithal/Districts/The Grand Endurance.md
 - written by The DM
 - edited by The DM on the wiki
+art:
+- place/fivefold-silks/upload-5e471e3e6e69b0d2
+data:
+  active_art: place/fivefold-silks/upload-5e471e3e6e69b0d2
 ---
 
 Bolts, thread, and a cutting table that has seen every fashion the city owns.

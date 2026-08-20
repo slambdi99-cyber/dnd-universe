@@ -12,8 +12,11 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/The Grand Endurance.md
 - written by The DM
+art:
+- place/the-kindled-wick/upload-eb64beb3b9ce8fb1
 data:
   visited: true
+  active_art: place/the-kindled-wick/upload-eb64beb3b9ce8fb1
 ---
 
 Candles, charms, and a bowl of pale stones by the register. Athene is warm, unhurried, and remembers your name the second time you come in.
