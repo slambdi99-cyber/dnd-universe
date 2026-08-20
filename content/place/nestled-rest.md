@@ -21,12 +21,14 @@ sources:
 - updated by The DM
 - Lore/Locations/Lorithal/Districts/Nestled Rest.md
 - party lodging since arriving in Lorithal
+- edited by The DM on the wiki
 data:
-  within_inferred: link
   visited: true
 ---
 
 Dollin Marsh runs the desk, hears everything, and prices it fairly.
+
+Melda granted the party some rooms here to enjoy the Kindling celebrations when they arrived in the city.
 
 :::visited
 | Item | Price | Qty | Notes |
