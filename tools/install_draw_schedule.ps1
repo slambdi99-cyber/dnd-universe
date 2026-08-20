@@ -38,12 +38,31 @@ if (-not (Test-Path $script)) {
     exit 1
 }
 
-# torch lives in the environment next door, same as everything else here.
-$python = Join-Path (Split-Path $root -Parent) "dnd-scribe\.venv\Scripts\python.exe"
+# pythonw, not python: it has no console, so a picture being drawn in the
+# background never steals focus or flashes a window at whoever is using the
+# machine. Everything it would have printed goes to .draw-queued.log instead,
+# because a scheduled task that fails invisibly is worse than one that is
+# merely quiet.
+$python = Join-Path (Split-Path $root -Parent) "dnd-scribe\.venv\Scripts\pythonw.exe"
 if (-not (Test-Path $python)) {
     Write-Host "Can't find the Python environment at:" -ForegroundColor Red
     Write-Host "  $python"
     Write-Host "Run dnd-scribe\setup.ps1 first."
+    exit 1
+}
+
+# Drawing needs the card. Without torch this would install a task that fails
+# every twenty minutes, silently, which is the whole failure mode the log file
+# exists to catch.
+#
+# Checked with the console interpreter, not pythonw. PowerShell does not wait
+# for a GUI-subsystem executable, so $LASTEXITCODE from pythonw is whatever it
+# was before, and this test would pass no matter what.
+$consolePython = Join-Path (Split-Path $python -Parent) "python.exe"
+& $consolePython -c "import torch, sys; sys.exit(0 if torch.cuda.is_available() else 1)" 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "That environment has no working CUDA torch, so nothing can be" -ForegroundColor Red
+    Write-Host "drawn. Scheduling it would just fail quietly every $Minutes minutes."
     exit 1
 }
 

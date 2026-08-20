@@ -28,6 +28,68 @@ from universe import artqueue, config  # noqa: E402
 from universe.assets import AssetStore  # noqa: E402
 from universe.entities import Library  # noqa: E402
 
+LOG = ROOT / ".draw-queued.log"
+
+
+def _log_to_file_when_nobody_is_watching() -> None:
+    """Keep a record when this runs with no console attached.
+
+    The scheduled task runs under pythonw, which has no window, so that a
+    picture being drawn does not interrupt whoever is using the machine. The
+    cost is that everything printed here goes nowhere, and a task that fails
+    silently every twenty minutes is the worst kind: the site says a picture is
+    queued, forever, and nothing anywhere says why.
+
+    So when stdout is not a terminal, it is also written to a file. Run by
+    hand, nothing changes.
+    """
+    if sys.stdout is not None and sys.stdout.isatty():
+        return
+
+    import atexit
+    import datetime
+    import io
+
+    buffer = io.StringIO()
+
+    class Tee:
+        def write(self, text):
+            buffer.write(text)
+            if sys.__stdout__ is not None:
+                try:
+                    sys.__stdout__.write(text)
+                except (OSError, ValueError):
+                    pass
+            return len(text)
+
+        def flush(self):
+            pass
+
+    sys.stdout = Tee()
+    sys.stderr = Tee()
+
+    def dump():
+        body = buffer.getvalue().strip()
+        if not body:
+            return
+        stamp = datetime.datetime.now().isoformat(timespec="seconds")
+        try:
+            previous = LOG.read_text(encoding="utf-8") if LOG.exists() else ""
+            text = previous + "=== " + stamp + " ===\n" + body + "\n"
+            # A breadcrumb trail, not an archive. Keep the tail, so this can
+            # never be the thing that fills the disk.
+            lines = text.splitlines()
+            if len(lines) > 200:
+                lines = lines[-200:]
+            LOG.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        except OSError:
+            pass
+
+    atexit.register(dump)
+
+
+_log_to_file_when_nobody_is_watching()
+
 
 def git(*args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["git", *args], cwd=str(ROOT), check=False,
@@ -40,7 +102,11 @@ def main() -> int:
     if not listing:
         # The queue is written by another machine, so what is on disk here is
         # only as fresh as the last pull.
-        pull = git("pull", "--rebase", "--quiet")
+        # Merge, not rebase. An interrupted rebase leaves HEAD detached, and
+        # this runs unattended on a schedule where a reboot or a sleep can cut
+        # it off. That exact failure left the server committing pages onto a
+        # branch that did not exist for days.
+        pull = git("pull", "--no-rebase", "--quiet")
         if pull.returncode != 0:
             print("Could not pull. Fix the repo first, then run this again.")
             print(pull.stderr.strip())

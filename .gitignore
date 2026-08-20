@@ -73,3 +73,6 @@ data/srd.json
 # rather than offering a button that cannot work. Per-machine by definition:
 # the server has one of these and the machine at home must never get it.
 .no-gpu
+
+# Breadcrumbs from the windowless art drain. Local, and rotated.
+.draw-queued.log
