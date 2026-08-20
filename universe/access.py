@@ -25,6 +25,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Iterable
 
+from . import encounter as encounter_mod
 from . import secrets as secrets_mod
 from .entities import Entity
 
@@ -98,34 +99,22 @@ def audience_of(entity: Entity) -> frozenset[str] | None:
 
 
 def reveal_requirements(entity: Entity) -> frozenset[str]:
-    """The places whose visiting reveals this page, or empty if ungated.
+    """The pages whose encounter reveals this one, or empty if ungated.
 
-    `revealed_by` in a page's data names one or more places as 'place/slug'
-    (a bare slug is taken as a place). Until one of them is marked visited,
-    the page is the DM's alone -- it does not exist for anyone else.
+    The rule itself lives in `encounter`; this name stays because it is what
+    every surface already calls.
     """
-    raw = entity.data.get("revealed_by")
-    if not raw:
-        return frozenset()
-    if isinstance(raw, str):
-        raw = [raw]
-    refs = set()
-    for r in raw:
-        r = str(r).strip().lower()
-        if r:
-            refs.add(r if "/" in r else f"place/{r}")
-    return frozenset(refs)
+    return encounter_mod.sources_of(entity)
 
 
 def readable(entity: Entity, viewer: Viewer) -> bool:
     if viewer.all_access:
         return True
-    # A gated page stays invisible until a visit reveals it. `revealed` is
-    # recomputed by `recompute_reveals` whenever a place's visited flag
-    # moves, so this check needs no knowledge of the rest of the world --
-    # which is what lets every per-entity caller stay correct for free.
-    if (reveal_requirements(entity) and not entity.data.get("revealed")
-            and not viewer.is_dm):
+    # A concealed page -- hidden by the DM's flag, or gated on an encounter
+    # that hasn't happened -- does not exist for anyone else. `encounter`
+    # owns the rule and keeps it a pure per-entity check, which is what lets
+    # every per-entity caller stay correct for free.
+    if encounter_mod.concealed(entity) and not viewer.is_dm:
         return False
     audience = audience_of(entity)
     if audience is None:
@@ -152,12 +141,14 @@ def redact(body: str, viewer: Viewer) -> str:
 def unlocked(entity: Entity) -> frozenset[str]:
     """Pseudo-identities this page grants to every reader.
 
-    A place the DM has marked visited hands out `visited`, which is what
-    opens its `:::visited` blocks. Nobody carries the key themselves --
-    it belongs to the page, so checking the place off reveals the section
-    for the whole table at once.
+    An encountered page -- a visited place, a met character, a seen item,
+    or one revealed by cascade -- hands out `visited`, which is what opens
+    its `:::visited` blocks. Nobody carries the key themselves -- it belongs
+    to the page, so checking it off reveals the section for the whole table
+    at once. Cascades count: meeting the shopkeeper by walking into her shop
+    opens her upon-meeting prose exactly as marking her met by hand would.
     """
-    if entity.data.get("visited"):
+    if encounter_mod.encountered(entity):
         return frozenset({secrets_mod.VISITED_KEY})
     return frozenset()
 
@@ -178,30 +169,12 @@ def redact_page(entity: Entity, viewer: Viewer) -> str:
 
 
 def recompute_reveals(library) -> list[str]:
-    """Bring every gated page's `revealed` flag in line with the visited map.
+    """Bring every cascade target in line with the encounter flags.
 
-    Called whenever a visited flag moves, or a page's `revealed_by` changes.
-    The flag is derived state written to disk so that `readable` can stay a
-    pure per-entity check; this function is the single place that derives it.
-    Returns the refs whose visibility just changed.
+    The rule lives in `encounter.recompute`; this name stays because it is
+    what every writer already calls.
     """
-    visited = {e.ref for e in library.all() if e.data.get("visited")}
-    changed = []
-    for entity in list(library.all()):
-        req = reveal_requirements(entity)
-        if not req:
-            continue
-        want = bool(req & visited)
-        have = bool(entity.data.get("revealed"))
-        if want == have:
-            continue
-        if want:
-            entity.data["revealed"] = True
-        else:
-            entity.data.pop("revealed", None)
-        library.save(entity)
-        changed.append(entity.ref)
-    return changed
+    return encounter_mod.recompute(library)
 
 
 def editable_body(entity: Entity, viewer: Viewer) -> str:
