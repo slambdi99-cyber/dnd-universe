@@ -22,13 +22,14 @@ sources:
 - 'DM compendium: Lore/Groups/The Rebellion/The Rebellion.md; reconciled against the
   live wiki at Sam''s request, 2026-08-14.'
 - written by The DM
+- edited by The DM on the wiki
 ---
 
 The Dissenters are a grassroots resistance movement in Lorithal, opposed to the city's current royalty. They have no cells, no hierarchy and no figurehead. Membership is marked by hanging coloured cloth, which is closer to flying a flag than to joining a cause.
 
 ## Names and cries
 
-**The Dissenters** is the canonical public-facing label. The DM compendium records the movement as **The Rebellion**.
+**The Dissenters** is the canonical public-facing label.
 
 Their cries are *"Truth to Lorithal!"* and *"For the Fallen Heir!"* — the second is a slogan, not the movement's name, and not a faction in its own right.
 
