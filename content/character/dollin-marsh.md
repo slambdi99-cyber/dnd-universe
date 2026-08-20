@@ -13,6 +13,7 @@ links:
 sources:
 - Lore/Locations/Lorithal/Districts/Nestled Rest.md
 - written by The DM
+- edited by The DM on the wiki
 data:
   revealed_by:
   - place/nestled-rest
@@ -21,3 +22,5 @@ data:
 ---
 
 Dollin hears everything and prices it fairly — rooms, rumors, and discretion alike. The party has taken rooms under his roof.
+
+Wren had a panic attack so he splashed water on her, then overheard some frantic whispers about the strange figure who took part in the events.
