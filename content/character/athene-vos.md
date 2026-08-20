@@ -13,6 +13,7 @@ links:
 sources:
 - Lore/Locations/Lorithal/Districts/The Grand Endurance.md
 - written by The DM
+- edited by The DM on the wiki
 data:
   revealed_by:
   - place/the-kindled-wick
@@ -20,4 +21,4 @@ data:
   revealed: true
 ---
 
-Athene is warm, unhurried, and remembers your name the second time you come in. Candles, charms, and a kind word — the sort of shop people visit for the company as much as the stock.
+Athene is warm, unhurried, and remembers your name the second time you come in. Candles, charms, and a kind word — the sort of shop people visit for the company as much as the stock. Until you attempt to intimidate her into becoming your bitch, at which point she will bolt into the crowd.
