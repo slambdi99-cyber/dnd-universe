@@ -12,6 +12,8 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/The Grand Endurance.md
 - written by The DM
+data:
+  visited: true
 ---
 
 Candles, charms, and a bowl of pale stones by the register. Athene is warm, unhurried, and remembers your name the second time you come in.

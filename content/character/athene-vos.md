@@ -17,6 +17,7 @@ data:
   revealed_by:
   - place/the-kindled-wick
   occupation: Keeper of The Kindled Wick
+  revealed: true
 ---
 
 Athene is warm, unhurried, and remembers your name the second time you come in. Candles, charms, and a kind word — the sort of shop people visit for the company as much as the stock.
