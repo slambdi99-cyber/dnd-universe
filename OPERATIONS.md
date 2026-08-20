@@ -77,13 +77,20 @@ an action:
 
 Nothing is attached until a person chooses, so a bad prompt costs nothing.
 
-**This only happens when the PC is on and something drains the queue.** If
-`tools\install_draw_schedule.ps1` has not been installed, requests wait forever
-and nobody is told. Checking takes one command, at home:
+**This only happens when the PC is on.** A scheduled task, "The Buried Star,
+draw queued art", drains the queue every thirty minutes while somebody is
+logged in. It runs under `pythonw`, so it never opens a window or steals focus.
+
+The cost of having no console is that a failure would be invisible, so it
+writes what it would have printed to `.draw-queued.log`. That file is the first
+place to look if a picture never turns up. To see the queue itself, at home:
 
 ```powershell
 python tools\draw_queued.py --list
 ```
+
+A cold run downloads about 7GB of model weights the first time and takes
+several minutes. After that it is roughly a minute per picture.
 
 This is also why `assets/` is committed rather than ignored, which is unusual
 for generated files. Now that the machine that draws is not the machine that
@@ -175,7 +182,10 @@ nothing backs up. The usual cause is a deploy key added without write access.
 ssh buried-star 'journalctl -u buried-star-repo -n 30 --no-pager'
 ```
 
-**Did a picture never arrive?** Check the queue is being drained, at home.
+**Did a picture never arrive?** At home, read `.draw-queued.log` for what the
+last drain actually did, and `python tools\draw_queued.py --list` for what is
+still waiting. If the log is stale, the PC has been off or the scheduled task
+is not running.
 
 ---
 
