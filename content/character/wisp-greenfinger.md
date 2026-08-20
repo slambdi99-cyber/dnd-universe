@@ -18,6 +18,7 @@ data:
   revealed_by:
   - place/greenfinger-s
   occupation: Herbalist at Greenfinger's
+  revealed: true
 ---
 
 Wisp works standing on a stool and knows her stock down to the last sprig. If it grows in Copper Vale, she has dried it, ground it, or bottled it — and she'll tell you honestly which of her salves actually work.

@@ -12,6 +12,8 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/The Grand Endurance.md
 - written by The DM
+data:
+  visited: true
 ---
 
 A narrow shop that smells like a crushed stem. Wisp Greenfinger works standing on a stool, and knows her stock down to the last sprig.
