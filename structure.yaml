@@ -26,6 +26,8 @@ kinds:
   nav: false
 - key: lore
   label: Lore
+- key: session
+  label: Sessions
 index_tags:
 - title: Regions
   kind: place

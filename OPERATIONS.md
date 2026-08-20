@@ -115,6 +115,21 @@ needs to travel back.
 
 ---
 
+## Recording a session
+
+`/join` in Discord starts it, on the PC. The bot records the voice channel in
+ten-minute chunks; a worker transcribes each chunk and draws a scene image
+from it. Each image posts to the table's chosen Discord channel as it is
+drawn, and the whole recording becomes a page under **Sessions** on the wiki,
+with the images attached as its art. `/stop` ends it, and the page reaches the
+site within a couple of minutes of the last image.
+
+The transcript and audio never leave the PC's private repo; only the scene art
+and the page travel. `.bot.log` next to `run.py` says what the bot did, and
+each session folder's `worker.log` says what the worker did.
+
+---
+
 ## Secrets, and what breaks without each
 
 None of these are in the repository, and none of them should be. They travel by
