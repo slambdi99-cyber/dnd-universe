@@ -12,6 +12,7 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/The Grand Endurance.md
 - written by The DM
+- edited by The DM on the wiki
 data:
   visited: true
 ---
@@ -34,3 +35,5 @@ A narrow shop that smells like a crushed stem. Wisp Greenfinger works standing o
 | Sprig of everleaf | 10g | 8 | Stay awake a full watch |
 | Salve of the Vale | 20g | 3 | Heals 1 HP. Beloved anyway |
 :::
+
+She supplied Tobias with a health potion and threw in some Salve as a gift. Apparently, he could have haggled harder.
