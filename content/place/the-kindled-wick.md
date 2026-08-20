@@ -22,8 +22,6 @@ data:
 
 Candles, charms, and a bowl of pale stones by the register. Athene is warm, unhurried, and remembers your name the second time you come in.
 
-The outfits were kinda hideous though... 
-
 :::visited
 | Item | Price | Qty | Notes |
 | --- | ---: | ---: | --- |
