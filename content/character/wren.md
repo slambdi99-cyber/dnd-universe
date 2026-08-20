@@ -61,7 +61,3 @@ Stated by her player, 2026-08-13.
 ## Out of character
 
 Asked where you would find her if she were at a shopping mall, her player answers: the book shop or the casino.
-
-Not in-world: there is no mall in Copper Vale. Recorded as characterisation, not geography.
-
-Stated by her player, 2026-08-19.
