@@ -23,6 +23,8 @@ sources:
   live wiki at Sam''s request, 2026-08-14.'
 - written by The DM
 - edited by The DM on the wiki
+data:
+  known: false
 ---
 
 The Dissenters are a grassroots resistance movement in Lorithal, opposed to the city's current royalty. They have no cells, no hierarchy and no figurehead. Membership is marked by hanging coloured cloth, which is closer to flying a flag than to joining a cause.
