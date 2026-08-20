@@ -37,3 +37,7 @@ Candles, charms, and a bowl of pale stones by the register. Athene is warm, unhu
 | Mirror, hand | 8g | 4 | |
 | Prayer card, Vaelorith | 5s | 30 | |
 :::
+
+## Secret tunnels
+
+The party discovered a dark, concealed service tunnel behind the back room of this small shop. Athene informed them it's used for unmonitored travel, nothing more.
