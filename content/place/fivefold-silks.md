@@ -37,4 +37,4 @@ Bolts, thread, and a cutting table that has seen every fashion the city owns.
 | Banner, blank | 6g | 8 | |
 :::
 
-The party bought some colorful (or quaint) attire and put 50 gold on the Viremont tab.
+The party bought some colorful (or quaint) attire and put 50 gold on the Viremont tab. The outfits were kinda hideous though...
