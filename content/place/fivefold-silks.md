@@ -28,7 +28,7 @@ Bolts, thread, and a cutting table that has seen every fashion the city owns.
 | Bolt of colored cloth | 12g | 4 | Nearly out |
 | Thread, spool | 5s | 30 | |
 | Needle case | 1g | 10 | |
-| Tailoring, per garment | 10g | — | Two days |
+| Tailoring, per garment | 10g | — | |
 | Vaelorith livery | 40g | 2 | |
 | Banner, blank | 6g | 8 | |
 :::
