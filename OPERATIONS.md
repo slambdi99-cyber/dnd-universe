@@ -104,20 +104,14 @@ serves, the repository is the only route between them.
 wiki's **Inbox**, where a person decides whether it deserves a page. Nothing is
 written to the wiki automatically, ever.
 
-It is meant to run on the server every thirty minutes. **It currently runs on
-the PC every two hours instead**, because `.discord-token` was never copied
-across. To finish the move:
+It runs on the server, every thirty minutes on the clock, and nothing about it
+touches the PC any more. `.discord-token` and `.sync-state.json` live on the
+server alongside the private `dnd-scribe` clone.
 
-```powershell
-scp C:\Claude\dnd-scribe\.discord-token C:\Claude\dnd-scribe\.sync-state.json buried-star:~/dnd-scribe/
-```
-
-```bash
-ssh buried-star 'sudo systemctl enable --now buried-star-discord.timer'
-```
-
-Then remove the scheduled task on the PC. Running both is wasteful, and gives
-two machines the same watermark to disagree about.
+The server's copy of `dnd-scribe` is read-only by design: its deploy key has no
+write access, because a machine that only reads a channel archive has no reason
+to be able to rewrite it. The downloaded archive is a cache, not something that
+needs to travel back.
 
 ---
 
