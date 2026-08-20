@@ -10,9 +10,11 @@ tags:
 - shopkeep
 links:
 - place/orchid-court-perfumery
+- faction/orchid-court
 sources:
 - Lore/Locations/Lorithal/Districts/Orchid Court.md
 - written by The DM
+- compendium sync by The DM, 2026-08-20
 data:
   revealed_by:
   - place/orchid-court-perfumery
