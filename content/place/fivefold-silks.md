@@ -11,6 +11,7 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/The Grand Endurance.md
 - written by The DM
+- edited by The DM on the wiki
 ---
 
 Bolts, thread, and a cutting table that has seen every fashion the city owns.
@@ -28,6 +29,6 @@ Bolts, thread, and a cutting table that has seen every fashion the city owns.
 | Thread, spool | 5s | 30 | |
 | Needle case | 1g | 10 | |
 | Tailoring, per garment | 10g | — | Two days |
-| Vaelorith livery | 40g | 2 | Selling to the wrong person is a crime |
+| Vaelorith livery | 40g | 2 | |
 | Banner, blank | 6g | 8 | |
 :::
