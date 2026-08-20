@@ -222,6 +222,52 @@ if proc.returncode == 0:
 
 shutil.rmtree(sandbox, ignore_errors=True)
 
+print("\n== secret table columns ==")
+TABLE = """Grum casts bells.
+
+| Item | Price | Notes ::dm |
+| --- | ---: | --- |
+| Handbell | 5g | |
+| Ear trumpet | 12g | He finds these very funny |
+"""
+
+player = s.redact(TABLE, {"wren"})
+check("player keeps the table", "Handbell" in player)
+check("player loses the column", "very funny" not in player)
+check("player never sees the header", "Notes" not in player)
+check("public prose survives", "Grum casts bells." in player)
+dm = s.redact(TABLE, {"dm"})
+check("dm keeps the column", "very funny" in dm)
+check("dm's header names the audience", "Notes &middot; dm" in dm)
+check("the marker itself never renders", "::dm" not in dm)
+check("strip_all drops the column", "very funny" not in s.strip_all(TABLE))
+check("a column counts as a secret", s.has_secrets(TABLE))
+check("hidden_from sees the column", s.hidden_from(TABLE, {"wren"}))
+check("but not for the dm", not s.hidden_from(TABLE, {"dm"}))
+check("audiences includes the column's", "dm" in s.audiences(TABLE))
+
+form = s.visible_body(TABLE, {"wren"})
+check("the table leaves the player's edit form", "Handbell" not in form,
+      "editing around hidden cells is how they get destroyed")
+check("the prose stays editable", "Grum casts bells." in form)
+merged = s.merge_edit(TABLE, form + "\n\nWren added a line.", {"wren"})
+check("saving folds the table back", "very funny" in merged)
+check("with the marker intact", "Notes ::dm" in merged)
+check("and keeps the player's edit", "Wren added a line." in merged)
+check("dm edit form keeps the table verbatim",
+      "Notes ::dm" in s.visible_body(TABLE, {"dm"}))
+
+VISITED_TABLE = (":::visited\n| Item | Notes ::dm |\n| --- | --- |\n"
+                 "| Fork | Planar |\n:::")
+opened = s.redact(VISITED_TABLE, {"wren", "visited"})
+check("a visited table opens without its dm column",
+      "Fork" in opened and "Planar" not in opened)
+carried = s.merge_edit(VISITED_TABLE, s.visible_body(
+    VISITED_TABLE, {"wren", "visited"}), {"wren", "visited"})
+check("a carried table keeps its visited fence",
+      ":::visited" in carried and "Planar" in carried,
+      "a table falling out of its fence would surface as public prose")
+
 print()
 if FAIL:
     print(f"{len(FAIL)} FAILURE(S): {FAIL}")

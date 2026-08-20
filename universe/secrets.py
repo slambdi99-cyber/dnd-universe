@@ -102,6 +102,148 @@ def parse(body: str) -> list[Segment]:
     return segments
 
 
+# -- secret columns ----------------------------------------------------------
+#
+# A table can carry one shared body with a column only some readers see:
+#
+#     | Item | Price | Notes ::dm |
+#     | --- | ---: | --- |
+#     | Ear trumpet | 12g | He finds these very funny |
+#
+# `::` plus an audience list on a header cell marks the whole column. Readers
+# outside the audience receive the same table without that column; readers
+# inside it see the header as "Notes · dm", so a secret column never looks
+# like an ordinary one. The same fail-closed rules as blocks apply: an
+# unparseable audience is the DM's alone.
+#
+# For editing, a table holding a column the editor may not read is withheld
+# whole, exactly like a block they may not read, and folded back on save.
+# Splicing their edited rows back around hidden cells would need to match
+# rows across renames and reorders, and a wrong match publishes or destroys
+# a secret; withholding the table costs an edit request in Discord instead.
+#
+# Escaped pipes are not understood. A table exotic enough to need `\|`
+# should carry its secrets as a block.
+
+_COL = re.compile(
+    r"^(?P<name>.*?)[ \t]*::[ \t]*"
+    r"(?P<aud>[A-Za-z][\w-]*(?:[ \t]*,[ \t]*[A-Za-z][\w-]*)*)[ \t]*$"
+)
+_SEP = re.compile(r"^\|(?=.*-)[ \t:\-|]+$")
+
+# Sentinel for "every column, chips on": the all-access process reads the
+# files it already owns, but still wants secret columns visibly marked.
+ALL = object()
+
+
+def _cells(line: str) -> list[str]:
+    s = line.strip()
+    if s.startswith("|"):
+        s = s[1:]
+    if s.endswith("|"):
+        s = s[:-1]
+    return [c.strip() for c in s.split("|")]
+
+
+def _row(cells: list[str]) -> str:
+    return "| " + " | ".join(cells) + " |"
+
+
+def _tables(lines: list[str]):
+    """Yield (start, end) line ranges of markdown tables: a header row
+    starting with |, a separator row, then every following | row."""
+    i = 0
+    while i < len(lines):
+        if (lines[i].lstrip().startswith("|") and i + 1 < len(lines)
+                and _SEP.match(lines[i + 1].strip())):
+            j = i
+            while j < len(lines) and lines[j].lstrip().startswith("|"):
+                j += 1
+            yield i, j
+            i = j
+        else:
+            i += 1
+
+
+def _column_audiences(header: list[str]) -> dict[int, frozenset[str]]:
+    out: dict[int, frozenset[str]] = {}
+    for i, cell in enumerate(header):
+        m = _COL.match(cell)
+        if m:
+            out[i] = _parse_audience(m.group("aud"))
+    return out
+
+
+def redact_columns(text: str, viewer) -> str:
+    """Rewrite the tables in `text` for one reader.
+
+    `viewer` is a set of identities (keep the columns they may read, drop
+    the rest), None (drop every secret column: the public/export view), or
+    the module's ALL sentinel (keep everything: the all-access reader).
+    A kept secret column's header is rewritten to name its audience, so it
+    can never pass for a public one.
+    """
+    lines = text.splitlines()
+    changed = False
+    for start, end in _tables(lines):
+        header = _cells(lines[start])
+        marked = _column_audiences(header)
+        if not marked:
+            continue
+        drop = {
+            i for i, aud in marked.items()
+            if viewer is not ALL and (viewer is None or not (viewer & aud))
+        }
+        for li in range(start, end):
+            cells = _cells(lines[li])
+            if li == start:
+                for ci, aud in marked.items():
+                    if ci not in drop and ci < len(cells):
+                        name = _COL.match(cells[ci]).group("name").strip()
+                        cells[ci] = f"{name} &middot; {', '.join(sorted(aud))}"
+            lines[li] = _row([c for ci, c in enumerate(cells) if ci not in drop])
+        changed = True
+    return "\n".join(lines) if changed else text
+
+
+def _column_withheld(text: str, viewer: set[str] | frozenset[str]) -> bool:
+    """Whether any table column in `text` is hidden from this viewer."""
+    lines = text.splitlines()
+    for start, _ in _tables(lines):
+        for aud in _column_audiences(_cells(lines[start])).values():
+            if not (viewer & aud):
+                return True
+    return False
+
+
+def _excise_hidden_tables(
+    text: str, viewer: set[str] | frozenset[str]
+) -> tuple[str, list[str]]:
+    """Split `text` into (editable remainder, tables withheld whole).
+
+    A table is withheld when it carries a column this viewer may not read;
+    see the note above on why the table travels whole rather than by cell.
+    """
+    lines = text.splitlines()
+    cut: list[tuple[int, int]] = []
+    tables: list[str] = []
+    for start, end in _tables(lines):
+        marked = _column_audiences(_cells(lines[start]))
+        if any(not (viewer & aud) for aud in marked.values()):
+            tables.append("\n".join(lines[start:end]))
+            cut.append((start, end))
+    if not cut:
+        return text, []
+    keep: list[str] = []
+    removed = set()
+    for start, end in cut:
+        removed.update(range(start, end))
+    for i, line in enumerate(lines):
+        if i not in removed:
+            keep.append(line)
+    return "\n".join(keep).strip("\n"), tables
+
+
 def redact(body: str, identities: set[str] | frozenset[str]) -> str:
     """Return the body as this viewer may see it.
 
@@ -110,7 +252,7 @@ def redact(body: str, identities: set[str] | frozenset[str]) -> str:
     """
     viewer = {i.lower() for i in identities}
     kept = [
-        s.text
+        redact_columns(s.text, viewer)
         for s in parse(body)
         if s.audience is None or (viewer & s.audience)
     ]
@@ -119,11 +261,19 @@ def redact(body: str, identities: set[str] | frozenset[str]) -> str:
 
 def strip_all(body: str) -> str:
     """Return only the public parts. Used for anything leaving the system."""
-    return "\n\n".join(s.text for s in parse(body) if not s.is_secret).strip()
+    return "\n\n".join(
+        redact_columns(s.text, None) for s in parse(body) if not s.is_secret
+    ).strip()
 
 
 def has_secrets(body: str) -> bool:
-    return any(s.is_secret for s in parse(body))
+    if any(s.is_secret for s in parse(body)):
+        return True
+    lines = body.splitlines()
+    return any(
+        _column_audiences(_cells(lines[start]))
+        for start, _ in _tables(lines)
+    )
 
 
 def hidden_from(body: str, identities: set[str] | frozenset[str]) -> bool:
@@ -134,17 +284,23 @@ def hidden_from(body: str, identities: set[str] | frozenset[str]) -> bool:
     nothing was removed.
     """
     viewer = {i.lower() for i in identities}
-    return any(
+    if any(
         s.audience is not None and not (viewer & s.audience) for s in parse(body)
-    )
+    ):
+        return True
+    return _column_withheld(body, viewer)
 
 
 def audiences(body: str) -> set[str]:
-    """Every identity named by any secret block in this body."""
+    """Every identity named by any secret block or column in this body."""
     out: set[str] = set()
     for segment in parse(body):
         if segment.audience:
             out |= set(segment.audience)
+    lines = body.splitlines()
+    for start, _ in _tables(lines):
+        for aud in _column_audiences(_cells(lines[start])).values():
+            out |= set(aud)
     return out
 
 
@@ -173,8 +329,30 @@ def merge_edit(
     quietly destroying them.
     """
     kept = withheld_blocks(original, identities)
+    kept += withheld_column_tables(original, identities)
     parts = [edited.strip()] + kept
     return "\n\n".join(p for p in parts if p.strip()).strip()
+
+
+def withheld_column_tables(
+    body: str, identities: set[str] | frozenset[str]
+) -> list[str]:
+    """Tables withheld from this editor because of a column they may not read.
+
+    Each comes back wearing its segment's fence where it had one, so a table
+    carried out of a `:::visited` block folds back in as visited material
+    rather than surfacing as public prose.
+    """
+    viewer = {i.lower() for i in identities}
+    out: list[str] = []
+    for segment in parse(body):
+        if segment.audience is not None and not (viewer & segment.audience):
+            continue  # the whole block is already carried by withheld_blocks
+        _, tables = _excise_hidden_tables(segment.text, viewer)
+        for table in tables:
+            out.append(wrap(table, segment.audience) if segment.audience
+                       else table)
+    return out
 
 
 def wrap(text: str, audience: list[str] | set[str]) -> str:
@@ -205,8 +383,14 @@ def visible_body(body: str, identities: set[str] | frozenset[str]) -> str:
     viewer = {i.lower() for i in identities}
     parts = []
     for segment in parse(body):
-        if segment.audience is None:
-            parts.append(segment.text)
-        elif viewer & segment.audience:
-            parts.append(wrap(segment.text, segment.audience))
+        if segment.audience is not None and not (viewer & segment.audience):
+            continue
+        # A table with a column this editor may not read leaves the form
+        # whole; merge_edit folds it back on save. Editing around hidden
+        # cells is how they get destroyed.
+        text, _ = _excise_hidden_tables(segment.text, viewer)
+        if not text.strip():
+            continue
+        parts.append(wrap(text, segment.audience) if segment.audience
+                     else text)
     return "\n\n".join(parts).strip()
