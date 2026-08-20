@@ -15,7 +15,7 @@ sources:
 - edited by The DM on the wiki
 data:
   revealed_by:
-  - place/the-tintinabullarium
+  - place/tintinabullarium
 ---
 
 Grum is deaf. He tests every bell with a palm flat to the bronze, and his casts ring truer than anyone's.
