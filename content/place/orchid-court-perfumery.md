@@ -12,6 +12,7 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Orchid Court.md
 - written by The DM
+- edited by The DM on the wiki
 ---
 
 Scent, polish, and the finest salon in the city. Lady Mour's parties are where the Orchid Court actually happens.
@@ -27,6 +28,5 @@ Scent, polish, and the finest salon in the city. Lady Mour's parties are where t
 | Pomade & powders | 8g | 10 | |
 | Silk gloves | 12g | 8 | |
 | Calling cards, engraved (50) | 20g | — | |
-| Salon invitation | 100g | — | Or a favor. She prefers the favor |
 | An introduction | — | — | Priced per person. Ask nicely |
 :::
