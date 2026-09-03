@@ -20,7 +20,7 @@ data:
 Off the main drag near the tack shops and the road out. Wixel buys artifacts without asking where they came from — exactly how he'd like his own finds treated.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Bag of Holding | 500g | 1 | |
 | Driftglobe | 400g | 1 | |

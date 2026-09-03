@@ -25,7 +25,7 @@ data:
 Bolts, thread, and a cutting table that has seen every fashion the city owns.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Fine clothes | 15g | 5 | |
 | Traveler's clothes | 2g | 12 | |

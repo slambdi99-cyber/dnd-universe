@@ -27,7 +27,7 @@ data:
 Presses, drying racks, and the city's records upstairs. Perrin Loomwright decides what's a public document.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Blank book, bound | 15g | 8 | |
 | Paper, quire | 3g | 20 | |

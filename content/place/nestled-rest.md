@@ -34,7 +34,7 @@ Dollin Marsh runs the desk, hears everything, and prices it fairly.
 Melda granted the party some rooms here to enjoy the Kindling celebrations when they arrived in the city.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Room, common, night | 5s | — | |
 | Room, private, night | 2g | — | |

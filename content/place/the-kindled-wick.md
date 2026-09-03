@@ -26,7 +26,7 @@ data:
 Candles, charms, and a bowl of pale stones by the register. Athene is warm, unhurried, and remembers your name the second time you come in.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Tallow candles (10) | 5s | 20 | |
 | Beeswax candles (10) | 2g | 12 | |

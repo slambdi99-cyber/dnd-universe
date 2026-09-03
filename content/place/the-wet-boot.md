@@ -20,7 +20,7 @@ data:
 Low ceiling, long benches, the cheapest beer in Lorithal. Colored cloth in the window that nobody's taken down yet, and Corvin — the loudest voice in the room against the House — behind the bar.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Ale, mug | 2c | — | |
 | Ale, pitcher | 8c | — | |

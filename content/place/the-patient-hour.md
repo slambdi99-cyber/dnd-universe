@@ -20,7 +20,7 @@ data:
 A shop the faculty calls a hobby. Lenses, mirrors, and a wall of notes nobody's read.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Magnifying lens | 100g | 3 | |
 | Mirror, polished steel | 20g | 6 | |

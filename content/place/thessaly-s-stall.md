@@ -20,7 +20,7 @@ data:
 A folding table by the bell steps, everything on it arranged just so.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Prayer beads | 3g | 12 | |
 | Holy water, vial | 25g | 6 | |
