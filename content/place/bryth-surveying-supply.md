@@ -12,6 +12,7 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Service Quarter.md
 - written by The DM
+- edited by The DM on the wiki
 ---
 
 Sits beside the sewer access and officially serves the University's survey work. The best-stocked adventuring shelf in Lorithal.
@@ -29,6 +30,5 @@ Sits beside the sewer access and officially serves the University's survey work.
 | Miner's canary, live | 5g | 4 | |
 | Piton (10) | 5s | 20 | |
 | Chalk & flagging tape | 1g | 12 | Marks a route back |
-| Leyline lodestone | 60g | 2 | Twitches near a ley convergence |
 | Tunnel map, copied | 30g | 3 | An older edition |
 :::
