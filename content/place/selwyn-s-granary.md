@@ -19,7 +19,7 @@ data:
 Sacks to the rafters and a long line at the side door every morning.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Grain, per bushel | 1g | — | |
 | Flour, sack | 2g | 20 | |

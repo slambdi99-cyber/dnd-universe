@@ -20,7 +20,7 @@ data:
 Sits beside the sewer access and officially serves the University's survey work. The best-stocked adventuring shelf in Lorithal.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Hempen rope, 50ft | 1g | 10 | |
 | Silk rope, 50ft | 10g | 3 | |

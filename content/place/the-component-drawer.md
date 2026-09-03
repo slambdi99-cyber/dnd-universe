@@ -21,7 +21,7 @@ data:
 Four hundred labeled drawers, floor to ceiling, and Mirelle knows every one by touch.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Component pouch | 25g | 4 | |
 | Arcane focus — crystal, rod, wand, staff | 10–20g | 6 | |

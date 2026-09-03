@@ -20,7 +20,7 @@ data:
 Banners, poles, and bunting. Oleander is apoplectic about the colored cloth going up around the city and says so to every customer.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | House banner, Vaelorith | 20g | 8 | |
 | Banner, plain white | 10g | 20 | |

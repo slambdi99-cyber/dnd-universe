@@ -21,7 +21,7 @@ data:
 Cookware out front, three tables and a pot in back. Everyone in the market eats here, which means everything in the market gets said here — and Odo Pell will pass it along unprompted, at length.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Bowl of the day | 2s | — | |
 | Bread & butter | 5c | — | |

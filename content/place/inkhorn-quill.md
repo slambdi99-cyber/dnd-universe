@@ -20,7 +20,7 @@ data:
 Tucked into the campus arcade, with the best scroll selection in the city.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Scroll, cantrip | 25g | 6 | |
 | Scroll, 1st level | 75g | 5 | |
