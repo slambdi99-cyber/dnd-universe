@@ -18,6 +18,7 @@ data:
   revealed_by:
   - place/the-patient-hour
   occupation: Proprietor of The Patient Hour
+  revealed: true
 ---
 
 A fringe metaphysicist by vocation and a shopkeeper by necessity. The faculty calls his shop a hobby and his theories worse. Ask him a question and you will not get out in an hour.
