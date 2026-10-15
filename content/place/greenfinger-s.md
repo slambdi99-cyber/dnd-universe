@@ -18,12 +18,15 @@ art:
 data:
   visited: true
   active_art: place/greenfinger-s/upload-bd68e9eec6588fa9
+  revealed_by:
+  - place/the-grand-endurance
+  revealed: true
 ---
 
 A narrow shop that smells like a crushed stem. Wisp Greenfinger works standing on a stool, and knows her stock down to the last sprig.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Potion of Healing | 50g | 8 | 2d4+2 |
 | Potion of Greater Healing | 150g | 2 | 4d4+4 |

@@ -57,6 +57,7 @@ from mcp.server.mcpserver import Context, MCPServer  # noqa: E402
 
 from universe import config as config_mod  # noqa: E402
 from universe import access as access_mod  # noqa: E402
+from universe import encounter as encounter_mod  # noqa: E402
 from universe import hierarchy as hierarchy_mod  # noqa: E402
 from universe import history as history_mod  # noqa: E402
 from universe import inbox as inbox_mod  # noqa: E402
@@ -701,6 +702,26 @@ def build_server(
         filed = inbox.file(message_ids or [])
         return {"filed": filed, "still_waiting": inbox.count(library)}
 
+    @server.tool(
+        description="Mark every waiting Discord message as read, without "
+        "filing them one by one. The 'mark all as read' button: use it when "
+        "the backlog is banter and nothing in it merits a page. Optionally "
+        "limit to one channel."
+    )
+    def catch_up(
+        ctx: Context,
+        channel: Annotated[str, "Limit to one channel, e.g. 'dnd-campaign'. "
+                                "Empty means every channel."] = "",
+    ) -> dict:
+        if read_only:
+            return {"error": "This connection is read-only."}
+        name = channel.strip()
+        if name and name not in inbox.channels():
+            return {"error": f"No channel called {name!r}. "
+                             f"Channels: {', '.join(inbox.channels())}"}
+        inbox.catch_up(name or None)
+        return {"still_waiting": inbox.count(library)}
+
     # -- write tools ---------------------------------------------------
 
     def secret_block(text: str, audience: list[str] | None) -> str:
@@ -739,13 +760,24 @@ def build_server(
         ] = "",
         revealed_by: Annotated[
             list[str] | None,
-            "DM only: hide this page from everyone until one of these places "
-            "is marked visited, e.g. ['place/krantz-salvage'].",
+            "DM only: hide this page from everyone until one of these pages "
+            "is encountered -- a place visited, a character met, an item "
+            "seen -- e.g. ['place/krantz-salvage']. Visiting the shop then "
+            "counts as meeting whoever it reveals.",
+        ] = None,
+        known: Annotated[
+            str | None,
+            "DM only: what the table knows of this page. 'no' hides it from "
+            "everyone but the DM until it is encountered -- the usual value "
+            "when creating a page ahead of play. 'yes' marks it already "
+            "encountered (visited/met/known/seen depending on kind).",
         ] = None,
     ) -> dict:
         ids, who = viewer(ctx)
-        if revealed_by and not ids.is_dm:
-            return {"error": "Only the DM can set revealed_by."}
+        if (revealed_by or known is not None) and not ids.is_dm:
+            return {"error": "Only the DM can set revealed_by or known."}
+        if known is not None and known not in ("yes", "no"):
+            return {"error": "known must be 'yes' or 'no'."}
         schema.reload_if_changed()
         if not schema.has(kind):
             return {"error": f"kind must be one of: {', '.join(schema.keys)}. "
@@ -769,11 +801,14 @@ def build_server(
         if revealed_by:
             entity.data["revealed_by"] = [
                 str(r).strip().lower() for r in revealed_by if str(r).strip()]
+        if known is not None:
+            encounter_mod.mark(entity, known == "yes")
         entity.sources.append(f"written by {who}")
         library.save(entity)
-        if revealed_by:
-            # The gate may already be open -- the named place could have been
-            # visited before this page existed.
+        if revealed_by or known is not None:
+            # The gate may already be open -- the named source could have
+            # been encountered before this page existed -- and a fresh flag
+            # can itself reveal pages gated on this one.
             access_mod.recompute_reveals(library)
         record(f"{entity.ref}: created over MCP", who)
         return {"created": entity.ref, "page": render(entity, ids)}
@@ -805,13 +840,24 @@ def build_server(
             bool | None,
             "DM only, places only: mark the place as visited by the party "
             "(or false to unmark). Opens the page's :::visited sections and "
-            "reveals any pages gated on it via revealed_by.",
+            "reveals any pages gated on it via revealed_by. For other kinds "
+            "-- and to hide a page outright -- use `known` instead.",
         ] = None,
         revealed_by: Annotated[
             list[str] | None,
-            "DM only: hide this page from everyone until one of these places "
-            "is marked visited, e.g. ['place/krantz-salvage']. Replaces the "
-            "existing list; pass [] to remove the gate.",
+            "DM only: hide this page from everyone until one of these pages "
+            "is encountered -- a place visited, a character met -- e.g. "
+            "['place/krantz-salvage']. Replaces the existing list; pass [] "
+            "to remove the gate.",
+        ] = None,
+        known: Annotated[
+            str | None,
+            "DM only: what the table knows of this page. 'yes' marks it "
+            "encountered (visited for a place, met for a character, known "
+            "for a faction, seen for an item), which reveals it, opens its "
+            ":::visited sections, and cascades to pages gated on it. 'no' "
+            "hides the page from everyone but the DM. 'clear' removes the "
+            "flag: public and untracked.",
         ] = None,
     ) -> dict:
         ids, who = viewer(ctx)
@@ -819,10 +865,15 @@ def build_server(
         if entity is None:
             return {"error": f"Nothing found for {ref!r}."}
 
-        if (visited is not None or revealed_by is not None) and not ids.is_dm:
-            return {"error": "Only the DM can change visited or revealed_by."}
+        if ((visited is not None or revealed_by is not None
+             or known is not None) and not ids.is_dm):
+            return {"error": "Only the DM can change visited, known or "
+                             "revealed_by."}
         if visited is not None and entity.kind != hierarchy_mod.KIND:
-            return {"error": "Only a place can be marked visited."}
+            return {"error": "Only a place can be marked visited. Use "
+                             "known='yes' for other kinds."}
+        if known is not None and known not in ("yes", "no", "clear"):
+            return {"error": "known must be 'yes', 'no' or 'clear'."}
 
         if within is not None:
             ok, problem = check_within(entity.kind, entity.ref, within)
@@ -844,10 +895,10 @@ def build_server(
         if add_links:
             entity.links = list(dict.fromkeys(entity.links + list(add_links)))
         if visited is not None:
-            if visited:
-                entity.data["visited"] = True
-            else:
-                entity.data.pop("visited", None)
+            encounter_mod.mark(entity, True if visited else None)
+        if known is not None:
+            encounter_mod.mark(
+                entity, {"yes": True, "no": False, "clear": None}[known])
         if revealed_by is not None:
             cleaned = [str(r).strip().lower() for r in revealed_by
                        if str(r).strip()]
@@ -862,7 +913,7 @@ def build_server(
 
         library.save(entity)
         out: dict[str, Any] = {"updated": entity.ref}
-        if visited is not None or revealed_by is not None:
+        if visited is not None or revealed_by is not None or known is not None:
             newly = access_mod.recompute_reveals(library)
             if newly:
                 out["visibility_changed"] = newly

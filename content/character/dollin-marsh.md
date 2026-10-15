@@ -19,6 +19,7 @@ data:
   - place/nestled-rest
   occupation: Innkeeper of the Nestled Rest
   revealed: true
+  met: true
 ---
 
 Dollin hears everything and prices it fairly — rooms, rumors, and discretion alike. The party has taken rooms under his roof.

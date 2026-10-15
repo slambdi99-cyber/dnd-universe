@@ -12,12 +12,15 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Ashbright University.md
 - written by The DM
+data:
+  revealed_by:
+  - place/ashbright-university
 ---
 
 Clocks, locks, and small broken things, all of them fixed properly.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Tinker's tools | 50g | 3 | |
 | Clockwork repair, per job | 5g | — | |

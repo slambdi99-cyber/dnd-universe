@@ -17,6 +17,7 @@ made undoable. Panels take one of these and add a feature.
 
 from __future__ import annotations
 
+import html
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -79,7 +80,30 @@ class Wiki:
             person = self.registry.members.get(key)
         if person is None:
             return access_mod.Viewer.nobody(), None
+        masked = self.masked(request)
+        if masked is not None:
+            # The DM checking what a player can see. The viewer really is the
+            # player -- same identities, same redactions -- and the name says
+            # so out loud, so the chrome can show the mask and the way out.
+            return (access_mod.Viewer.person(masked),
+                    site_mod.MaskedName.of(masked.name, person.name))
         return access_mod.Viewer.person(person), person.name
+
+    def masked(self, request) -> people_mod.Person | None:
+        """The player the signed-in DM is viewing as, or None.
+
+        Only a DM can wear the mask, and only a non-DM face is worth
+        wearing; anything else in the session is ignored rather than
+        honoured, so a stale value cannot grant a player the DM's eyes.
+        """
+        target = request.session.get("as")
+        if not target:
+            return None
+        person = self.registry.members.get(request.session.get("who", ""))
+        other = self.registry.members.get(target)
+        if person is None or other is None or not person.is_dm or other.is_dm:
+            return None
+        return other
 
     def require_login(self, request):
         """Two doors, in order: the shared passphrase, then who you are.
@@ -91,6 +115,13 @@ class Wiki:
             return RedirectResponse("/wiki/enter", status_code=303)
         if not request.session.get("who"):
             return RedirectResponse("/wiki/login", status_code=303)
+        # Impersonation is a pair of borrowed eyes, not borrowed hands: every
+        # write while masked would land in the player's name, so none happen.
+        # The one allowed POST is the route that takes the mask off.
+        if (request.method not in ("GET", "HEAD")
+                and request.url.path != "/wiki/impersonate"
+                and self.masked(request) is not None):
+            return RedirectResponse("/wiki/", status_code=303)
         return None
 
     def open_page(self, request):
@@ -166,13 +197,36 @@ class Wiki:
         except OSError:
             waiting = 0
         badge = f'<span class="badge">{waiting}</span>' if waiting else ""
+        # The DM's periscope: pick a player from the site menu and browse as
+        # them. Offered by display name because that is all render() carries;
+        # names are unique on the roster. Not offered while already masked --
+        # the way out lives in the header instead.
+        viewas = ""
+        reveals = ""
+        person = next((p for p in self.registry.members.values()
+                       if p.name == user), None)
+        if (person is not None and person.is_dm
+                and not getattr(user, "real", "")):
+            # Full navigation on purpose: the board carries its own page
+            # script, and the router does not run scripts it swaps in.
+            reveals = '<a href="/wiki/reveals" data-full-nav>Reveal web</a>'
+            options = "".join(
+                f'<option value="{html.escape(p.key)}">'
+                f'{html.escape(p.name)}</option>'
+                for p in self.roster() if not p.is_dm)
+            if options:
+                viewas = (
+                    '<form class="viewas" method="post" '
+                    'action="/wiki/impersonate">'
+                    f'<select name="who">{options}</select>'
+                    '<button type="submit">View as</button></form>')
         # Two pieces now: + New stays a visible button because writing is the
         # point of the wiki, while Inbox and Structure join the site dropdown
         # with Guide and Changelog -- machinery, not content.
         return (
             '<a class="act" href="/wiki/new">+ New</a>',
             f'<a href="/wiki/inbox">Inbox{badge}</a>'
-            '<a href="/wiki/structure">Structure</a>',
+            f'<a href="/wiki/structure">Structure</a>{reveals}{viewas}',
         )
 
     def render(self, title: str, body: str, index_json: str = "[]", *,

@@ -12,12 +12,16 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/The Grand Endurance.md
 - written by The DM
+data:
+  revealed_by:
+  - place/the-grand-endurance
+  revealed: true
 ---
 
 Crates of the season's produce, some of it fresher than the rest.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Fruit, seasonal, per lb | 3c | — | Some of it's fine |
 | Root vegetables, sack | 8s | 10 | |

@@ -11,12 +11,15 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Trindel's Stride.md
 - written by The DM
+data:
+  revealed_by:
+  - place/trindel-s-stride
 ---
 
 Right by the East Post road — mounts, carts, and everything that keeps them moving.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Riding horse | 75g | 4 | |
 | Draft horse | 50g | 3 | |

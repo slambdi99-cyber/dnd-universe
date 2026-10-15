@@ -24,6 +24,8 @@ sources:
 - Lore/Locations/Lorithal/Districts/Harvest Abbey.md
 data:
   within_inferred: link
+  revealed_by:
+  - place/the-broadheights
 ---
 
 Selwyn's Granary is the abbey's public face, selling grain and staples to the whole city.

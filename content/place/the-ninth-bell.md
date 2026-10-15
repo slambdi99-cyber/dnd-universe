@@ -12,12 +12,16 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Tintinabullarium.md
 - written by The DM
+- edited by The DM on the wiki
+data:
+  revealed_by:
+  - place/tintinabullarium
 ---
 
 Grum is deaf. He tests every bell with a palm flat to the bronze, and his casts ring truer than anyone's.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Handbell | 5g | 6 | |
 | Tuning fork, standard | 20g | 4 | |

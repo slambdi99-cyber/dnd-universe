@@ -12,12 +12,15 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/West Post.md
 - written by The DM
+data:
+  revealed_by:
+  - place/west-post
 ---
 
 Guard stock. Permit, vouch, or a very good reason.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Longsword | 15g | 6 | |
 | Mace / spear / handaxe | 5–10g | — | |

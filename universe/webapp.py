@@ -24,6 +24,7 @@ from starlette.routing import Route
 
 from . import access as access_mod
 from . import changelog as changelog_mod
+from . import encounter as encounter_mod
 from . import gate as gate_mod
 from . import hierarchy as hierarchy_mod
 from . import inbox as inbox_mod
@@ -373,7 +374,7 @@ change one.</p>
         if entity is None:
             return {"name": "", "summary": "", "appearance": "", "body": "",
                     "tags": "", "links": "", "kind": "place", "source": "",
-                    "within": ""}
+                    "within": "", "revealed_by": ""}
         return {
             "name": entity.name,
             "summary": entity.summary,
@@ -383,7 +384,25 @@ change one.</p>
             "links": ", ".join(entity.links),
             "kind": entity.kind,
             "within": entity.within,
+            # Canonical form rather than what the file happens to say, so a
+            # bare slug someone hand-wrote reads back as place/slug.
+            "revealed_by": ", ".join(sorted(encounter_mod.sources_of(entity))),
         }
+
+    def apply_gate(entity: Entity, raw: str) -> bool:
+        """Set a page's reveal gate from the form field. Returns True on change.
+
+        An emptied field drops the derived `revealed` flag with the gate, so
+        an ungated page carries no leftover bookkeeping.
+        """
+        before = entity.data.get("revealed_by")
+        cleaned = [r.strip().lower() for r in raw.split(",") if r.strip()]
+        if cleaned:
+            entity.data["revealed_by"] = cleaned
+        else:
+            entity.data.pop("revealed_by", None)
+            entity.data.pop("revealed", None)
+        return entity.data.get("revealed_by") != before
 
     def tag_suggestions() -> dict[str, list[str]]:
         """The tags each kind actually uses, most common first.
@@ -447,7 +466,8 @@ change one.</p>
                            action=f"/wiki/{kind}/{slug}/edit",
                            within_options=(
                                place_options(entity.within, exclude=entity.ref)
-                               if kind == hierarchy_mod.KIND else "")),
+                               if kind == hierarchy_mod.KIND else ""),
+                           dm=viewer.is_dm),
                 user=user,
             )
 
@@ -479,10 +499,21 @@ change one.</p>
         # Anything this editor could not see is carried across untouched.
         entity.body = secrets_mod.merge_edit(entity.body, body, editing_ids)
 
+        # The reveal gate, from the DM's copy of the form only. A player's
+        # form never carries the field, and a hand-made POST that does is
+        # ignored rather than honoured.
+        gate_changed = False
+        if viewer.is_dm and "revealed_by" in form:
+            gate_changed = apply_gate(entity, str(form.get("revealed_by", "")))
+
         note = f"edited by {user} on the wiki"
         if note not in entity.sources:
             entity.sources.append(note)
         library.save(entity)
+        if gate_changed:
+            # The gate may be born open: its source could have been
+            # encountered before the gate existed.
+            access_mod.recompute_reveals(library)
         # `sources` says a person touched this page at some point; it is
         # deduped, so a second edit adds nothing. The commit is what carries
         # when, and how often, and is what the changelog counts.
@@ -527,11 +558,14 @@ change one.</p>
         return RedirectResponse(f"/wiki/{kind}/index.html", status_code=303)
 
     async def toggle_visited(request):
-        """Check a place off as visited by the party, or uncheck it.
+        """Move a page's encounter flag: visited, met, known, seen.
 
-        DM only. The flag is what opens the page's `:::visited` sections to
-        everyone, so this button is the reveal: stock a shop's inventory
-        behind the fence, press this when the party walks in.
+        DM only, any kind. The route keeps its old name because the concept
+        grew out of the places-only visited checkbox and old links still
+        point here. The form's `set` field says where the flag goes --
+        "true" (encountered), "false" (hidden from everyone but the DM),
+        "clear" (untracked, public) -- and a bare POST keeps the original
+        toggle so nothing scripted against it breaks.
         """
         redirect = require_login(request)
         if redirect:
@@ -545,22 +579,126 @@ change one.</p>
         if ref not in allowed or not viewer.is_dm:
             return HTMLResponse("Not found", status_code=404)
         entity = library.load(kind, slug)
-        if entity.data.get("visited"):
-            # Removed rather than set False, so the metadata table doesn't
-            # carry a "visited False" row on every unvisited place.
-            entity.data.pop("visited", None)
-            note = "unmarked visited"
+        verb = encounter_mod.flag_key(entity.kind)
+        form = await request.form()
+        choice = str(form.get("set", ""))
+        if choice == "true":
+            encounter_mod.mark(entity, True)
+            note = f"marked {verb}"
+        elif choice == "false":
+            encounter_mod.mark(entity, False)
+            note = f"hidden until {verb}"
+        elif choice == "clear":
+            encounter_mod.mark(entity, None)
+            note = f"unmarked {verb}"
         else:
-            entity.data["visited"] = True
-            note = "marked visited"
+            # The original button: flips between encountered and untracked.
+            value = None if encounter_mod.flag_of(entity) else True
+            encounter_mod.mark(entity, value)
+            note = f"marked {verb}" if value else f"unmarked {verb}"
         library.save(entity)
-        # Visiting can reveal other pages outright -- an NPC, a landmark --
-        # so the reveal map is settled in the same breath as the flag.
+        # An encounter can reveal other pages outright -- walk into the shop
+        # and you have met the shopkeeper -- so the cascade map is settled
+        # in the same breath as the flag.
         revealed = access_mod.recompute_reveals(library)
         if revealed:
-            note += ", revealing " + ", ".join(sorted(revealed))
+            note += ", changing " + ", ".join(sorted(revealed))
         wiki.record(f"{ref}: {note} on the wiki", user or "someone")
+        # The reveal web posts the same toggles; send its presses back to
+        # the board instead of scattering the DM onto individual pages.
+        if str(form.get("back", "")) == "reveals":
+            return RedirectResponse("/wiki/reveals", status_code=303)
         return RedirectResponse(f"/wiki/{kind}/{slug}.html", status_code=303)
+
+    async def reveal_web(request):
+        """The reveal graph, drawn. DM only: the web IS the trick showing."""
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        if not viewer.is_dm:
+            return HTMLResponse("Not found", status_code=404)
+        return render("Reveal web",
+                      site_mod.render_reveal_web(schema, library, "/wiki/"),
+                      user=user)
+
+    async def wire_reveal(request):
+        """Connect two pages in the reveal graph. DM only.
+
+        `direction` says which end of the wire this page holds: "revealed_by"
+        adds `target` to this page's own gate, "reveals" adds this page to
+        the target's. Either way the stored fact is one `revealed_by` list
+        on the gated page -- the wire has no second record to drift.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        viewer, user = viewer_for(request)
+        kind, slug = request.path_params["kind"], request.path_params["slug"]
+        ref = f"{kind}/{slug}"
+        _, allowed = entities_for(viewer)
+        # Same 404 as a missing page for non-DMs, like every other route:
+        # a 403 would confirm there is something here to press.
+        if ref not in allowed or not viewer.is_dm:
+            return HTMLResponse("Not found", status_code=404)
+        entity = library.load(kind, slug)
+        form = await request.form()
+        direction = str(form.get("direction", ""))
+        raw = str(form.get("target", "")).strip()
+        target = library.load(*raw.split("/", 1)) if "/" in raw else None
+        if target is None and raw:
+            # A typed name rather than a picked ref. Exact match only:
+            # guessing at "Bogwatchers" between the temple and the faction
+            # would wire a gate nobody asked for.
+            matches = [e for e in library.all()
+                       if e.name.strip().lower() == raw.lower()]
+            if len(matches) == 1:
+                target = matches[0]
+        if target is None or direction not in ("revealed_by", "reveals"):
+            return HTMLResponse("No such page.", status_code=400)
+        gated = entity if direction == "revealed_by" else target
+        source = target if direction == "revealed_by" else entity
+        if gated.ref == source.ref:
+            return HTMLResponse("A page cannot reveal itself.",
+                                status_code=400)
+        if source.ref not in encounter_mod.sources_of(gated):
+            gates = gated.data.get("revealed_by") or []
+            if isinstance(gates, str):
+                gates = [gates]
+            gated.data["revealed_by"] = list(gates) + [source.ref]
+            library.save(gated)
+            # The new wire may already be live: a gate wired to a place the
+            # party has stood in reveals its page in the same breath.
+            revealed = access_mod.recompute_reveals(library)
+            note = f"revealed by {source.ref}"
+            if revealed:
+                note += ", changing " + ", ".join(sorted(revealed))
+            wiki.record(f"{gated.ref}: {note} on the wiki", user or "someone")
+        return RedirectResponse(f"/wiki/{kind}/{slug}.html", status_code=303)
+
+    async def impersonate(request):
+        """Put on, or take off, a player's eyes. DM only.
+
+        Sets nothing but a session key: `viewer_for` does the actual seeing,
+        and `require_login` keeps the mask read-only. Posting without a
+        valid player clears the mask, which is what the "back to yourself"
+        button sends.
+        """
+        redirect = require_login(request)
+        if redirect:
+            return redirect
+        person = registry.members.get(request.session.get("who", ""))
+        if person is None or not person.is_dm:
+            # Same 404 a player gets on any DM-only door.
+            return HTMLResponse("Not found", status_code=404)
+        form = await request.form()
+        target = str(form.get("who", "")).strip().lower()
+        other = registry.members.get(target)
+        if other is not None and not other.is_dm:
+            request.session["as"] = target
+        else:
+            request.session.pop("as", None)
+        return RedirectResponse("/wiki/", status_code=303)
 
     async def new_page(request):
         redirect = require_login(request)
@@ -588,7 +726,8 @@ change one.</p>
                                      action="/wiki/new", creating=True,
                                      within_options=place_options(
                                          values.get("within", "")),
-                                     tag_pills=tag_suggestions()),
+                                     tag_pills=tag_suggestions(),
+                                     dm=viewer.is_dm),
                           user=user)
 
         form = await request.form()
@@ -600,12 +739,14 @@ change one.</p>
                 _edit_form({**form_values(None, viewer), "name": name,
                             "kind": kind, "body": str(form.get("body", "")),
                             "summary": str(form.get("summary", "")),
-                            "source": str(form.get("source", ""))},
+                            "source": str(form.get("source", "")),
+                            "revealed_by": str(form.get("revealed_by", ""))},
                            registry, schema.kinds, withheld=0,
                            action="/wiki/new", creating=True,
                            error="Give it a name and pick a type.",
                            within_options=place_options(""),
-                           tag_pills=tag_suggestions()),
+                           tag_pills=tag_suggestions(),
+                           dm=viewer.is_dm),
                 user=user,
             )
 
@@ -642,7 +783,12 @@ change one.</p>
                    if l.strip() and "/" in l],
             sources=([source] if source else []) + [f"created by {user} on the wiki"],
         )
+        gate_changed = False
+        if viewer.is_dm and "revealed_by" in form:
+            gate_changed = apply_gate(entity, str(form.get("revealed_by", "")))
         library.save(entity)
+        if gate_changed:
+            access_mod.recompute_reveals(library)
         wiki.record(f"{kind}/{slug}: created on the wiki", user)
         # A page citing a Discord message is the message being dealt with, so
         # the inbox drops it without anyone pressing a second button.
@@ -653,6 +799,9 @@ change one.</p>
         Route("/wiki/{kind}/{slug}/edit", edit, methods=["GET", "POST"]),
         Route("/wiki/{kind}/{slug}/delete", delete_page, methods=["POST"]),
         Route("/wiki/{kind}/{slug}/visited", toggle_visited, methods=["POST"]),
+        Route("/wiki/{kind}/{slug}/wire", wire_reveal, methods=["POST"]),
+        Route("/wiki/reveals", reveal_web),
+        Route("/wiki/impersonate", impersonate, methods=["POST"]),
         Route("/wiki/enter", enter, methods=["GET", "POST"]),
         Route("/wiki/login", login, methods=["GET", "POST"]),
         Route("/wiki/people/new", add_person, methods=["GET", "POST"]),
@@ -675,7 +824,8 @@ change one.</p>
 def _edit_form(v: dict, registry: people_mod.People, kinds, withheld: int,
                action: str, creating: bool = False, error: str = "",
                within_options: str = "",
-               tag_pills: dict[str, list[str]] | None = None) -> str:
+               tag_pills: dict[str, list[str]] | None = None,
+               dm: bool = False) -> str:
     err = f'<div class="error">{html.escape(error)}</div>' if error else ""
     title = "New page" if creating else f"Editing {v['name']}"
 
@@ -807,6 +957,19 @@ but the page comes off the site now.">
         for p in registry.members.values()
     )
 
+    # The reveal gate, only on the DM's copy of the form. Rendering it for a
+    # player would name the trick even with the value blank.
+    gate_field = "" if not dm else f"""
+  <fieldset class="secretbox">
+    <legend>Reveal gate</legend>
+    <p class="hint">Hidden until the party encounters one of these pages --
+    visiting the shop counts as meeting whoever it reveals. Comma separated,
+    as place/the-kindled-wick; a bare name is taken as a place. Leave empty
+    for no gate; the Hide/Mark buttons on the page cover one-off hiding.</p>
+    <input name="revealed_by" value="{html.escape(v.get('revealed_by', ''))}">
+  </fieldset>
+"""
+
     return f"""
 <h1>{html.escape(title)}</h1>
 {err}
@@ -838,7 +1001,7 @@ but the page comes off the site now.">
               placeholder="Something only some of us know..."></textarea>
     <div class="cbs">{boxes}</div>
   </fieldset>
-
+{gate_field}
   <button type="submit">{"Create" if creating else "Save"}</button>
 </form>
 {delete_form}

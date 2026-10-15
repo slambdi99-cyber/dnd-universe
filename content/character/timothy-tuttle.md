@@ -30,7 +30,7 @@ data:
   dndbeyond_campaign: https://www.dndbeyond.com/campaigns/6916676
   files:
   - id: character/timothy-tuttle/upload-d39eb4dfc8bb45e9
-    name: content3.png
+    name: content.png
     type: image/png
     size: 3286345
     by: The DM

@@ -12,12 +12,15 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Service Quarter.md
 - written by The DM
+data:
+  revealed_by:
+  - place/service-quarter
 ---
 
 Cash only, no names, no receipts. Dossel remembers faces anyway.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Scrap steel, per lb | 5s | — | |
 | Alchemist's fire | 60g | 4 | |

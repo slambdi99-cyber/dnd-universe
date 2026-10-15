@@ -13,12 +13,15 @@ sources:
 - Lore/Locations/Lorithal/Districts/Orchid Court.md
 - written by The DM
 - edited by The DM on the wiki
+data:
+  revealed_by:
+  - place/orchid-court
 ---
 
 Scent, polish, and the finest salon in the city. Lady Mour's parties are where the Orchid Court actually happens.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Perfume, common blend | 15g | 10 | |
 | Perfume, bespoke | 80g | — | Three days, one fitting |

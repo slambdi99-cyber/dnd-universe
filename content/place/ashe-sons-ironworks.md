@@ -12,12 +12,15 @@ tags:
 sources:
 - Lore/Locations/Lorithal/Districts/Service Quarter.md
 - written by The DM
+data:
+  revealed_by:
+  - place/service-quarter
 ---
 
 Forge out front, the ring of the anvil all day. Tobbin has been filing complaints about the sewer collapses for a month and will tell anyone who stands still about it.
 
 :::visited
-| Item | Price | Qty | Notes |
+| Item | Price | Qty | Notes ::dm |
 | --- | ---: | ---: | --- |
 | Nails, keg | 2g | 10 | |
 | Hinges, brackets, fittings | 1–5g | — | |
